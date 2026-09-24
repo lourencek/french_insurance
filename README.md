@@ -1,1 +1,5685 @@
-# french_insurance
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>freMTPL2_Feature_Engineering</title>
+  <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+  <style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #1a1a1a;
+    background: #ffffff;
+    margin: 0;
+    padding: 24px;
+  }
+  .notebook { max-width: 1200px; margin: 0 auto; }
+
+  /* Header with title block and 3-dot menu */
+  .notebook-header { margin-bottom: 24px; }
+  .notebook-header-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+  .notebook-header-info { display: flex; flex-direction: column; }
+  .notebook-name-label { font-size: 13px; font-weight: 400; color: #1a1a1a; }
+  .notebook-title { font-size: 40px; font-weight: 600; margin: 0; color: #1a1a1a; overflow-wrap: break-word; }
+  .notebook-exported-at { font-size: 13px; font-weight: 400; color: #5d6a85; }
+  .notebook-header-divider { border: none; border-top: 1px solid #d5dae4; margin: 16px 0 0 0; }
+
+  /* Collapse/expand via data-collapse-state — always included so cells honour their
+     initial metadata (codeCollapsed / collapsed) even without interactive controls. */
+  .cell[data-collapse-state="collapsed"] .cell-header { border-radius: 0 0 8px 8px; }
+  .cell[data-collapse-state="collapsed"] .cell-outputs,
+  .cell[data-collapse-state="code-only"] .cell-outputs,
+  .cell[data-collapse-state="results-only"] .cell-input,
+  .cell[data-collapse-state="collapsed"] .cell-input { display: none; }
+  .cell[data-collapse-state="code-only"] .cell-input { border-radius: 0 0 8px 8px; }
+
+  /* Cell — matches in-app notebook cell styling */
+  .cell {
+    border: 1px solid #d5dae4;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    background: #fff;
+    position: relative;
+  }
+  .cell-input { border-radius: 0; overflow: hidden; }
+  .cell-outputs { border-radius: 0 0 8px 8px; overflow: hidden; }
+  .cell-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    background: #fff;
+    font-size: 12px;
+    height: 36px;
+    border-radius: 8px 8px 0 0;
+  }
+  .cell-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #5d6a85;
+  }
+  .cell-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+  .cell-name { font-weight: 500; color: #333; }
+  .cell-counter { color: #888; font-family: monospace; }
+
+  /* Code input area — gray background matching reusableBackgroundAdditionalInfo */
+  .cell-input {
+    background: #f7f7f7;
+    position: relative;
+  }
+  .cell-input::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 3px;
+    width: 3px;
+    height: 100%;
+    border-radius: 1px;
+    background: #d5dae4;
+  }
+  .cell-status-success::before { background: #0e9c73; }
+  .cell-status-error::before { background: #d3132f; }
+  .cell-source pre {
+    margin: 0;
+    padding: 12px 16px;
+    overflow-x: auto;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 13px;
+    line-height: 1.45;
+    white-space: pre;
+    color: #1a1a1a;
+  }
+
+  /*
+   * Syntax highlighting — .tok-* classes emitted by @lezer/highlight's
+   * classHighlighter + lezerTagHighlighter (same as the live CodeMirror
+   * editor). Colours resolve the --editor-* CSS variables from light.css.
+   */
+  .tok-comment              { color: #5d6a85; } /* --editor-comment          (gray-70)  */
+  .tok-controlKeyword       { color: #653e03; } /* --editor-control-keyword  (yellow-90) */
+  .tok-definitionKeyword    { color: #085bd7; } /* --editor-keyword          (blue-60)  */
+  .tok-keyword              { color: #9712e8; } /* --editor-py-keyword                  */
+  .tok-variableName         { color: #002c6e; } /* --editor-variable-name    (blue-90)  */
+  .tok-name                 { color: #191e24; } /* --editor-text             (gray-90)  */
+  .tok-functionName         { color: #653e03; } /* --editor-function-name    (yellow-90) */
+  .tok-number               { color: #087959; } /* --editor-number           (green-80) */
+  .tok-string, .tok-string2 { color: #860112; } /* --editor-string           (red-80)   */
+  .tok-typeName             { color: #087959; } /* --editor-type-name        (green-80) */
+  .tok-bool                 { color: #9712e8; } /* --editor-py-keyword                  */
+  .tok-null                 { color: #9712e8; } /* --editor-py-keyword                  */
+  .tok-operator             { color: #191e24; } /* --editor-text             (gray-90)  */
+  .tok-punctuation          { color: #191e24; } /* --editor-text             (gray-90)  */
+  .tok-self                 { color: #9712e8; } /* --editor-py-keyword                  */
+  .tok-builtin              { color: #085bd7; } /* --editor-keyword          (blue-60)  */
+  .tok-specialVariable      { color: #002c6e; } /* --editor-variable-name    (blue-90)  */
+
+  /* SQL theme overrides (sqlTheme.ts) — SQL keywords are blue, builtins/numbers
+     use --editor-function (green), and string2/specialVariable differ from Python. */
+  .cell-sql .tok-keyword        { color: #085bd7; } /* --editor-keyword          (blue-60)  */
+  .cell-sql .tok-builtin        { color: #087959; } /* --editor-function         (green-80) */
+  .cell-sql .tok-string2        { color: #087959; } /* --editor-function         (green-80) */
+  .cell-sql .tok-specialVariable { color: #653e03; } /* --editor-control-keyword  (yellow-90) */
+
+  /* Outputs — white background, visually distinct from gray code input */
+  .cell-outputs { background: #fff; border-top: 1px solid #d5dae4; }
+  /* Table/chart results already have their own top border via .rv-container;
+     class applied at render time to avoid :has() (unsupported in Firefox <121). */
+  .cell-outputs-no-top-border { border-top: none; }
+
+  /* Markdown rendered as inline content — no cell border, no badge */
+  .markdown-block {
+    padding: 4px 4px 4px 20px;
+    line-height: 1.6;
+    margin-bottom: 4px;
+    color: #1a1a1a;
+  }
+  .markdown-block h1,.markdown-block h2,.markdown-block h3,
+  .markdown-block h4,.markdown-block h5,.markdown-block h6 {
+    margin-top: 16px; margin-bottom: 8px; font-weight: 600;
+  }
+  .markdown-block p { margin: 0 0 10px; }
+  .markdown-block code {
+    background: #f0f0f0; padding: 1px 4px; border-radius: 3px;
+    font-family: monospace; font-size: 12px;
+  }
+  .markdown-block pre {
+    background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto;
+  }
+  .markdown-block blockquote {
+    border-left: 3px solid #ccc; margin: 0 0 10px; padding: 4px 12px; color: #555;
+  }
+  .markdown-block table { border-collapse: collapse; margin-bottom: 10px; }
+  .markdown-block th, .markdown-block td {
+    border: 1px solid #ddd; padding: 6px 10px;
+  }
+  .markdown-block th { background: #f5f5f5; font-weight: 600; }
+
+  .output-text {
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.45;
+    margin: 0;
+    padding: 10px 16px;
+    white-space: pre-wrap;
+    overflow-x: auto;
+  }
+  .output-stderr { }
+  .output-error  { padding: 10px 16px; }
+  .output-sql-error { color: #5d6a85; padding: 10px 16px; } /* gray-70 — matches --editor-comment */
+
+  .output-markdown  { padding: 10px 16px; }
+  .output-html      { padding: 10px 16px; }
+  .output-json {
+    font-family: monospace; font-size: 13px; line-height: 1.45;
+    margin: 0; padding: 10px 16px; overflow-x: auto;
+    background: #fafafa; white-space: pre;
+  }
+  .output-image { padding: 10px 16px; }
+  .output-image img { display: block; }
+  .output-audio { padding: 10px 16px; }
+  .output-audio audio { max-width: 100%; width: 500px; }
+
+  /* Results Viewer: Tab toggle */
+  .rv-container { border-top: 1px solid #e0e0e0; }
+  .rv-tabs {
+    display: flex;
+    gap: 0;
+    padding: 0 8px;
+    background: #f7f7f7;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  .rv-tab {
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #666;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .rv-tab:hover { color: #1a1a1a; }
+  .rv-tab-active {
+    color: #0969da;
+    border-bottom-color: #0969da;
+  }
+  .rv-panel-hidden { display: none; }
+
+  /* Data grid (interactive scrollable table) */
+  .dg-container { background: #fff; }
+  .dg-toolbar {
+    display: flex;
+    align-items: center;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: #666;
+    background: #f9f9f9;
+    border-bottom: 1px solid #e8e8e8;
+    position: relative;
+    z-index: 5;
+  }
+  .dg-row-count { font-weight: 500; flex-shrink: 0; }
+  .dg-toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    flex-shrink: 1;
+    min-width: 0;
+    justify-content: flex-end;
+  }
+
+  /* Search control — collapsed icon that expands on hover (matches SearchControl.tsx) */
+  .dg-search {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 24px;
+    width: 24px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: transparent;
+    transition: width 200ms ease, background-color 200ms ease, box-shadow 300ms ease;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .dg-search-expanded {
+    width: 250px;
+    background: #e8e8e8;
+    padding: 0 8px;
+    gap: 4px;
+    justify-content: flex-start;
+  }
+  .dg-search-expanded:focus-within {
+    box-shadow: 0 0 0 2px #0969da;
+  }
+  .dg-search-icon {
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    color: #333;
+    flex-shrink: 0;
+  }
+  .dg-search-input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 12px;
+    color: #222;
+    padding: 0;
+    height: 100%;
+    display: none;
+  }
+  .dg-search-expanded .dg-search-input { display: block; }
+  .dg-search-input::placeholder { color: #888; }
+  .dg-search-clear {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #555;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dg-search-expanded .dg-search-clear { display: flex; }
+  .dg-search-clear:hover { color: #111; background: rgba(0,0,0,0.08); }
+  .dg-search-clear svg { width: 14px; height: 14px; }
+
+  .dg-search:not(.dg-search-expanded):hover { background: #e8e8e8; }
+
+  /* Column selection button — icon-only tertiary button (matches BottomPaneIconButton) */
+  .dg-colsel-wrapper { position: relative; }
+  .dg-colsel-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: #555;
+    border-radius: 6px;
+  }
+  .dg-colsel-btn:hover { background: #e8e8e8; color: #222; }
+  .dg-colsel-btn svg { width: 16px; height: 16px; }
+
+  /* Column selection popover (matches ColumnSelectionPopover.tsx) */
+  .dg-colsel-popover[hidden] { display: none !important; }
+  .dg-colsel-popover {
+    position: fixed;
+    z-index: 1000;
+    width: 240px;
+    background: #fff;
+    border: 1px solid #d0d0d0;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.16);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .dg-colsel-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .dg-colsel-search-icon {
+    position: absolute;
+    left: 8px;
+    width: 14px;
+    height: 14px;
+    color: #888;
+    pointer-events: none;
+  }
+  .dg-colsel-search-input {
+    width: 100%;
+    height: 30px;
+    padding: 4px 8px 4px 28px;
+    font-size: 12px;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    outline: none;
+    background: #f5f5f5;
+    color: #222;
+  }
+  .dg-colsel-search-input:focus { border-color: #0969da; background: #fff; }
+  .dg-colsel-search-input::placeholder { color: #888; }
+  .dg-colsel-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 13px;
+    color: #333;
+    cursor: pointer;
+    user-select: none;
+  }
+  .dg-colsel-item:hover { color: #111; }
+  .dg-colsel-item input { accent-color: #0969da; margin: 0; flex-shrink: 0; width: 14px; height: 14px; }
+  .dg-colsel-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dg-colsel-all { font-weight: 500; }
+  .dg-colsel-sep { height: 1px; background: #e0e0e0; margin: 0; }
+  .dg-colsel-list { max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; }
+  .dg-colsel-apply {
+    width: 100%;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background: #0969da;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .dg-colsel-apply:hover { background: #0758b6; }
+  .dg-colsel-apply:disabled { background: #a0cfff; cursor: default; }
+  .dg-colsel-empty { font-size: 12px; color: #888; text-align: center; padding: 12px 0; }
+  .dg-colsel-empty[hidden] { display: none; }
+  .dg-scroll {
+    overflow: auto;
+    position: relative;
+    min-height: 120px;
+  }
+  .dg-search-empty {
+    padding: 48px 16px;
+    text-align: center;
+    font-size: 13px;
+    color: #888;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  .dg-search-empty[hidden] { display: none; }
+  .dg-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    min-width: 100%;
+    table-layout: auto;
+  }
+  .dg-table thead { position: sticky; top: 0; z-index: 2; }
+  .dg-table th {
+    background: #f5f5f5;
+    border-bottom: 2px solid #d0d0d0;
+    border-right: 1px solid #e8e8e8;
+    padding: 0 4px 0 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    text-align: left;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 12px;
+    color: #333;
+    height: 36px;
+  }
+  .dg-col-header {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    min-height: 100%;
+  }
+  .dg-col-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .dg-sort-arrow { font-size: 10px; color: #0969da; flex-shrink: 0; }
+  .dg-col-menu-btn {
+    flex-shrink: 0;
+    opacity: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 15px;
+    color: #555;
+    line-height: 1;
+    border-radius: 3px;
+  }
+  th:hover .dg-col-menu-btn { opacity: 1; }
+  .dg-col-menu-btn:hover { background: #e0e0e0; color: #111; }
+  .dg-col-menu {
+    position: fixed;
+    background: #fff;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.14);
+    z-index: 1000;
+    min-width: 160px;
+    padding: 4px;
+  }
+  .dg-col-menu-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 7px 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    color: #222;
+    border-radius: 4px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  .dg-col-menu-item:hover { background: #f0f7ff; }
+  .dg-col-menu-item.dg-active { background: #e8f0fe; color: #0969da; font-weight: 500; }
+  .dg-col-menu-item.dg-active:hover { background: #d4e4fc; }
+  .dg-col-menu-sep { height: 1px; background: #e8e8e8; margin: 4px 0; }
+  .dg-submenu-header { display: flex; justify-content: space-between; align-items: center; }
+  .dg-submenu-arrow { font-size: 9px; color: #888; margin-left: 4px; }
+  .dg-submenu-list { border-left: 2px solid #e0e8f8; margin-left: 8px; }
+  .dg-submenu-item { padding-left: 12px !important; font-size: 11.5px; color: #444; }
+  .dg-stats-row th {
+    background: #f0f7ff;
+    font-weight: 400;
+    font-size: 11px;
+    color: #555;
+    padding: 3px 12px;
+    border-bottom: 1px solid #c8daf8;
+    white-space: nowrap;
+  }
+  .dg-stats-row .dg-row-num { background: #f0f7ff !important; }
+  .dg-table td {
+    border-bottom: 1px solid #eee;
+    border-right: 1px solid #f0f0f0;
+    padding: 0 12px;
+    height: 28px;
+    color: #1a1a1a;
+  }
+  .dg-cell {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .dg-table tr:hover td { background: #f0f7ff; }
+  .dg-table tr:nth-child(even) td { background: #fafafa; }
+  .dg-table tr:nth-child(even):hover td { background: #f0f7ff; }
+  .dg-row-num {
+    color: #999;
+    text-align: right;
+    padding: 4px 8px !important;
+    width: 48px;
+    min-width: 48px;
+    max-width: 48px;
+    font-size: 11px;
+    user-select: none;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: #f9f9f9 !important;
+    border-right: 1px solid #e0e0e0 !important;
+  }
+  th.dg-row-num {
+    background: #f5f5f5 !important;
+    z-index: 3;
+  }
+
+  /* Charts */
+  .output-vega  { padding: 10px 16px; }
+  .output-plotly { padding: 10px 16px; min-height: 400px; }
+
+  /* Query placeholder */
+  .output-query-placeholder {
+    padding: 10px 16px;
+    color: #888;
+    font-style: italic;
+    font-size: 13px;
+    border-top: 1px dashed #e0e0e0;
+  }
+  .output-warning {
+    padding: 8px 16px;
+    background: #fffbeb;
+    color: #92400e;
+    border-left: 3px solid #f59e0b;
+    font-size: 13px;
+    margin: 4px 0;
+  }
+  .output-other { padding: 10px 16px; color: #888; font-style: italic; font-size: 13px; }
+
+  /* Chart editor (left sidebar + chart area) */
+  .ch-layout {
+    display: flex;
+    min-height: 340px;
+    background: #fff;
+  }
+  .ch-sidebar {
+    width: 220px;
+    min-width: 220px;
+    flex-shrink: 0;
+    border-right: 1px solid #e0e0e0;
+    background: #f9f9f9;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 10px;
+    overflow-y: auto;
+  }
+  .ch-form { display: flex; flex-direction: column; gap: 6px; }
+  .ch-field-row { display: flex; align-items: center; gap: 6px; }
+  .ch-label {
+    width: 72px;
+    min-width: 72px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #555;
+    flex-shrink: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  .ch-select {
+    flex: 1;
+    min-width: 0;
+    font-size: 12px;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    padding: 4px 4px;
+    background: #fff;
+    color: #222;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  .ch-divider { height: 1px; background: #e8e8e8; margin: 2px 0; }
+
+  /* Multi-Y axis select: stacked dropdowns + Add column button */
+  .ch-multi-y { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+  .ch-multi-y-item { display: flex; align-items: center; gap: 4px; }
+  .ch-multi-y-item .ch-select { flex: 1; min-width: 0; }
+  .ch-remove-btn {
+    background: none; border: none; cursor: pointer; color: #888;
+    font-size: 12px; padding: 2px 4px; border-radius: 3px; line-height: 1; flex-shrink: 0;
+  }
+  .ch-remove-btn:hover { background: #eee; color: #333; }
+  .ch-add-col-wrapper { position: relative; }
+  .ch-add-col-btn {
+    background: none; border: 1px dashed #ccc; border-radius: 4px;
+    font-size: 11px; color: #555; cursor: pointer; padding: 3px 8px; width: 100%;
+    text-align: left;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  .ch-add-col-btn:hover { border-color: #999; background: #f5f5f5; }
+  .ch-add-col-menu {
+    position: absolute; top: 100%; left: 0; right: 0; z-index: 10;
+    background: #fff; border: 1px solid #d0d0d0; border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12); max-height: 200px; overflow-y: auto;
+    margin-top: 2px;
+  }
+  .ch-add-col-header {
+    font-size: 10px; font-weight: 600; color: #888; padding: 6px 8px 2px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .ch-add-col-item {
+    display: block; width: 100%; background: none; border: none; text-align: left;
+    font-size: 12px; padding: 5px 8px; cursor: pointer; color: #222;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  .ch-add-col-item:hover { background: #f0f4ff; }
+
+  /* Toggle switch for axis labels */
+  .ch-toggle-row { align-items: flex-start; }
+  .ch-toggle-right { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+  .ch-toggle {
+    position: relative; width: 32px; height: 18px; border-radius: 9px;
+    background: #ccc; border: none; cursor: pointer; padding: 0; flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .ch-toggle.ch-toggle-on { background: #0078d4; }
+  .ch-toggle-knob {
+    position: absolute; top: 2px; left: 2px; width: 14px; height: 14px;
+    border-radius: 50%; background: #fff; transition: left 0.15s;
+  }
+  .ch-toggle.ch-toggle-on .ch-toggle-knob { left: 16px; }
+  .ch-text-input {
+    font-size: 12px; border: 1px solid #d0d0d0; border-radius: 4px;
+    padding: 4px 6px; width: 100%; background: #fff; color: #222;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  .ch-text-input::placeholder { color: #aaa; }
+
+  .ch-area {
+    flex: 1;
+    min-width: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 8px 4px;
+  }
+  .ch-area > div { width: 100%; }
+
+  /*
+   * ANSI colour classes emitted by ansi_up (use_classes=true).
+   * Class names use the -fg suffix (e.g. ansi-red-fg).
+   * Hex values are the resolved light-mode Balto base-color tokens matching
+   * the --editor-* mappings in NotebookResults.css so the export looks
+   * consistent with the in-app rendering.
+   *
+   *   red/bright-red         → --editor-string          → base-color-red-80     #860112
+   *   green/bright-green     → --editor-function         → base-color-green-80   #087959
+   *   yellow/bright-yellow   → --editor-control-keyword  → base-color-yellow-90  #653e03
+   *   blue/bright-blue       → --editor-keyword          → base-color-blue-60    #085bd7
+   *   magenta/bright-magenta → --editor-py-keyword       →                       #9712e8
+   *   cyan/bright-cyan       → --editor-variable-name    → base-color-blue-90    #002c6e
+   *   black/bright-black     → --editor-comment          → base-color-gray-70    #5d6a85
+   *   white/bright-white     → --editor-text             → base-color-gray-90    #191e24
+   */
+  .ansi-black-fg, .ansi-bright-black-fg   { color: #5d6a85; }
+  .ansi-red-fg, .ansi-bright-red-fg       { color: #860112; }
+  .ansi-green-fg, .ansi-bright-green-fg   { color: #087959; }
+  .ansi-yellow-fg, .ansi-bright-yellow-fg { color: #653e03; }
+  .ansi-blue-fg, .ansi-bright-blue-fg     { color: #085bd7; }
+  .ansi-magenta-fg, .ansi-bright-magenta-fg { color: #9712e8; }
+  .ansi-cyan-fg, .ansi-bright-cyan-fg     { color: #002c6e; }
+  .ansi-white-fg, .ansi-bright-white-fg   { color: #191e24; }
+  .ansi-yellow-bg { background-color: #fff8e6; }
+  .ansi-bold { font-weight: bold; }
+</style>
+</head>
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+<symbol id="icon-search" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M7 2a5 5 0 0 1 3.871 8.164l3.983 3.983-.707.707-3.983-3.983A5 5 0 1 1 7 2m0 1a4 4 0 1 0 0 8 4 4 0 0 0 0-8" clip-rule="evenodd"/></symbol>
+<symbol id="icon-clear-fill" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1m0 6.293L5.354 4.646l-.708.708L7.293 8l-2.647 2.646.708.707L8 8.708l2.646 2.646.707-.707L8.708 8l2.646-2.646-.707-.708z" clip-rule="evenodd"/></symbol>
+<symbol id="icon-col-filter" viewBox="0 0 16 16"><path d="M6.5 2a.5.5 0 0 1 .5.5V4H6V3H3v10h3v-3h1v3.5a.5.5 0 0 1-.5.5h-4l-.1-.01a.5.5 0 0 1-.4-.49v-11a.5.5 0 0 1 .5-.5z"/><path fill-rule="evenodd" d="M14.972 5a.5.5 0 0 1 .393.809L12 10.09v3.41a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-3.41L5.636 5.809A.5.5 0 0 1 6.029 5zM9.786 9.472a1 1 0 0 1 .214.618V13h1v-2.91a1 1 0 0 1 .214-.617L13.944 6H7.057z" clip-rule="evenodd"/></symbol>
+<symbol id="icon-lang-python" viewBox="0 0 16 16"><path d="M3 12.5a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5V12h1v.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 12.5V12h1z"/><path fill-rule="evenodd" d="M5.75 5.113q.593 0 1.04.242.444.24.69.672.25.435.25 1.012v.008q0 .582-.25 1.016a1.7 1.7 0 0 1-.69.671 2.2 2.2 0 0 1-1.04.239H4.605v1.777h-1.18V5.113zM4.605 8.051h.856q.508 0 .789-.258.285-.262.285-.742v-.008q0-.48-.285-.738-.28-.258-.79-.258h-.855z" clip-rule="evenodd"/><path d="M10.395 7.484h.07l1.238-2.37h1.277l-1.964 3.53v2.106h-1.18V8.645L7.875 5.113h1.277zM12.5 2A1.5 1.5 0 0 1 14 3.5V4h-1v-.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5V4H2v-.5A1.5 1.5 0 0 1 3.5 2z"/></symbol>
+<symbol id="icon-lang-sql" viewBox="0 0 16 16"><path d="M3 12.5a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5V12h1v.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 12.5V12h1z"/><path fill-rule="evenodd" d="M8.534 5.441q.728 0 1.258.315.533.315.823.895.291.582.291 1.378v.007q0 .796-.29 1.377a2.15 2.15 0 0 1-.535.691l.664.885h-.96l-.376-.5a2.7 2.7 0 0 1-.875.138q-.732 0-1.264-.315a2.13 2.13 0 0 1-.825-.899q-.287-.58-.287-1.377V8.03q0-.8.291-1.378.294-.581.827-.895.534-.315 1.258-.315m0 .875q-.4 0-.697.212a1.35 1.35 0 0 0-.462.595 2.3 2.3 0 0 0-.164.906v.007q0 .52.161.905.164.387.458.599.297.212.704.212c.104 0 .2-.016.294-.037L8.2 8.877h.96l.319.425q.124-.156.211-.36.164-.387.165-.906V8.03q0-.522-.165-.906a1.33 1.33 0 0 0-.458-.595 1.17 1.17 0 0 0-.697-.212" clip-rule="evenodd"/><path d="M3.687 5.441q.573 0 .984.189.414.184.646.509.233.322.263.735l.004.044h-.97l-.008-.041a.6.6 0 0 0-.15-.31.8.8 0 0 0-.314-.21 1.2 1.2 0 0 0-.455-.078q-.253 0-.445.075a.7.7 0 0 0-.297.212.5.5 0 0 0-.106.318v.004q0 .239.191.392.195.15.63.24l.523.106q.523.105.85.287.332.18.49.454t.157.66v.003q0 .49-.243.848-.24.356-.687.554-.445.195-1.06.195a2.7 2.7 0 0 1-1.022-.178 1.6 1.6 0 0 1-.684-.499 1.4 1.4 0 0 1-.276-.762l-.004-.055H2.7l.003.034a.56.56 0 0 0 .15.325.9.9 0 0 0 .356.215q.222.079.51.08.276 0 .485-.083a.8.8 0 0 0 .324-.225q.12-.147.12-.335V9.14a.46.46 0 0 0-.198-.39q-.195-.147-.656-.242l-.52-.107q-.768-.156-1.118-.515-.348-.36-.348-.92v-.003q0-.458.243-.8.242-.342.666-.53.423-.192.97-.192m8.952 4.209h2.194v.85h-3.227V5.568h1.033zM12.5 2A1.5 1.5 0 0 1 14 3.5V4h-1v-.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5V4H2v-.5A1.5 1.5 0 0 1 3.5 2z"/></symbol>
+</svg>
+  <div id="dg-col-menu" class="dg-col-menu" hidden></div>
+  <div class="notebook">
+    <div class="notebook-header">
+      <div class="notebook-header-top">
+        <div class="notebook-header-info">
+          <span class="notebook-name-label">Notebook name</span>
+          <h1 class="notebook-title">freMTPL2_Feature_Engineering</h1>
+          <span class="notebook-exported-at">Exported at 02:21 PM GMT+12 on September 24, 2026</span>
+        </div>
+        
+      </div>
+      <hr class="notebook-header-divider" />
+    </div>
+    <div class="markdown-wrapper">
+  <div class="markdown-block"><h1 id="fremtpl2-feature-engineering-pipeline">freMTPL2 Feature Engineering Pipeline</h1>
+<p>Build a modelling-ready frequency table from the raw freMTPL2 data:</p>
+<ul>
+<li>Actuarial age bands for driver and vehicle age</li>
+<li>Log-exposure offset for Poisson / Negative-Binomial GLM</li>
+<li>BonusMalus capping and log-density transform</li>
+<li>Stratified 80/20 train/test split balanced on claim frequency</li>
+</ul>
+</div>
+</div>
+<div class="cell cell-sql" data-index="2" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-name">Create feature-engineered table with stratified split</span><span class="cell-counter">[1]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-keyword">CREATE</span> <span class="tok-keyword">OR</span> REPLACE <span class="tok-keyword">TABLE</span> FREMTPL2.FREMTPL2_INVESTIGATION.FREQ_MODEL_FEATURES <span class="tok-keyword">AS</span>
+<span class="tok-keyword">WITH</span> base <span class="tok-keyword">AS</span> <span class="tok-punctuation">(</span>
+  <span class="tok-keyword">SELECT</span>
+    IDPOL<span class="tok-punctuation">,</span>
+    CLAIMNB<span class="tok-punctuation">,</span>
+    EXPOSURE<span class="tok-punctuation">,</span>
+    VEHPOWER<span class="tok-punctuation">,</span>
+    VEHAGE<span class="tok-punctuation">,</span>
+    DRIVAGE<span class="tok-punctuation">,</span>
+    BONUSMALUS<span class="tok-punctuation">,</span>
+    VEHBRAND<span class="tok-punctuation">,</span>
+    VEHGAS<span class="tok-punctuation">,</span>
+    AREA<span class="tok-punctuation">,</span>
+    DENSITY<span class="tok-punctuation">,</span>
+    REGION<span class="tok-punctuation">,</span>
+
+    <span class="tok-comment">-- Log-exposure offset (Poisson/NB GLM offset term)</span>
+    LN<span class="tok-punctuation">(</span>EXPOSURE<span class="tok-punctuation">)</span>          <span class="tok-keyword">AS</span> LN_EXPOSURE<span class="tok-punctuation">,</span>
+
+    <span class="tok-comment">-- Driver age bands (actuarial risk curve)</span>
+    <span class="tok-keyword">CASE</span>
+      <span class="tok-keyword">WHEN</span> DRIVAGE <span class="tok-keyword">BETWEEN</span> <span class="tok-number">18</span> <span class="tok-keyword">AND</span> <span class="tok-number">21</span> <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;18-21&#x27;</span>
+      <span class="tok-keyword">WHEN</span> DRIVAGE <span class="tok-keyword">BETWEEN</span> <span class="tok-number">22</span> <span class="tok-keyword">AND</span> <span class="tok-number">25</span> <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;22-25&#x27;</span>
+      <span class="tok-keyword">WHEN</span> DRIVAGE <span class="tok-keyword">BETWEEN</span> <span class="tok-number">26</span> <span class="tok-keyword">AND</span> <span class="tok-number">30</span> <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;26-30&#x27;</span>
+      <span class="tok-keyword">WHEN</span> DRIVAGE <span class="tok-keyword">BETWEEN</span> <span class="tok-number">31</span> <span class="tok-keyword">AND</span> <span class="tok-number">40</span> <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;31-40&#x27;</span>
+      <span class="tok-keyword">WHEN</span> DRIVAGE <span class="tok-keyword">BETWEEN</span> <span class="tok-number">41</span> <span class="tok-keyword">AND</span> <span class="tok-number">50</span> <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;41-50&#x27;</span>
+      <span class="tok-keyword">WHEN</span> DRIVAGE <span class="tok-keyword">BETWEEN</span> <span class="tok-number">51</span> <span class="tok-keyword">AND</span> <span class="tok-number">60</span> <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;51-60&#x27;</span>
+      <span class="tok-keyword">WHEN</span> DRIVAGE <span class="tok-keyword">BETWEEN</span> <span class="tok-number">61</span> <span class="tok-keyword">AND</span> <span class="tok-number">70</span> <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;61-70&#x27;</span>
+      <span class="tok-keyword">ELSE</span> <span class="tok-string">&#x27;71+&#x27;</span>
+    <span class="tok-keyword">END</span>                   <span class="tok-keyword">AS</span> DRIVAGE_BAND<span class="tok-punctuation">,</span>
+
+    <span class="tok-comment">-- Vehicle age bands (mechanical risk curve)</span>
+    <span class="tok-keyword">CASE</span>
+      <span class="tok-keyword">WHEN</span> VEHAGE <span class="tok-keyword">BETWEEN</span> <span class="tok-number">0</span>  <span class="tok-keyword">AND</span> <span class="tok-number">1</span>  <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;00-01&#x27;</span>
+      <span class="tok-keyword">WHEN</span> VEHAGE <span class="tok-keyword">BETWEEN</span> <span class="tok-number">2</span>  <span class="tok-keyword">AND</span> <span class="tok-number">5</span>  <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;02-05&#x27;</span>
+      <span class="tok-keyword">WHEN</span> VEHAGE <span class="tok-keyword">BETWEEN</span> <span class="tok-number">6</span>  <span class="tok-keyword">AND</span> <span class="tok-number">10</span> <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;06-10&#x27;</span>
+      <span class="tok-keyword">WHEN</span> VEHAGE <span class="tok-keyword">BETWEEN</span> <span class="tok-number">11</span> <span class="tok-keyword">AND</span> <span class="tok-number">15</span> <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;11-15&#x27;</span>
+      <span class="tok-keyword">ELSE</span> <span class="tok-string">&#x27;16+&#x27;</span>
+    <span class="tok-keyword">END</span>                   <span class="tok-keyword">AS</span> VEHAGE_BAND<span class="tok-punctuation">,</span>
+
+    <span class="tok-comment">-- BonusMalus capped at 150 (outlier compression)</span>
+    LEAST<span class="tok-punctuation">(</span>BONUSMALUS<span class="tok-punctuation">,</span> <span class="tok-number">150</span><span class="tok-punctuation">)</span> <span class="tok-keyword">AS</span> BONUSMALUS_CAPPED<span class="tok-punctuation">,</span>
+
+    <span class="tok-comment">-- Log density (de-skew for GLM)</span>
+    LN<span class="tok-punctuation">(</span>DENSITY <span class="tok-operator">+</span> <span class="tok-number">1</span><span class="tok-punctuation">)</span>       <span class="tok-keyword">AS</span> LN_DENSITY<span class="tok-punctuation">,</span>
+
+    <span class="tok-comment">-- Binary claim flag for stratified splitting</span>
+    <span class="tok-keyword">CASE</span> <span class="tok-keyword">WHEN</span> CLAIMNB <span class="tok-operator">&gt;</span> <span class="tok-number">0</span> <span class="tok-keyword">THEN</span> <span class="tok-number">1</span> <span class="tok-keyword">ELSE</span> <span class="tok-number">0</span> <span class="tok-keyword">END</span> <span class="tok-keyword">AS</span> HAS_CLAIM
+
+  <span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.FREMTPL2FREQ
+<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span>
+
+stratified <span class="tok-keyword">AS</span> <span class="tok-punctuation">(</span>
+  <span class="tok-keyword">SELECT</span>
+    b.<span class="tok-operator">*</span><span class="tok-punctuation">,</span>
+    ROW_NUMBER<span class="tok-punctuation">(</span><span class="tok-punctuation">)</span> OVER <span class="tok-punctuation">(</span>
+      PARTITION <span class="tok-keyword">BY</span> HAS_CLAIM
+      <span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> ABS<span class="tok-punctuation">(</span>HASH<span class="tok-punctuation">(</span>IDPOL<span class="tok-punctuation">)</span><span class="tok-punctuation">)</span>
+    <span class="tok-punctuation">)</span> <span class="tok-keyword">AS</span> RN<span class="tok-punctuation">,</span>
+    <span class="tok-keyword">COUNT</span><span class="tok-punctuation">(</span><span class="tok-operator">*</span><span class="tok-punctuation">)</span> OVER <span class="tok-punctuation">(</span>PARTITION <span class="tok-keyword">BY</span> HAS_CLAIM<span class="tok-punctuation">)</span> <span class="tok-keyword">AS</span> STRATUM_SIZE
+  <span class="tok-keyword">FROM</span> base b
+<span class="tok-punctuation">)</span>
+
+<span class="tok-keyword">SELECT</span>
+  IDPOL<span class="tok-punctuation">,</span>
+  CLAIMNB<span class="tok-punctuation">,</span>
+  EXPOSURE<span class="tok-punctuation">,</span>
+  LN_EXPOSURE<span class="tok-punctuation">,</span>
+  VEHPOWER<span class="tok-punctuation">,</span>
+  VEHAGE<span class="tok-punctuation">,</span>
+  VEHAGE_BAND<span class="tok-punctuation">,</span>
+  DRIVAGE<span class="tok-punctuation">,</span>
+  DRIVAGE_BAND<span class="tok-punctuation">,</span>
+  BONUSMALUS<span class="tok-punctuation">,</span>
+  BONUSMALUS_CAPPED<span class="tok-punctuation">,</span>
+  VEHBRAND<span class="tok-punctuation">,</span>
+  VEHGAS<span class="tok-punctuation">,</span>
+  AREA<span class="tok-punctuation">,</span>
+  REGION<span class="tok-punctuation">,</span>
+  DENSITY<span class="tok-punctuation">,</span>
+  LN_DENSITY<span class="tok-punctuation">,</span>
+  HAS_CLAIM<span class="tok-punctuation">,</span>
+  <span class="tok-keyword">CASE</span>
+    <span class="tok-keyword">WHEN</span> RN <span class="tok-operator">&lt;=</span> STRATUM_SIZE <span class="tok-operator">*</span> <span class="tok-number">0.8</span> <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;TRAIN&#x27;</span>
+    <span class="tok-keyword">ELSE</span> <span class="tok-string">&#x27;TEST&#x27;</span>
+  <span class="tok-keyword">END</span> <span class="tok-keyword">AS</span> DATASET
+<span class="tok-keyword">FROM</span> stratified</code></pre></div></div>
+  <div class="cell-outputs"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="1 row">1 row</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">status</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:64px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">status</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="Table FREQ_MODEL_FEATURES successfully created.">Table FREQ_MODEL_FEATURES successfully created.</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="3" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-name">Validate stratified split — claim rate by dataset</span><span class="cell-counter">[2]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-keyword">SELECT</span>
+  DATASET<span class="tok-punctuation">,</span>
+  <span class="tok-keyword">COUNT</span><span class="tok-punctuation">(</span><span class="tok-operator">*</span><span class="tok-punctuation">)</span>                                       <span class="tok-keyword">AS</span> N_ROWS<span class="tok-punctuation">,</span>
+  SUM<span class="tok-punctuation">(</span>HAS_CLAIM<span class="tok-punctuation">)</span>                                  <span class="tok-keyword">AS</span> N_WITH_CLAIMS<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>HAS_CLAIM<span class="tok-punctuation">)</span> <span class="tok-operator">/</span> <span class="tok-keyword">COUNT</span><span class="tok-punctuation">(</span><span class="tok-operator">*</span><span class="tok-punctuation">)</span> <span class="tok-operator">*</span> <span class="tok-number">100</span><span class="tok-punctuation">,</span> <span class="tok-number">2</span><span class="tok-punctuation">)</span>       <span class="tok-keyword">AS</span> CLAIM_PCT<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>AVG<span class="tok-punctuation">(</span>CLAIMNB<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">6</span><span class="tok-punctuation">)</span>                           <span class="tok-keyword">AS</span> AVG_CLAIMNB<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>AVG<span class="tok-punctuation">(</span>EXPOSURE<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">4</span><span class="tok-punctuation">)</span>                           <span class="tok-keyword">AS</span> AVG_EXPOSURE
+<span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.FREQ_MODEL_FEATURES
+<span class="tok-keyword">GROUP</span> <span class="tok-keyword">BY</span> DATASET
+<span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> DATASET</code></pre></div></div>
+  <div class="cell-outputs cell-outputs-no-top-border"><div class="rv-container" id="res-0">
+  <div class="rv-tabs">
+    <button class="rv-tab rv-tab-active" data-target="res-0-table" onclick="switchTab(this)">Table</button>
+    <button class="rv-tab" data-target="res-0-chart" onclick="switchTab(this)">Chart</button>
+  </div>
+  <div class="rv-panel" id="res-0-table"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="2 rows">2 rows</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">DATASET</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="1" onchange="dgToggleCol(this)"><span class="dg-colsel-label">N_ROWS</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="2" onchange="dgToggleCol(this)"><span class="dg-colsel-label">N_WITH_CLAIMS</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="3" onchange="dgToggleCol(this)"><span class="dg-colsel-label">CLAIM_PCT</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="4" onchange="dgToggleCol(this)"><span class="dg-colsel-label">AVG_CLAIMNB</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="5" onchange="dgToggleCol(this)"><span class="dg-colsel-label">AVG_EXPOSURE</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:92px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">DATASET</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">N_ROWS</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,2)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">N_WITH_CLAIMS</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,3)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">CLAIM_PCT</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,4)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">AVG_CLAIMNB</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,5)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">AVG_EXPOSURE</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,6)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="TEST">TEST</div></td><td><div class="dg-cell" data-raw="135603">135603</div></td><td><div class="dg-cell" data-raw="6812">6812</div></td><td><div class="dg-cell" data-raw="5.02">5.02</div></td><td><div class="dg-cell" data-raw="0.053465">0.053465</div></td><td><div class="dg-cell" data-raw="0.5281">0.5281</div></td></tr><tr><td class="dg-row-num">2</td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td><td><div class="dg-cell" data-raw="542410">542410</div></td><td><div class="dg-cell" data-raw="27248">27248</div></td><td><div class="dg-cell" data-raw="5.02">5.02</div></td><td><div class="dg-cell" data-raw="0.053192">0.053192</div></td><td><div class="dg-cell" data-raw="0.5289">0.5289</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+  <div class="rv-panel rv-panel-hidden" id="res-0-chart"><div class="ch-layout" id="ch-0"><script type="application/json" id="ch-0-cols">[{"name":"DATASET","type":"nominal"},{"name":"N_ROWS","type":"quantitative"}]</script><script type="application/json" id="ch-0-vals">[{"DATASET":"TEST","N_ROWS":"135603"},{"DATASET":"TRAIN","N_ROWS":"542410"}]</script><script type="application/json" id="ch-0-state">{"type":"grouped-bar","xField":"DATASET","yFields":["N_ROWS"],"colorField":null,"aggregate":"sum","sortX":"none","timeResolution":"none","limit":0,"xAxisLabelEnabled":true,"xAxisLabel":"DATASET","yAxisLabelEnabled":true,"yAxisLabel":"N_ROWS"}</script></div></div>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="4" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-name">Driver age band — claim frequency profile</span><span class="cell-counter">[3]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-keyword">SELECT</span>
+  DRIVAGE_BAND<span class="tok-punctuation">,</span>
+  <span class="tok-keyword">COUNT</span><span class="tok-punctuation">(</span><span class="tok-operator">*</span><span class="tok-punctuation">)</span>                                        <span class="tok-keyword">AS</span> N_POLICIES<span class="tok-punctuation">,</span>
+  SUM<span class="tok-punctuation">(</span>CLAIMNB<span class="tok-punctuation">)</span>                                    <span class="tok-keyword">AS</span> TOTAL_CLAIMS<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>CLAIMNB<span class="tok-punctuation">)</span> <span class="tok-operator">/</span> SUM<span class="tok-punctuation">(</span>EXPOSURE<span class="tok-punctuation">)</span> <span class="tok-operator">*</span> <span class="tok-number">100</span><span class="tok-punctuation">,</span> <span class="tok-number">4</span><span class="tok-punctuation">)</span>    <span class="tok-keyword">AS</span> FREQ_PER_EXPOSURE_PCT<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>AVG<span class="tok-punctuation">(</span>EXPOSURE<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">4</span><span class="tok-punctuation">)</span>                          <span class="tok-keyword">AS</span> AVG_EXPOSURE
+<span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.FREQ_MODEL_FEATURES
+<span class="tok-keyword">GROUP</span> <span class="tok-keyword">BY</span> DRIVAGE_BAND
+<span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> DRIVAGE_BAND</code></pre></div></div>
+  <div class="cell-outputs cell-outputs-no-top-border"><div class="rv-container" id="res-1">
+  <div class="rv-tabs">
+    <button class="rv-tab rv-tab-active" data-target="res-1-table" onclick="switchTab(this)">Table</button>
+    <button class="rv-tab" data-target="res-1-chart" onclick="switchTab(this)">Chart</button>
+  </div>
+  <div class="rv-panel" id="res-1-table"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="8 rows">8 rows</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">DRIVAGE_BAND</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="1" onchange="dgToggleCol(this)"><span class="dg-colsel-label">N_POLICIES</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="2" onchange="dgToggleCol(this)"><span class="dg-colsel-label">TOTAL_CLAIMS</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="3" onchange="dgToggleCol(this)"><span class="dg-colsel-label">FREQ_PER_EXPOSURE_PCT</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="4" onchange="dgToggleCol(this)"><span class="dg-colsel-label">AVG_EXPOSURE</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:260px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">DRIVAGE_BAND</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">N_POLICIES</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,2)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">TOTAL_CLAIMS</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,3)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">FREQ_PER_EXPOSURE_PCT</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,4)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">AVG_EXPOSURE</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,5)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="18-21">18-21</div></td><td><div class="dg-cell" data-raw="11253">11253</div></td><td><div class="dg-cell" data-raw="996">996</div></td><td><div class="dg-cell" data-raw="22.6123">22.6123</div></td><td><div class="dg-cell" data-raw="0.3914">0.3914</div></td></tr><tr><td class="dg-row-num">2</td><td><div class="dg-cell" data-raw="22-25">22-25</div></td><td><div class="dg-cell" data-raw="27642">27642</div></td><td><div class="dg-cell" data-raw="1845">1845</div></td><td><div class="dg-cell" data-raw="15.6049">15.6049</div></td><td><div class="dg-cell" data-raw="0.4277">0.4277</div></td></tr><tr><td class="dg-row-num">3</td><td><div class="dg-cell" data-raw="26-30">26-30</div></td><td><div class="dg-cell" data-raw="65594">65594</div></td><td><div class="dg-cell" data-raw="3093">3093</div></td><td><div class="dg-cell" data-raw="10.5996">10.5996</div></td><td><div class="dg-cell" data-raw="0.4449">0.4449</div></td></tr><tr><td class="dg-row-num">4</td><td><div class="dg-cell" data-raw="31-40">31-40</div></td><td><div class="dg-cell" data-raw="170097">170097</div></td><td><div class="dg-cell" data-raw="7522">7522</div></td><td><div class="dg-cell" data-raw="8.9615">8.9615</div></td><td><div class="dg-cell" data-raw="0.4935">0.4935</div></td></tr><tr><td class="dg-row-num">5</td><td><div class="dg-cell" data-raw="41-50">41-50</div></td><td><div class="dg-cell" data-raw="165185">165185</div></td><td><div class="dg-cell" data-raw="9165">9165</div></td><td><div class="dg-cell" data-raw="10.3984">10.3984</div></td><td><div class="dg-cell" data-raw="0.5336">0.5336</div></td></tr><tr><td class="dg-row-num">6</td><td><div class="dg-cell" data-raw="51-60">51-60</div></td><td><div class="dg-cell" data-raw="135014">135014</div></td><td><div class="dg-cell" data-raw="7292">7292</div></td><td><div class="dg-cell" data-raw="9.6292">9.6292</div></td><td><div class="dg-cell" data-raw="0.5609">0.5609</div></td></tr><tr><td class="dg-row-num">7</td><td><div class="dg-cell" data-raw="61-70">61-70</div></td><td><div class="dg-cell" data-raw="63863">63863</div></td><td><div class="dg-cell" data-raw="3566">3566</div></td><td><div class="dg-cell" data-raw="9.3028">9.3028</div></td><td><div class="dg-cell" data-raw="0.6002">0.6002</div></td></tr><tr><td class="dg-row-num">8</td><td><div class="dg-cell" data-raw="71+">71+</div></td><td><div class="dg-cell" data-raw="39365">39365</div></td><td><div class="dg-cell" data-raw="2623">2623</div></td><td><div class="dg-cell" data-raw="9.7309">9.7309</div></td><td><div class="dg-cell" data-raw="0.6848">0.6848</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+  <div class="rv-panel rv-panel-hidden" id="res-1-chart"><div class="ch-layout" id="ch-1"><script type="application/json" id="ch-1-cols">[{"name":"DRIVAGE_BAND","type":"nominal"},{"name":"N_POLICIES","type":"quantitative"}]</script><script type="application/json" id="ch-1-vals">[{"DRIVAGE_BAND":"18-21","N_POLICIES":"11253"},{"DRIVAGE_BAND":"22-25","N_POLICIES":"27642"},{"DRIVAGE_BAND":"26-30","N_POLICIES":"65594"},{"DRIVAGE_BAND":"31-40","N_POLICIES":"170097"},{"DRIVAGE_BAND":"41-50","N_POLICIES":"165185"},{"DRIVAGE_BAND":"51-60","N_POLICIES":"135014"},{"DRIVAGE_BAND":"61-70","N_POLICIES":"63863"},{"DRIVAGE_BAND":"71+","N_POLICIES":"39365"}]</script><script type="application/json" id="ch-1-state">{"type":"grouped-bar","xField":"DRIVAGE_BAND","yFields":["N_POLICIES"],"colorField":null,"aggregate":"sum","sortX":"none","timeResolution":"none","limit":0,"xAxisLabelEnabled":true,"xAxisLabel":"DRIVAGE_BAND","yAxisLabelEnabled":true,"yAxisLabel":"N_POLICIES"}</script></div></div>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="5" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-name">Vehicle age band — claim frequency profile</span><span class="cell-counter">[4]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-keyword">SELECT</span>
+  VEHAGE_BAND<span class="tok-punctuation">,</span>
+  <span class="tok-keyword">COUNT</span><span class="tok-punctuation">(</span><span class="tok-operator">*</span><span class="tok-punctuation">)</span>                                        <span class="tok-keyword">AS</span> N_POLICIES<span class="tok-punctuation">,</span>
+  SUM<span class="tok-punctuation">(</span>CLAIMNB<span class="tok-punctuation">)</span>                                    <span class="tok-keyword">AS</span> TOTAL_CLAIMS<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>CLAIMNB<span class="tok-punctuation">)</span> <span class="tok-operator">/</span> SUM<span class="tok-punctuation">(</span>EXPOSURE<span class="tok-punctuation">)</span> <span class="tok-operator">*</span> <span class="tok-number">100</span><span class="tok-punctuation">,</span> <span class="tok-number">4</span><span class="tok-punctuation">)</span>    <span class="tok-keyword">AS</span> FREQ_PER_EXPOSURE_PCT<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>AVG<span class="tok-punctuation">(</span>EXPOSURE<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">4</span><span class="tok-punctuation">)</span>                          <span class="tok-keyword">AS</span> AVG_EXPOSURE
+<span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.FREQ_MODEL_FEATURES
+<span class="tok-keyword">GROUP</span> <span class="tok-keyword">BY</span> VEHAGE_BAND
+<span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> VEHAGE_BAND</code></pre></div></div>
+  <div class="cell-outputs cell-outputs-no-top-border"><div class="rv-container" id="res-2">
+  <div class="rv-tabs">
+    <button class="rv-tab rv-tab-active" data-target="res-2-table" onclick="switchTab(this)">Table</button>
+    <button class="rv-tab" data-target="res-2-chart" onclick="switchTab(this)">Chart</button>
+  </div>
+  <div class="rv-panel" id="res-2-table"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="5 rows">5 rows</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">VEHAGE_BAND</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="1" onchange="dgToggleCol(this)"><span class="dg-colsel-label">N_POLICIES</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="2" onchange="dgToggleCol(this)"><span class="dg-colsel-label">TOTAL_CLAIMS</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="3" onchange="dgToggleCol(this)"><span class="dg-colsel-label">FREQ_PER_EXPOSURE_PCT</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="4" onchange="dgToggleCol(this)"><span class="dg-colsel-label">AVG_EXPOSURE</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:176px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">VEHAGE_BAND</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">N_POLICIES</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,2)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">TOTAL_CLAIMS</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,3)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">FREQ_PER_EXPOSURE_PCT</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,4)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">AVG_EXPOSURE</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,5)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="00-01">00-01</div></td><td><div class="dg-cell" data-raw="129023">129023</div></td><td><div class="dg-cell" data-raw="8136">8136</div></td><td><div class="dg-cell" data-raw="16.4468">16.4468</div></td><td><div class="dg-cell" data-raw="0.3834">0.3834</div></td></tr><tr><td class="dg-row-num">2</td><td><div class="dg-cell" data-raw="02-05">02-05</div></td><td><div class="dg-cell" data-raw="191614">191614</div></td><td><div class="dg-cell" data-raw="9511">9511</div></td><td><div class="dg-cell" data-raw="9.3476">9.3476</div></td><td><div class="dg-cell" data-raw="0.5310">0.5310</div></td></tr><tr><td class="dg-row-num">3</td><td><div class="dg-cell" data-raw="06-10">06-10</div></td><td><div class="dg-cell" data-raw="171594">171594</div></td><td><div class="dg-cell" data-raw="9846">9846</div></td><td><div class="dg-cell" data-raw="9.9446">9.9446</div></td><td><div class="dg-cell" data-raw="0.5770">0.5770</div></td></tr><tr><td class="dg-row-num">4</td><td><div class="dg-cell" data-raw="11-15">11-15</div></td><td><div class="dg-cell" data-raw="134063">134063</div></td><td><div class="dg-cell" data-raw="6648">6648</div></td><td><div class="dg-cell" data-raw="8.5241">8.5241</div></td><td><div class="dg-cell" data-raw="0.5817">0.5817</div></td></tr><tr><td class="dg-row-num">5</td><td><div class="dg-cell" data-raw="16+">16+</div></td><td><div class="dg-cell" data-raw="51719">51719</div></td><td><div class="dg-cell" data-raw="1961">1961</div></td><td><div class="dg-cell" data-raw="6.4755">6.4755</div></td><td><div class="dg-cell" data-raw="0.5855">0.5855</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+  <div class="rv-panel rv-panel-hidden" id="res-2-chart"><div class="ch-layout" id="ch-2"><script type="application/json" id="ch-2-cols">[{"name":"VEHAGE_BAND","type":"nominal"},{"name":"N_POLICIES","type":"quantitative"}]</script><script type="application/json" id="ch-2-vals">[{"VEHAGE_BAND":"00-01","N_POLICIES":"129023"},{"VEHAGE_BAND":"02-05","N_POLICIES":"191614"},{"VEHAGE_BAND":"06-10","N_POLICIES":"171594"},{"VEHAGE_BAND":"11-15","N_POLICIES":"134063"},{"VEHAGE_BAND":"16+","N_POLICIES":"51719"}]</script><script type="application/json" id="ch-2-state">{"type":"grouped-bar","xField":"VEHAGE_BAND","yFields":["N_POLICIES"],"colorField":null,"aggregate":"sum","sortX":"none","timeResolution":"none","limit":0,"xAxisLabelEnabled":true,"xAxisLabel":"VEHAGE_BAND","yAxisLabelEnabled":true,"yAxisLabel":"N_POLICIES"}</script></div></div>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="6" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-name">Preview sample rows</span><span class="cell-counter">[5]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-keyword">SELECT</span> <span class="tok-operator">*</span>
+<span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.FREQ_MODEL_FEATURES
+<span class="tok-keyword">LIMIT</span> <span class="tok-number">20</span></code></pre></div></div>
+  <div class="cell-outputs cell-outputs-no-top-border"><div class="rv-container" id="res-3">
+  <div class="rv-tabs">
+    <button class="rv-tab rv-tab-active" data-target="res-3-table" onclick="switchTab(this)">Table</button>
+    <button class="rv-tab" data-target="res-3-chart" onclick="switchTab(this)">Chart</button>
+  </div>
+  <div class="rv-panel" id="res-3-table"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="20 rows">20 rows</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">IDPOL</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="1" onchange="dgToggleCol(this)"><span class="dg-colsel-label">CLAIMNB</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="2" onchange="dgToggleCol(this)"><span class="dg-colsel-label">EXPOSURE</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="3" onchange="dgToggleCol(this)"><span class="dg-colsel-label">LN_EXPOSURE</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="4" onchange="dgToggleCol(this)"><span class="dg-colsel-label">VEHPOWER</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="5" onchange="dgToggleCol(this)"><span class="dg-colsel-label">VEHAGE</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="6" onchange="dgToggleCol(this)"><span class="dg-colsel-label">VEHAGE_BAND</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="7" onchange="dgToggleCol(this)"><span class="dg-colsel-label">DRIVAGE</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="8" onchange="dgToggleCol(this)"><span class="dg-colsel-label">DRIVAGE_BAND</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="9" onchange="dgToggleCol(this)"><span class="dg-colsel-label">BONUSMALUS</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="10" onchange="dgToggleCol(this)"><span class="dg-colsel-label">BONUSMALUS_CAPPED</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="11" onchange="dgToggleCol(this)"><span class="dg-colsel-label">VEHBRAND</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="12" onchange="dgToggleCol(this)"><span class="dg-colsel-label">VEHGAS</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="13" onchange="dgToggleCol(this)"><span class="dg-colsel-label">AREA</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="14" onchange="dgToggleCol(this)"><span class="dg-colsel-label">REGION</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="15" onchange="dgToggleCol(this)"><span class="dg-colsel-label">DENSITY</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="16" onchange="dgToggleCol(this)"><span class="dg-colsel-label">LN_DENSITY</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="17" onchange="dgToggleCol(this)"><span class="dg-colsel-label">HAS_CLAIM</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="18" onchange="dgToggleCol(this)"><span class="dg-colsel-label">DATASET</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:316px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">IDPOL</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">CLAIMNB</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,2)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">EXPOSURE</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,3)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">LN_EXPOSURE</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,4)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">VEHPOWER</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,5)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">VEHAGE</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,6)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">VEHAGE_BAND</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,7)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">DRIVAGE</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,8)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">DRIVAGE_BAND</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,9)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">BONUSMALUS</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,10)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">BONUSMALUS_CAPPED</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,11)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">VEHBRAND</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,12)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">VEHGAS</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,13)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">AREA</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,14)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">REGION</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,15)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">DENSITY</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,16)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">LN_DENSITY</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,17)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">HAS_CLAIM</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,18)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">DATASET</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,19)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="106001">106001</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="1.000000000">1.000000000</div></td><td><div class="dg-cell" data-raw="0">0</div></td><td><div class="dg-cell" data-raw="4">4</div></td><td><div class="dg-cell" data-raw="2">2</div></td><td><div class="dg-cell" data-raw="02-05">02-05</div></td><td><div class="dg-cell" data-raw="30">30</div></td><td><div class="dg-cell" data-raw="26-30">26-30</div></td><td><div class="dg-cell" data-raw="67">67</div></td><td><div class="dg-cell" data-raw="67">67</div></td><td><div class="dg-cell" data-raw="B1">B1</div></td><td><div class="dg-cell" data-raw="Regular">Regular</div></td><td><div class="dg-cell" data-raw="C">C</div></td><td><div class="dg-cell" data-raw="Haute-Normandie">Haute-Normandie</div></td><td><div class="dg-cell" data-raw="133">133</div></td><td><div class="dg-cell" data-raw="4.8978397999509">4.8978397999509</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td></tr><tr><td class="dg-row-num">2</td><td><div class="dg-cell" data-raw="2322">2322</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="0.640000000">0.640000000</div></td><td><div class="dg-cell" data-raw="-0.44628710262842">-0.44628710262842</div></td><td><div class="dg-cell" data-raw="4">4</div></td><td><div class="dg-cell" data-raw="0">0</div></td><td><div class="dg-cell" data-raw="00-01">00-01</div></td><td><div class="dg-cell" data-raw="32">32</div></td><td><div class="dg-cell" data-raw="31-40">31-40</div></td><td><div class="dg-cell" data-raw="64">64</div></td><td><div class="dg-cell" data-raw="64">64</div></td><td><div class="dg-cell" data-raw="B12">B12</div></td><td><div class="dg-cell" data-raw="Regular">Regular</div></td><td><div class="dg-cell" data-raw="D">D</div></td><td><div class="dg-cell" data-raw="Rhone-Alpes">Rhone-Alpes</div></td><td><div class="dg-cell" data-raw="1381">1381</div></td><td><div class="dg-cell" data-raw="7.2312870043276">7.2312870043276</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td></tr><tr><td class="dg-row-num">3</td><td><div class="dg-cell" data-raw="3133883">3133883</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="0.550000000">0.550000000</div></td><td><div class="dg-cell" data-raw="-0.59783700075562">-0.59783700075562</div></td><td><div class="dg-cell" data-raw="4">4</div></td><td><div class="dg-cell" data-raw="11">11</div></td><td><div class="dg-cell" data-raw="11-15">11-15</div></td><td><div class="dg-cell" data-raw="21">21</div></td><td><div class="dg-cell" data-raw="18-21">18-21</div></td><td><div class="dg-cell" data-raw="95">95</div></td><td><div class="dg-cell" data-raw="95">95</div></td><td><div class="dg-cell" data-raw="B2">B2</div></td><td><div class="dg-cell" data-raw="Regular">Regular</div></td><td><div class="dg-cell" data-raw="E">E</div></td><td><div class="dg-cell" data-raw="Rhone-Alpes">Rhone-Alpes</div></td><td><div class="dg-cell" data-raw="2252">2252</div></td><td><div class="dg-cell" data-raw="7.7200179404322">7.7200179404322</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td></tr><tr><td class="dg-row-num">4</td><td><div class="dg-cell" data-raw="4167488">4167488</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="0.760000000">0.760000000</div></td><td><div class="dg-cell" data-raw="-0.27443684570176">-0.27443684570176</div></td><td><div class="dg-cell" data-raw="5">5</div></td><td><div class="dg-cell" data-raw="9">9</div></td><td><div class="dg-cell" data-raw="06-10">06-10</div></td><td><div class="dg-cell" data-raw="23">23</div></td><td><div class="dg-cell" data-raw="22-25">22-25</div></td><td><div class="dg-cell" data-raw="100">100</div></td><td><div class="dg-cell" data-raw="100">100</div></td><td><div class="dg-cell" data-raw="B3">B3</div></td><td><div class="dg-cell" data-raw="Diesel">Diesel</div></td><td><div class="dg-cell" data-raw="E">E</div></td><td><div class="dg-cell" data-raw="Midi-Pyrenees">Midi-Pyrenees</div></td><td><div class="dg-cell" data-raw="3301">3301</div></td><td><div class="dg-cell" data-raw="8.1022836244801">8.1022836244801</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td></tr><tr><td class="dg-row-num">5</td><td><div class="dg-cell" data-raw="166683">166683</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="1.000000000">1.000000000</div></td><td><div class="dg-cell" data-raw="0">0</div></td><td><div class="dg-cell" data-raw="4">4</div></td><td><div class="dg-cell" data-raw="8">8</div></td><td><div class="dg-cell" data-raw="06-10">06-10</div></td><td><div class="dg-cell" data-raw="47">47</div></td><td><div class="dg-cell" data-raw="41-50">41-50</div></td><td><div class="dg-cell" data-raw="78">78</div></td><td><div class="dg-cell" data-raw="78">78</div></td><td><div class="dg-cell" data-raw="B2">B2</div></td><td><div class="dg-cell" data-raw="Regular">Regular</div></td><td><div class="dg-cell" data-raw="C">C</div></td><td><div class="dg-cell" data-raw="Poitou-Charentes">Poitou-Charentes</div></td><td><div class="dg-cell" data-raw="238">238</div></td><td><div class="dg-cell" data-raw="5.4764635519315">5.4764635519315</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td></tr><tr><td class="dg-row-num">6</td><td><div class="dg-cell" data-raw="149243">149243</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="0.850000000">0.850000000</div></td><td><div class="dg-cell" data-raw="-0.16251892949777">-0.16251892949777</div></td><td><div class="dg-cell" data-raw="5">5</div></td><td><div class="dg-cell" data-raw="9">9</div></td><td><div class="dg-cell" data-raw="06-10">06-10</div></td><td><div class="dg-cell" data-raw="45">45</div></td><td><div class="dg-cell" data-raw="41-50">41-50</div></td><td><div class="dg-cell" data-raw="62">62</div></td><td><div class="dg-cell" data-raw="62">62</div></td><td><div class="dg-cell" data-raw="B2">B2</div></td><td><div class="dg-cell" data-raw="Diesel">Diesel</div></td><td><div class="dg-cell" data-raw="E">E</div></td><td><div class="dg-cell" data-raw="Pays-de-la-Loire">Pays-de-la-Loire</div></td><td><div class="dg-cell" data-raw="4128">4128</div></td><td><div class="dg-cell" data-raw="8.3257905258861">8.3257905258861</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td></tr><tr><td class="dg-row-num">7</td><td><div class="dg-cell" data-raw="10336">10336</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="0.110000000">0.110000000</div></td><td><div class="dg-cell" data-raw="-2.2072749131897">-2.2072749131897</div></td><td><div class="dg-cell" data-raw="9">9</div></td><td><div class="dg-cell" data-raw="7">7</div></td><td><div class="dg-cell" data-raw="06-10">06-10</div></td><td><div class="dg-cell" data-raw="25">25</div></td><td><div class="dg-cell" data-raw="22-25">22-25</div></td><td><div class="dg-cell" data-raw="64">64</div></td><td><div class="dg-cell" data-raw="64">64</div></td><td><div class="dg-cell" data-raw="B12">B12</div></td><td><div class="dg-cell" data-raw="Regular">Regular</div></td><td><div class="dg-cell" data-raw="E">E</div></td><td><div class="dg-cell" data-raw="Provence-Alpes-Cotes-D&#x27;Azur">Provence-Alpes-Cotes-D&#x27;Azur</div></td><td><div class="dg-cell" data-raw="2674">2674</div></td><td><div class="dg-cell" data-raw="7.8917046593301">7.8917046593301</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td></tr><tr><td class="dg-row-num">8</td><td><div class="dg-cell" data-raw="2221708">2221708</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="0.220000000">0.220000000</div></td><td><div class="dg-cell" data-raw="-1.5141277326298">-1.5141277326298</div></td><td><div class="dg-cell" data-raw="5">5</div></td><td><div class="dg-cell" data-raw="17">17</div></td><td><div class="dg-cell" data-raw="16+">16+</div></td><td><div class="dg-cell" data-raw="39">39</div></td><td><div class="dg-cell" data-raw="31-40">31-40</div></td><td><div class="dg-cell" data-raw="62">62</div></td><td><div class="dg-cell" data-raw="62">62</div></td><td><div class="dg-cell" data-raw="B2">B2</div></td><td><div class="dg-cell" data-raw="Regular">Regular</div></td><td><div class="dg-cell" data-raw="E">E</div></td><td><div class="dg-cell" data-raw="Haute-Normandie">Haute-Normandie</div></td><td><div class="dg-cell" data-raw="4059">4059</div></td><td><div class="dg-cell" data-raw="8.3089382525958">8.3089382525958</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td></tr><tr><td class="dg-row-num">9</td><td><div class="dg-cell" data-raw="2088278">2088278</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="1.000000000">1.000000000</div></td><td><div class="dg-cell" data-raw="0">0</div></td><td><div class="dg-cell" data-raw="5">5</div></td><td><div class="dg-cell" data-raw="13">13</div></td><td><div class="dg-cell" data-raw="11-15">11-15</div></td><td><div class="dg-cell" data-raw="34">34</div></td><td><div class="dg-cell" data-raw="31-40">31-40</div></td><td><div class="dg-cell" data-raw="85">85</div></td><td><div class="dg-cell" data-raw="85">85</div></td><td><div class="dg-cell" data-raw="B2">B2</div></td><td><div class="dg-cell" data-raw="Diesel">Diesel</div></td><td><div class="dg-cell" data-raw="C">C</div></td><td><div class="dg-cell" data-raw="Centre">Centre</div></td><td><div class="dg-cell" data-raw="222">222</div></td><td><div class="dg-cell" data-raw="5.4071717714601">5.4071717714601</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td></tr><tr><td class="dg-row-num">10</td><td><div class="dg-cell" data-raw="3127650">3127650</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="0.340000000">0.340000000</div></td><td><div class="dg-cell" data-raw="-1.0788096613719">-1.0788096613719</div></td><td><div class="dg-cell" data-raw="9">9</div></td><td><div class="dg-cell" data-raw="2">2</div></td><td><div class="dg-cell" data-raw="02-05">02-05</div></td><td><div class="dg-cell" data-raw="32">32</div></td><td><div class="dg-cell" data-raw="31-40">31-40</div></td><td><div class="dg-cell" data-raw="50">50</div></td><td><div class="dg-cell" data-raw="50">50</div></td><td><div class="dg-cell" data-raw="B1">B1</div></td><td><div class="dg-cell" data-raw="Regular">Regular</div></td><td><div class="dg-cell" data-raw="E">E</div></td><td><div class="dg-cell" data-raw="Ile-de-France">Ile-de-France</div></td><td><div class="dg-cell" data-raw="6127">6127</div></td><td><div class="dg-cell" data-raw="8.7206237114204">8.7206237114204</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td></tr><tr><td class="dg-row-num">11</td><td><div class="dg-cell" data-raw="2114622">2114622</div></td><td><div class="dg-cell" data-raw="2">2</div></td><td><div class="dg-cell" data-raw="0.460000000">0.460000000</div></td><td><div class="dg-cell" data-raw="-0.776528789499">-0.776528789499</div></td><td><div class="dg-cell" data-raw="6">6</div></td><td><div class="dg-cell" data-raw="10">10</div></td><td><div class="dg-cell" data-raw="06-10">06-10</div></td><td><div class="dg-cell" data-raw="69">69</div></td><td><div class="dg-cell" data-raw="61-70">61-70</div></td><td><div class="dg-cell" data-raw="62">62</div></td><td><div class="dg-cell" data-raw="62">62</div></td><td><div class="dg-cell" data-raw="B2">B2</div></td><td><div class="dg-cell" data-raw="Regular">Regular</div></td><td><div class="dg-cell" data-raw="E">E</div></td><td><div class="dg-cell" data-raw="Rhone-Alpes">Rhone-Alpes</div></td><td><div class="dg-cell" data-raw="9307">9307</div></td><td><div class="dg-cell" data-raw="9.1386295244222">9.1386295244222</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td></tr><tr><td class="dg-row-num">12</td><td><div class="dg-cell" data-raw="4142311">4142311</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="1.000000000">1.000000000</div></td><td><div class="dg-cell" data-raw="0">0</div></td><td><div class="dg-cell" data-raw="10">10</div></td><td><div class="dg-cell" data-raw="6">6</div></td><td><div class="dg-cell" data-raw="06-10">06-10</div></td><td><div class="dg-cell" data-raw="50">50</div></td><td><div class="dg-cell" data-raw="41-50">41-50</div></td><td><div class="dg-cell" data-raw="50">50</div></td><td><div class="dg-cell" data-raw="50">50</div></td><td><div class="dg-cell" data-raw="B10">B10</div></td><td><div class="dg-cell" data-raw="Diesel">Diesel</div></td><td><div class="dg-cell" data-raw="D">D</div></td><td><div class="dg-cell" data-raw="Provence-Alpes-Cotes-D&#x27;Azur">Provence-Alpes-Cotes-D&#x27;Azur</div></td><td><div class="dg-cell" data-raw="1976">1976</div></td><td><div class="dg-cell" data-raw="7.5893358231706">7.5893358231706</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td></tr><tr><td class="dg-row-num">13</td><td><div class="dg-cell" data-raw="5440">5440</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="0.490000000">0.490000000</div></td><td><div class="dg-cell" data-raw="-0.71334988787746">-0.71334988787746</div></td><td><div class="dg-cell" data-raw="7">7</div></td><td><div class="dg-cell" data-raw="4">4</div></td><td><div class="dg-cell" data-raw="02-05">02-05</div></td><td><div class="dg-cell" data-raw="48">48</div></td><td><div class="dg-cell" data-raw="41-50">41-50</div></td><td><div class="dg-cell" data-raw="50">50</div></td><td><div class="dg-cell" data-raw="50">50</div></td><td><div class="dg-cell" data-raw="B4">B4</div></td><td><div class="dg-cell" data-raw="Regular">Regular</div></td><td><div class="dg-cell" data-raw="B">B</div></td><td><div class="dg-cell" data-raw="Franche-Comte">Franche-Comte</div></td><td><div class="dg-cell" data-raw="69">69</div></td><td><div class="dg-cell" data-raw="4.2484952420494">4.2484952420494</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td></tr><tr><td class="dg-row-num">14</td><td><div class="dg-cell" data-raw="3142113">3142113</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="0.450000000">0.450000000</div></td><td><div class="dg-cell" data-raw="-0.79850769621777">-0.79850769621777</div></td><td><div class="dg-cell" data-raw="6">6</div></td><td><div class="dg-cell" data-raw="11">11</div></td><td><div class="dg-cell" data-raw="11-15">11-15</div></td><td><div class="dg-cell" data-raw="23">23</div></td><td><div class="dg-cell" data-raw="22-25">22-25</div></td><td><div class="dg-cell" data-raw="125">125</div></td><td><div class="dg-cell" data-raw="125">125</div></td><td><div class="dg-cell" data-raw="B2">B2</div></td><td><div class="dg-cell" data-raw="Diesel">Diesel</div></td><td><div class="dg-cell" data-raw="E">E</div></td><td><div class="dg-cell" data-raw="Poitou-Charentes">Poitou-Charentes</div></td><td><div class="dg-cell" data-raw="2694">2694</div></td><td><div class="dg-cell" data-raw="7.8991534833431">7.8991534833431</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td></tr><tr><td class="dg-row-num">15</td><td><div class="dg-cell" data-raw="6084271">6084271</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="0.460000000">0.460000000</div></td><td><div class="dg-cell" data-raw="-0.776528789499">-0.776528789499</div></td><td><div class="dg-cell" data-raw="7">7</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="00-01">00-01</div></td><td><div class="dg-cell" data-raw="59">59</div></td><td><div class="dg-cell" data-raw="51-60">51-60</div></td><td><div class="dg-cell" data-raw="50">50</div></td><td><div class="dg-cell" data-raw="50">50</div></td><td><div class="dg-cell" data-raw="B12">B12</div></td><td><div class="dg-cell" data-raw="Diesel">Diesel</div></td><td><div class="dg-cell" data-raw="E">E</div></td><td><div class="dg-cell" data-raw="Ile-de-France">Ile-de-France</div></td><td><div class="dg-cell" data-raw="6090">6090</div></td><td><div class="dg-cell" data-raw="8.7145675508365">8.7145675508365</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td></tr><tr><td class="dg-row-num">16</td><td><div class="dg-cell" data-raw="3172978">3172978</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="0.210000000">0.210000000</div></td><td><div class="dg-cell" data-raw="-1.5606477482647">-1.5606477482647</div></td><td><div class="dg-cell" data-raw="4">4</div></td><td><div class="dg-cell" data-raw="8">8</div></td><td><div class="dg-cell" data-raw="06-10">06-10</div></td><td><div class="dg-cell" data-raw="33">33</div></td><td><div class="dg-cell" data-raw="31-40">31-40</div></td><td><div class="dg-cell" data-raw="68">68</div></td><td><div class="dg-cell" data-raw="68">68</div></td><td><div class="dg-cell" data-raw="B5">B5</div></td><td><div class="dg-cell" data-raw="Regular">Regular</div></td><td><div class="dg-cell" data-raw="C">C</div></td><td><div class="dg-cell" data-raw="Centre">Centre</div></td><td><div class="dg-cell" data-raw="139">139</div></td><td><div class="dg-cell" data-raw="4.9416424226093">4.9416424226093</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td></tr><tr><td class="dg-row-num">17</td><td><div class="dg-cell" data-raw="21741">21741</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="1.000000000">1.000000000</div></td><td><div class="dg-cell" data-raw="0">0</div></td><td><div class="dg-cell" data-raw="7">7</div></td><td><div class="dg-cell" data-raw="6">6</div></td><td><div class="dg-cell" data-raw="06-10">06-10</div></td><td><div class="dg-cell" data-raw="66">66</div></td><td><div class="dg-cell" data-raw="61-70">61-70</div></td><td><div class="dg-cell" data-raw="50">50</div></td><td><div class="dg-cell" data-raw="50">50</div></td><td><div class="dg-cell" data-raw="B2">B2</div></td><td><div class="dg-cell" data-raw="Regular">Regular</div></td><td><div class="dg-cell" data-raw="A">A</div></td><td><div class="dg-cell" data-raw="Centre">Centre</div></td><td><div class="dg-cell" data-raw="27">27</div></td><td><div class="dg-cell" data-raw="3.3322045101752">3.3322045101752</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td></tr><tr><td class="dg-row-num">18</td><td><div class="dg-cell" data-raw="8223">8223</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="0.290000000">0.290000000</div></td><td><div class="dg-cell" data-raw="-1.2378743560016">-1.2378743560016</div></td><td><div class="dg-cell" data-raw="10">10</div></td><td><div class="dg-cell" data-raw="10">10</div></td><td><div class="dg-cell" data-raw="06-10">06-10</div></td><td><div class="dg-cell" data-raw="26">26</div></td><td><div class="dg-cell" data-raw="26-30">26-30</div></td><td><div class="dg-cell" data-raw="85">85</div></td><td><div class="dg-cell" data-raw="85">85</div></td><td><div class="dg-cell" data-raw="B12">B12</div></td><td><div class="dg-cell" data-raw="Regular">Regular</div></td><td><div class="dg-cell" data-raw="C">C</div></td><td><div class="dg-cell" data-raw="Poitou-Charentes">Poitou-Charentes</div></td><td><div class="dg-cell" data-raw="298">298</div></td><td><div class="dg-cell" data-raw="5.7004435733907">5.7004435733907</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td></tr><tr><td class="dg-row-num">19</td><td><div class="dg-cell" data-raw="1034221">1034221</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="0.580000000">0.580000000</div></td><td><div class="dg-cell" data-raw="-0.54472717544167">-0.54472717544167</div></td><td><div class="dg-cell" data-raw="6">6</div></td><td><div class="dg-cell" data-raw="3">3</div></td><td><div class="dg-cell" data-raw="02-05">02-05</div></td><td><div class="dg-cell" data-raw="40">40</div></td><td><div class="dg-cell" data-raw="31-40">31-40</div></td><td><div class="dg-cell" data-raw="91">91</div></td><td><div class="dg-cell" data-raw="91">91</div></td><td><div class="dg-cell" data-raw="B1">B1</div></td><td><div class="dg-cell" data-raw="Regular">Regular</div></td><td><div class="dg-cell" data-raw="A">A</div></td><td><div class="dg-cell" data-raw="Centre">Centre</div></td><td><div class="dg-cell" data-raw="18">18</div></td><td><div class="dg-cell" data-raw="2.9444389791664">2.9444389791664</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td></tr><tr><td class="dg-row-num">20</td><td><div class="dg-cell" data-raw="8330">8330</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="0.040000000">0.040000000</div></td><td><div class="dg-cell" data-raw="-3.2188758248682">-3.2188758248682</div></td><td><div class="dg-cell" data-raw="5">5</div></td><td><div class="dg-cell" data-raw="0">0</div></td><td><div class="dg-cell" data-raw="00-01">00-01</div></td><td><div class="dg-cell" data-raw="40">40</div></td><td><div class="dg-cell" data-raw="31-40">31-40</div></td><td><div class="dg-cell" data-raw="100">100</div></td><td><div class="dg-cell" data-raw="100">100</div></td><td><div class="dg-cell" data-raw="B12">B12</div></td><td><div class="dg-cell" data-raw="Regular">Regular</div></td><td><div class="dg-cell" data-raw="C">C</div></td><td><div class="dg-cell" data-raw="Provence-Alpes-Cotes-D&#x27;Azur">Provence-Alpes-Cotes-D&#x27;Azur</div></td><td><div class="dg-cell" data-raw="116">116</div></td><td><div class="dg-cell" data-raw="4.7621739347978">4.7621739347978</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+  <div class="rv-panel rv-panel-hidden" id="res-3-chart"><div class="ch-layout" id="ch-3"><script type="application/json" id="ch-3-cols">[{"name":"VEHAGE_BAND","type":"nominal"},{"name":"IDPOL","type":"quantitative"}]</script><script type="application/json" id="ch-3-vals">[{"VEHAGE_BAND":"02-05","IDPOL":"106001"},{"VEHAGE_BAND":"00-01","IDPOL":"2322"},{"VEHAGE_BAND":"11-15","IDPOL":"3133883"},{"VEHAGE_BAND":"06-10","IDPOL":"4167488"},{"VEHAGE_BAND":"06-10","IDPOL":"166683"},{"VEHAGE_BAND":"06-10","IDPOL":"149243"},{"VEHAGE_BAND":"06-10","IDPOL":"10336"},{"VEHAGE_BAND":"16+","IDPOL":"2221708"},{"VEHAGE_BAND":"11-15","IDPOL":"2088278"},{"VEHAGE_BAND":"02-05","IDPOL":"3127650"},{"VEHAGE_BAND":"06-10","IDPOL":"2114622"},{"VEHAGE_BAND":"06-10","IDPOL":"4142311"},{"VEHAGE_BAND":"02-05","IDPOL":"5440"},{"VEHAGE_BAND":"11-15","IDPOL":"3142113"},{"VEHAGE_BAND":"00-01","IDPOL":"6084271"},{"VEHAGE_BAND":"06-10","IDPOL":"3172978"},{"VEHAGE_BAND":"06-10","IDPOL":"21741"},{"VEHAGE_BAND":"06-10","IDPOL":"8223"},{"VEHAGE_BAND":"02-05","IDPOL":"1034221"},{"VEHAGE_BAND":"00-01","IDPOL":"8330"}]</script><script type="application/json" id="ch-3-state">{"type":"grouped-bar","xField":"VEHAGE_BAND","yFields":["IDPOL"],"colorField":null,"aggregate":"sum","sortX":"none","timeResolution":"none","limit":0,"xAxisLabelEnabled":true,"xAxisLabel":"VEHAGE_BAND","yAxisLabelEnabled":true,"yAxisLabel":"IDPOL"}</script></div></div>
+</div></div>
+</div>
+<div class="markdown-wrapper">
+  <div class="markdown-block"><hr>
+<h2 id="poisson-glm--claim-frequency-model">Poisson GLM — Claim Frequency Model</h2>
+<p>Fit a Poisson GLM with canonical log link and <code>ln(Exposure)</code> offset.</p>
+<p><strong>Reference levels</strong> (largest/lowest-risk group — standard actuarial base):</p>
+<ul>
+<li>Driver age: 31-40 (prime risk)</li>
+<li>Vehicle age: 02-05 (most common)</li>
+<li>Area: C (mid-density)</li>
+<li>Region: Ile-de-France (largest)</li>
+<li>Vehicle brand: B1 (most common)</li>
+<li>Fuel: Regular</li>
+</ul>
+</div>
+</div>
+<div class="cell cell-sql" data-index="8" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-name">Create stage for stored procedure artifacts</span><span class="cell-counter">[6]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-keyword">CREATE</span> STAGE <span class="tok-keyword">IF</span> <span class="tok-keyword">NOT</span> <span class="tok-keyword">EXISTS</span> FREMTPL2.FREMTPL2_INVESTIGATION.MODEL_STAGE</code></pre></div></div>
+  <div class="cell-outputs"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="1 row">1 row</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">status</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:64px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">status</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="MODEL_STAGE already exists, statement succeeded.">MODEL_STAGE already exists, statement succeeded.</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+</div>
+<div class="cell cell-python" data-index="9" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-python"/></svg>Python</span><span class="cell-name">Register Poisson GLM stored procedure</span><span class="cell-counter">[7]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-python"><span class="tok-keyword tok-definitionKeyword">from</span> <span class="tok-variableName">snowflake</span><span class="tok-operator">.</span><span class="tok-variableName">snowpark</span> <span class="tok-keyword">import</span> <span class="tok-variableName">Session</span> <span class="tok-keyword">as</span> <span class="tok-variableName">SnowparkSession</span>
+<span class="tok-keyword tok-definitionKeyword">from</span> <span class="tok-variableName">snowflake</span><span class="tok-operator">.</span><span class="tok-variableName">snowpark</span><span class="tok-operator">.</span><span class="tok-variableName">context</span> <span class="tok-keyword">import</span> <span class="tok-variableName">get_active_session</span>
+<span class="tok-keyword tok-definitionKeyword">from</span> <span class="tok-variableName">snowflake</span><span class="tok-operator">.</span><span class="tok-variableName">snowpark</span><span class="tok-operator">.</span><span class="tok-variableName">types</span> <span class="tok-keyword">import</span> <span class="tok-variableName">StringType</span>
+
+<span class="tok-variableName">session</span> <span class="tok-operator">=</span> <span class="tok-variableName tok-functionName">get_active_session</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span>
+
+<span class="tok-keyword tok-definitionKeyword">def</span> <span class="tok-variableName tok-definition tok-functionName">fit_poisson_glm</span><span class="tok-punctuation">(</span><span class="tok-variableName">session</span>: <span class="tok-variableName">SnowparkSession</span><span class="tok-punctuation">)</span> -&gt; <span class="tok-variableName">str</span>:
+    <span class="tok-keyword">import</span> <span class="tok-variableName">pandas</span> <span class="tok-keyword">as</span> <span class="tok-variableName">pd</span>
+    <span class="tok-keyword">import</span> <span class="tok-variableName">numpy</span> <span class="tok-keyword">as</span> <span class="tok-variableName">np</span>
+    <span class="tok-keyword">import</span> <span class="tok-variableName">statsmodels</span><span class="tok-operator">.</span><span class="tok-variableName">api</span> <span class="tok-keyword">as</span> <span class="tok-variableName">sm</span>
+    <span class="tok-keyword">import</span> <span class="tok-variableName">statsmodels</span><span class="tok-operator">.</span><span class="tok-variableName">formula</span><span class="tok-operator">.</span><span class="tok-variableName">api</span> <span class="tok-keyword">as</span> <span class="tok-variableName">smf</span>
+
+    <span class="tok-comment"># Set session context for temp stage creation</span>
+    <span class="tok-variableName">session</span><span class="tok-operator">.</span><span class="tok-propertyName">sql</span><span class="tok-punctuation">(</span><span class="tok-string">&quot;USE DATABASE FREMTPL2&quot;</span><span class="tok-punctuation">)</span><span class="tok-operator">.</span><span class="tok-propertyName">collect</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span>
+    <span class="tok-variableName">session</span><span class="tok-operator">.</span><span class="tok-propertyName">sql</span><span class="tok-punctuation">(</span><span class="tok-string">&quot;USE SCHEMA FREMTPL2_INVESTIGATION&quot;</span><span class="tok-punctuation">)</span><span class="tok-operator">.</span><span class="tok-propertyName">collect</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span>
+
+    <span class="tok-comment"># 1. Load feature table</span>
+    <span class="tok-variableName">features_df</span> <span class="tok-operator">=</span> <span class="tok-variableName">session</span><span class="tok-operator">.</span><span class="tok-propertyName">table</span><span class="tok-punctuation">(</span><span class="tok-string">&quot;FREMTPL2.FREMTPL2_INVESTIGATION.FREQ_MODEL_FEATURES&quot;</span><span class="tok-punctuation">)</span>
+    <span class="tok-variableName">train_pdf</span> <span class="tok-operator">=</span> <span class="tok-variableName">features_df</span><span class="tok-operator">.</span><span class="tok-propertyName">filter</span><span class="tok-punctuation">(</span><span class="tok-string">&quot;DATASET = &#x27;TRAIN&#x27;&quot;</span><span class="tok-punctuation">)</span><span class="tok-operator">.</span><span class="tok-propertyName">to_pandas</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span>
+
+    <span class="tok-comment"># 2. Poisson GLM with actuarial reference levels</span>
+    <span class="tok-variableName">formula</span> <span class="tok-operator">=</span> <span class="tok-punctuation">(</span>
+        <span class="tok-string">&quot;CLAIMNB ~ &quot;</span>
+        <span class="tok-string">&quot;C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;)) + &quot;</span>
+        <span class="tok-string">&quot;C(VEHAGE_BAND, Treatment(reference=&#x27;02-05&#x27;)) + &quot;</span>
+        <span class="tok-string">&quot;C(AREA, Treatment(reference=&#x27;C&#x27;)) + &quot;</span>
+        <span class="tok-string">&quot;C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;)) + &quot;</span>
+        <span class="tok-string">&quot;C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;)) + &quot;</span>
+        <span class="tok-string">&quot;C(VEHGAS, Treatment(reference=&#x27;Regular&#x27;)) + &quot;</span>
+        <span class="tok-string">&quot;VEHPOWER + BONUSMALUS_CAPPED + LN_DENSITY&quot;</span>
+    <span class="tok-punctuation">)</span>
+
+    <span class="tok-variableName">model</span> <span class="tok-operator">=</span> <span class="tok-variableName">smf</span><span class="tok-operator">.</span><span class="tok-propertyName">glm</span><span class="tok-punctuation">(</span>
+        <span class="tok-variableName">formula</span><span class="tok-operator">=</span><span class="tok-variableName">formula</span><span class="tok-punctuation">,</span>
+        <span class="tok-variableName">data</span><span class="tok-operator">=</span><span class="tok-variableName">train_pdf</span><span class="tok-punctuation">,</span>
+        <span class="tok-variableName">family</span><span class="tok-operator">=</span><span class="tok-variableName">sm</span><span class="tok-operator">.</span><span class="tok-propertyName">families</span><span class="tok-operator">.</span><span class="tok-propertyName">Poisson</span><span class="tok-punctuation">(</span><span class="tok-variableName">link</span><span class="tok-operator">=</span><span class="tok-variableName">sm</span><span class="tok-operator">.</span><span class="tok-propertyName">families</span><span class="tok-operator">.</span><span class="tok-propertyName">links</span><span class="tok-operator">.</span><span class="tok-propertyName">Log</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span>
+        <span class="tok-variableName">offset</span><span class="tok-operator">=</span><span class="tok-variableName">train_pdf</span><span class="tok-punctuation">[</span><span class="tok-string">&quot;LN_EXPOSURE&quot;</span><span class="tok-punctuation">]</span><span class="tok-operator">.</span><span class="tok-propertyName">astype</span><span class="tok-punctuation">(</span><span class="tok-variableName">float</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span>
+    <span class="tok-punctuation">)</span><span class="tok-operator">.</span><span class="tok-propertyName">fit</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span>
+
+    <span class="tok-comment"># 3. Save coefficients</span>
+    <span class="tok-variableName">ci</span> <span class="tok-operator">=</span> <span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">conf_int</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span>
+    <span class="tok-variableName">coef_pdf</span> <span class="tok-operator">=</span> <span class="tok-variableName">pd</span><span class="tok-operator">.</span><span class="tok-propertyName">DataFrame</span><span class="tok-punctuation">(</span><span class="tok-punctuation">{</span>
+        <span class="tok-string">&quot;COEFFICIENT_NAME&quot;</span>: <span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">params</span><span class="tok-operator">.</span><span class="tok-propertyName">index</span><span class="tok-operator">.</span><span class="tok-propertyName">astype</span><span class="tok-punctuation">(</span><span class="tok-variableName">str</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span>
+        <span class="tok-string">&quot;ESTIMATE&quot;</span>:  <span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">params</span><span class="tok-operator">.</span><span class="tok-propertyName">values</span><span class="tok-punctuation">,</span>
+        <span class="tok-string">&quot;EXP_ESTIMATE&quot;</span>: <span class="tok-variableName">np</span><span class="tok-operator">.</span><span class="tok-propertyName">exp</span><span class="tok-punctuation">(</span><span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">params</span><span class="tok-operator">.</span><span class="tok-propertyName">values</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span>
+        <span class="tok-string">&quot;STD_ERROR&quot;</span>: <span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">bse</span><span class="tok-operator">.</span><span class="tok-propertyName">values</span><span class="tok-punctuation">,</span>
+        <span class="tok-string">&quot;Z_VALUE&quot;</span>:   <span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">tvalues</span><span class="tok-operator">.</span><span class="tok-propertyName">values</span><span class="tok-punctuation">,</span>
+        <span class="tok-string">&quot;P_VALUE&quot;</span>:   <span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">pvalues</span><span class="tok-operator">.</span><span class="tok-propertyName">values</span><span class="tok-punctuation">,</span>
+        <span class="tok-string">&quot;CI_LOWER&quot;</span>:  <span class="tok-variableName">ci</span><span class="tok-punctuation">[</span><span class="tok-number">0</span><span class="tok-punctuation">]</span><span class="tok-operator">.</span><span class="tok-propertyName">values</span><span class="tok-punctuation">,</span>
+        <span class="tok-string">&quot;CI_UPPER&quot;</span>:  <span class="tok-variableName">ci</span><span class="tok-punctuation">[</span><span class="tok-number">1</span><span class="tok-punctuation">]</span><span class="tok-operator">.</span><span class="tok-propertyName">values</span><span class="tok-punctuation">,</span>
+    <span class="tok-punctuation">}</span><span class="tok-punctuation">)</span>
+    <span class="tok-variableName">session</span><span class="tok-operator">.</span><span class="tok-propertyName">create_dataframe</span><span class="tok-punctuation">(</span><span class="tok-variableName">coef_pdf</span><span class="tok-punctuation">)</span><span class="tok-operator">.</span><span class="tok-propertyName">write</span><span class="tok-operator">.</span><span class="tok-propertyName">save_as_table</span><span class="tok-punctuation">(</span>
+        <span class="tok-string">&quot;FREMTPL2.FREMTPL2_INVESTIGATION.GLM_POISSON_COEFFICIENTS&quot;</span><span class="tok-punctuation">,</span>
+        <span class="tok-variableName">mode</span><span class="tok-operator">=</span><span class="tok-string">&quot;overwrite&quot;</span><span class="tok-punctuation">,</span>
+    <span class="tok-punctuation">)</span>
+
+    <span class="tok-comment"># 4. Score all policies (train + test)</span>
+    <span class="tok-variableName">all_pdf</span> <span class="tok-operator">=</span> <span class="tok-variableName">features_df</span><span class="tok-operator">.</span><span class="tok-propertyName">to_pandas</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span>
+    <span class="tok-variableName">all_pdf</span><span class="tok-punctuation">[</span><span class="tok-string">&quot;PREDICTED_FREQ&quot;</span><span class="tok-punctuation">]</span> <span class="tok-operator">=</span> <span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">predict</span><span class="tok-punctuation">(</span>
+        <span class="tok-variableName">all_pdf</span><span class="tok-punctuation">,</span> <span class="tok-variableName">offset</span><span class="tok-operator">=</span><span class="tok-variableName">all_pdf</span><span class="tok-punctuation">[</span><span class="tok-string">&quot;LN_EXPOSURE&quot;</span><span class="tok-punctuation">]</span><span class="tok-operator">.</span><span class="tok-propertyName">astype</span><span class="tok-punctuation">(</span><span class="tok-variableName">float</span><span class="tok-punctuation">)</span>
+    <span class="tok-punctuation">)</span>
+    <span class="tok-variableName">pred_pdf</span> <span class="tok-operator">=</span> <span class="tok-variableName">all_pdf</span><span class="tok-punctuation">[</span><span class="tok-punctuation">[</span><span class="tok-string">&quot;IDPOL&quot;</span><span class="tok-punctuation">,</span> <span class="tok-string">&quot;PREDICTED_FREQ&quot;</span><span class="tok-punctuation">,</span> <span class="tok-string">&quot;DATASET&quot;</span><span class="tok-punctuation">]</span><span class="tok-punctuation">]</span><span class="tok-operator">.</span><span class="tok-propertyName">copy</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span>
+    <span class="tok-variableName">session</span><span class="tok-operator">.</span><span class="tok-propertyName">create_dataframe</span><span class="tok-punctuation">(</span><span class="tok-variableName">pred_pdf</span><span class="tok-punctuation">)</span><span class="tok-operator">.</span><span class="tok-propertyName">write</span><span class="tok-operator">.</span><span class="tok-propertyName">save_as_table</span><span class="tok-punctuation">(</span>
+        <span class="tok-string">&quot;FREMTPL2.FREMTPL2_INVESTIGATION.GLM_POISSON_PREDICTIONS&quot;</span><span class="tok-punctuation">,</span>
+        <span class="tok-variableName">mode</span><span class="tok-operator">=</span><span class="tok-string">&quot;overwrite&quot;</span><span class="tok-punctuation">,</span>
+    <span class="tok-punctuation">)</span>
+
+    <span class="tok-keyword">return</span> <span class="tok-punctuation">(</span>
+        <span class="tok-string2">f&quot;Poisson GLM fitted.\n&quot;</span>
+        <span class="tok-string2">f&quot;AIC: </span><span class="tok-punctuation">{</span><span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">aic</span>:<span class="tok-keyword">.2f</span><span class="tok-punctuation">}</span><span class="tok-string2">\n&quot;</span>
+        <span class="tok-string2">f&quot;Deviance: </span><span class="tok-punctuation">{</span><span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">deviance</span>:<span class="tok-keyword">.2f</span><span class="tok-punctuation">}</span><span class="tok-string2">\n&quot;</span>
+        <span class="tok-string2">f&quot;Pearson chi2/df: </span><span class="tok-punctuation">{</span><span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">pearson_chi2</span> <span class="tok-operator">/</span> <span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">df_resid</span>:<span class="tok-keyword">.4f</span><span class="tok-punctuation">}</span><span class="tok-string2">\n&quot;</span>
+        <span class="tok-string2">f&quot;Log-likelihood: </span><span class="tok-punctuation">{</span><span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">llf</span>:<span class="tok-keyword">.2f</span><span class="tok-punctuation">}</span><span class="tok-string2">\n&quot;</span>
+        <span class="tok-string2">f&quot;Coefficients: </span><span class="tok-punctuation">{</span><span class="tok-variableName tok-functionName">len</span><span class="tok-punctuation">(</span><span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">params</span><span class="tok-punctuation">)</span><span class="tok-punctuation">}</span><span class="tok-string2">\n&quot;</span>
+        <span class="tok-string2">f&quot;Train rows: </span><span class="tok-punctuation">{</span><span class="tok-variableName tok-functionName">len</span><span class="tok-punctuation">(</span><span class="tok-variableName">train_pdf</span><span class="tok-punctuation">)</span>:<span class="tok-keyword">,</span><span class="tok-punctuation">}</span><span class="tok-string2">\n&quot;</span>
+        <span class="tok-string2">f&quot;Scored rows: </span><span class="tok-punctuation">{</span><span class="tok-variableName tok-functionName">len</span><span class="tok-punctuation">(</span><span class="tok-variableName">all_pdf</span><span class="tok-punctuation">)</span>:<span class="tok-keyword">,</span><span class="tok-punctuation">}</span><span class="tok-string2">&quot;</span>
+    <span class="tok-punctuation">)</span>
+
+<span class="tok-variableName">session</span><span class="tok-operator">.</span><span class="tok-propertyName">sproc</span><span class="tok-operator">.</span><span class="tok-propertyName">register</span><span class="tok-punctuation">(</span>
+    <span class="tok-variableName">func</span><span class="tok-operator">=</span><span class="tok-variableName">fit_poisson_glm</span><span class="tok-punctuation">,</span>
+    <span class="tok-variableName">name</span><span class="tok-operator">=</span><span class="tok-string">&quot;FREMTPL2.FREMTPL2_INVESTIGATION.FIT_POISSON_GLM&quot;</span><span class="tok-punctuation">,</span>
+    <span class="tok-variableName">packages</span><span class="tok-operator">=</span><span class="tok-punctuation">[</span><span class="tok-string">&quot;snowflake-snowpark-python&quot;</span><span class="tok-punctuation">,</span> <span class="tok-string">&quot;statsmodels&quot;</span><span class="tok-punctuation">,</span> <span class="tok-string">&quot;pandas&quot;</span><span class="tok-punctuation">,</span> <span class="tok-string">&quot;numpy&quot;</span><span class="tok-punctuation">]</span><span class="tok-punctuation">,</span>
+    <span class="tok-variableName">is_permanent</span><span class="tok-operator">=</span><span class="tok-bool">True</span><span class="tok-punctuation">,</span>
+    <span class="tok-variableName">stage_location</span><span class="tok-operator">=</span><span class="tok-string">&quot;@FREMTPL2.FREMTPL2_INVESTIGATION.MODEL_STAGE&quot;</span><span class="tok-punctuation">,</span>
+    <span class="tok-variableName">replace</span><span class="tok-operator">=</span><span class="tok-bool">True</span><span class="tok-punctuation">,</span>
+    <span class="tok-variableName">return_type</span><span class="tok-operator">=</span><span class="tok-variableName tok-functionName">StringType</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span>
+    <span class="tok-variableName">execute_as</span><span class="tok-operator">=</span><span class="tok-string">&quot;caller&quot;</span><span class="tok-punctuation">,</span>
+<span class="tok-punctuation">)</span>
+<span class="tok-variableName tok-functionName">print</span><span class="tok-punctuation">(</span><span class="tok-string">&quot;Stored procedure registered: FREMTPL2.FREMTPL2_INVESTIGATION.FIT_POISSON_GLM&quot;</span><span class="tok-punctuation">)</span></code></pre></div></div>
+  <div class="cell-outputs"><pre class="output-text">Stored procedure registered: FREMTPL2.FREMTPL2_INVESTIGATION.FIT_POISSON_GLM
+</pre></div>
+</div>
+<div class="cell cell-sql" data-index="10" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-name">Fit the Poisson GLM</span><span class="cell-counter">[8]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-keyword">CALL</span> FREMTPL2.FREMTPL2_INVESTIGATION.FIT_POISSON_GLM<span class="tok-punctuation">(</span><span class="tok-punctuation">)</span></code></pre></div></div>
+  <div class="cell-outputs"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="1 row">1 row</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">FIT_POISSON_GLM</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:64px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">FIT_POISSON_GLM</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="Poisson GLM fitted.
+AIC: 228303.32
+Deviance: 172759.43
+Pearson chi2/df: 2.5868
+Log-likelihood: -114100.66
+Coefficients: 51
+Train rows: 542,410
+Scored rows: 678,013">Poisson GLM fitted.
+AIC: 228303.32
+Deviance: 172759.43
+Pearson chi2/df: 2.5868
+Log-likelihood: -114100.66
+Coefficients: 51
+Train rows: 542,410
+Scored rows: 678,013</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="11" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-name">GLM coefficients ranked by significance</span><span class="cell-counter">[9]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-keyword">SELECT</span>
+  COEFFICIENT_NAME<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>ESTIMATE<span class="tok-punctuation">,</span> <span class="tok-number">6</span><span class="tok-punctuation">)</span>      <span class="tok-keyword">AS</span> ESTIMATE<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>EXP_ESTIMATE<span class="tok-punctuation">,</span> <span class="tok-number">4</span><span class="tok-punctuation">)</span>  <span class="tok-keyword">AS</span> RELATIVITY<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>STD_ERROR<span class="tok-punctuation">,</span> <span class="tok-number">6</span><span class="tok-punctuation">)</span>     <span class="tok-keyword">AS</span> STD_ERROR<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>Z_VALUE<span class="tok-punctuation">,</span> <span class="tok-number">2</span><span class="tok-punctuation">)</span>       <span class="tok-keyword">AS</span> Z_VALUE<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>P_VALUE<span class="tok-punctuation">,</span> <span class="tok-number">6</span><span class="tok-punctuation">)</span>       <span class="tok-keyword">AS</span> P_VALUE<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>CI_LOWER<span class="tok-punctuation">,</span> <span class="tok-number">6</span><span class="tok-punctuation">)</span>      <span class="tok-keyword">AS</span> CI_LOWER<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>CI_UPPER<span class="tok-punctuation">,</span> <span class="tok-number">6</span><span class="tok-punctuation">)</span>      <span class="tok-keyword">AS</span> CI_UPPER
+<span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.GLM_POISSON_COEFFICIENTS
+<span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> ABS<span class="tok-punctuation">(</span>Z_VALUE<span class="tok-punctuation">)</span> <span class="tok-keyword">DESC</span></code></pre></div></div>
+  <div class="cell-outputs cell-outputs-no-top-border"><div class="rv-container" id="res-4">
+  <div class="rv-tabs">
+    <button class="rv-tab rv-tab-active" data-target="res-4-table" onclick="switchTab(this)">Table</button>
+    <button class="rv-tab" data-target="res-4-chart" onclick="switchTab(this)">Chart</button>
+  </div>
+  <div class="rv-panel" id="res-4-table"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="51 rows">51 rows</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">COEFFICIENT_NAME</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="1" onchange="dgToggleCol(this)"><span class="dg-colsel-label">ESTIMATE</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="2" onchange="dgToggleCol(this)"><span class="dg-colsel-label">RELATIVITY</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="3" onchange="dgToggleCol(this)"><span class="dg-colsel-label">STD_ERROR</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="4" onchange="dgToggleCol(this)"><span class="dg-colsel-label">Z_VALUE</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="5" onchange="dgToggleCol(this)"><span class="dg-colsel-label">P_VALUE</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="6" onchange="dgToggleCol(this)"><span class="dg-colsel-label">CI_LOWER</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="7" onchange="dgToggleCol(this)"><span class="dg-colsel-label">CI_UPPER</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:316px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">COEFFICIENT_NAME</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">ESTIMATE</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,2)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">RELATIVITY</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,3)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">STD_ERROR</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,4)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">Z_VALUE</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,5)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">P_VALUE</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,6)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">CI_LOWER</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,7)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">CI_UPPER</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,8)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="BONUSMALUS_CAPPED">BONUSMALUS_CAPPED</div></td><td><div class="dg-cell" data-raw="0.023156">0.023156</div></td><td><div class="dg-cell" data-raw="1.0234">1.0234</div></td><td><div class="dg-cell" data-raw="0.000376">0.000376</div></td><td><div class="dg-cell" data-raw="61.51">61.51</div></td><td><div class="dg-cell" data-raw="0">0</div></td><td><div class="dg-cell" data-raw="0.022418">0.022418</div></td><td><div class="dg-cell" data-raw="0.023894">0.023894</div></td></tr><tr><td class="dg-row-num">2</td><td><div class="dg-cell" data-raw="Intercept">Intercept</div></td><td><div class="dg-cell" data-raw="-4.25149">-4.25149</div></td><td><div class="dg-cell" data-raw="0.0142">0.0142</div></td><td><div class="dg-cell" data-raw="0.091435">0.091435</div></td><td><div class="dg-cell" data-raw="-46.5">-46.5</div></td><td><div class="dg-cell" data-raw="0">0</div></td><td><div class="dg-cell" data-raw="-4.4307">-4.4307</div></td><td><div class="dg-cell" data-raw="-4.07228">-4.07228</div></td></tr><tr><td class="dg-row-num">3</td><td><div class="dg-cell" data-raw="C(VEHAGE_BAND, Treatment(reference=&#x27;02-05&#x27;))[T.00-01]">C(VEHAGE_BAND, Treatment(reference=&#x27;02-05&#x27;))[T.00-01]</div></td><td><div class="dg-cell" data-raw="0.509777">0.509777</div></td><td><div class="dg-cell" data-raw="1.6649">1.6649</div></td><td><div class="dg-cell" data-raw="0.017471">0.017471</div></td><td><div class="dg-cell" data-raw="29.18">29.18</div></td><td><div class="dg-cell" data-raw="0">0</div></td><td><div class="dg-cell" data-raw="0.475534">0.475534</div></td><td><div class="dg-cell" data-raw="0.54402">0.54402</div></td></tr><tr><td class="dg-row-num">4</td><td><div class="dg-cell" data-raw="C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.41-50]">C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.41-50]</div></td><td><div class="dg-cell" data-raw="0.287336">0.287336</div></td><td><div class="dg-cell" data-raw="1.3329">1.3329</div></td><td><div class="dg-cell" data-raw="0.017611">0.017611</div></td><td><div class="dg-cell" data-raw="16.32">16.32</div></td><td><div class="dg-cell" data-raw="0">0</div></td><td><div class="dg-cell" data-raw="0.252819">0.252819</div></td><td><div class="dg-cell" data-raw="0.321853">0.321853</div></td></tr><tr><td class="dg-row-num">5</td><td><div class="dg-cell" data-raw="C(VEHAGE_BAND, Treatment(reference=&#x27;02-05&#x27;))[T.16+]">C(VEHAGE_BAND, Treatment(reference=&#x27;02-05&#x27;))[T.16+]</div></td><td><div class="dg-cell" data-raw="-0.392159">-0.392159</div></td><td><div class="dg-cell" data-raw="0.6756">0.6756</div></td><td><div class="dg-cell" data-raw="0.028486">0.028486</div></td><td><div class="dg-cell" data-raw="-13.77">-13.77</div></td><td><div class="dg-cell" data-raw="0">0</div></td><td><div class="dg-cell" data-raw="-0.447991">-0.447991</div></td><td><div class="dg-cell" data-raw="-0.336327">-0.336327</div></td></tr><tr><td class="dg-row-num">6</td><td><div class="dg-cell" data-raw="C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.71+]">C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.71+]</div></td><td><div class="dg-cell" data-raw="0.308186">0.308186</div></td><td><div class="dg-cell" data-raw="1.361">1.361</div></td><td><div class="dg-cell" data-raw="0.025963">0.025963</div></td><td><div class="dg-cell" data-raw="11.87">11.87</div></td><td><div class="dg-cell" data-raw="0">0</div></td><td><div class="dg-cell" data-raw="0.257298">0.257298</div></td><td><div class="dg-cell" data-raw="0.359073">0.359073</div></td></tr><tr><td class="dg-row-num">7</td><td><div class="dg-cell" data-raw="C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.51-60]">C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.51-60]</div></td><td><div class="dg-cell" data-raw="0.218987">0.218987</div></td><td><div class="dg-cell" data-raw="1.2448">1.2448</div></td><td><div class="dg-cell" data-raw="0.018757">0.018757</div></td><td><div class="dg-cell" data-raw="11.67">11.67</div></td><td><div class="dg-cell" data-raw="0">0</div></td><td><div class="dg-cell" data-raw="0.182223">0.182223</div></td><td><div class="dg-cell" data-raw="0.25575">0.25575</div></td></tr><tr><td class="dg-row-num">8</td><td><div class="dg-cell" data-raw="C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.61-70]">C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.61-70]</div></td><td><div class="dg-cell" data-raw="0.193447">0.193447</div></td><td><div class="dg-cell" data-raw="1.2134">1.2134</div></td><td><div class="dg-cell" data-raw="0.02326">0.02326</div></td><td><div class="dg-cell" data-raw="8.32">8.32</div></td><td><div class="dg-cell" data-raw="0">0</div></td><td><div class="dg-cell" data-raw="0.147858">0.147858</div></td><td><div class="dg-cell" data-raw="0.239035">0.239035</div></td></tr><tr><td class="dg-row-num">9</td><td><div class="dg-cell" data-raw="C(VEHAGE_BAND, Treatment(reference=&#x27;02-05&#x27;))[T.11-15]">C(VEHAGE_BAND, Treatment(reference=&#x27;02-05&#x27;))[T.11-15]</div></td><td><div class="dg-cell" data-raw="-0.133942">-0.133942</div></td><td><div class="dg-cell" data-raw="0.8746">0.8746</div></td><td><div class="dg-cell" data-raw="0.018778">0.018778</div></td><td><div class="dg-cell" data-raw="-7.13">-7.13</div></td><td><div class="dg-cell" data-raw="0">0</div></td><td><div class="dg-cell" data-raw="-0.170746">-0.170746</div></td><td><div class="dg-cell" data-raw="-0.097139">-0.097139</div></td></tr><tr><td class="dg-row-num">10</td><td><div class="dg-cell" data-raw="C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B12]">C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B12]</div></td><td><div class="dg-cell" data-raw="0.139481">0.139481</div></td><td><div class="dg-cell" data-raw="1.1497">1.1497</div></td><td><div class="dg-cell" data-raw="0.020054">0.020054</div></td><td><div class="dg-cell" data-raw="6.96">6.96</div></td><td><div class="dg-cell" data-raw="0">0</div></td><td><div class="dg-cell" data-raw="0.100176">0.100176</div></td><td><div class="dg-cell" data-raw="0.178785">0.178785</div></td></tr><tr><td class="dg-row-num">11</td><td><div class="dg-cell" data-raw="C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.18-21]">C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.18-21]</div></td><td><div class="dg-cell" data-raw="0.245565">0.245565</div></td><td><div class="dg-cell" data-raw="1.2783">1.2783</div></td><td><div class="dg-cell" data-raw="0.039847">0.039847</div></td><td><div class="dg-cell" data-raw="6.16">6.16</div></td><td><div class="dg-cell" data-raw="0">0</div></td><td><div class="dg-cell" data-raw="0.167467">0.167467</div></td><td><div class="dg-cell" data-raw="0.323662">0.323662</div></td></tr><tr><td class="dg-row-num">12</td><td><div class="dg-cell" data-raw="C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.26-30]">C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.26-30]</div></td><td><div class="dg-cell" data-raw="-0.149618">-0.149618</div></td><td><div class="dg-cell" data-raw="0.861">0.861</div></td><td><div class="dg-cell" data-raw="0.024459">0.024459</div></td><td><div class="dg-cell" data-raw="-6.12">-6.12</div></td><td><div class="dg-cell" data-raw="0">0</div></td><td><div class="dg-cell" data-raw="-0.197556">-0.197556</div></td><td><div class="dg-cell" data-raw="-0.101679">-0.101679</div></td></tr><tr><td class="dg-row-num">13</td><td><div class="dg-cell" data-raw="C(VEHGAS, Treatment(reference=&#x27;Regular&#x27;))[T.Diesel]">C(VEHGAS, Treatment(reference=&#x27;Regular&#x27;))[T.Diesel]</div></td><td><div class="dg-cell" data-raw="-0.051449">-0.051449</div></td><td><div class="dg-cell" data-raw="0.9499">0.9499</div></td><td><div class="dg-cell" data-raw="0.012303">0.012303</div></td><td><div class="dg-cell" data-raw="-4.18">-4.18</div></td><td><div class="dg-cell" data-raw="2.9e-5">2.9e-5</div></td><td><div class="dg-cell" data-raw="-0.075562">-0.075562</div></td><td><div class="dg-cell" data-raw="-0.027335">-0.027335</div></td></tr><tr><td class="dg-row-num">14</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Nord-Pas-de-Calais]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Nord-Pas-de-Calais]</div></td><td><div class="dg-cell" data-raw="-0.142497">-0.142497</div></td><td><div class="dg-cell" data-raw="0.8672">0.8672</div></td><td><div class="dg-cell" data-raw="0.034708">0.034708</div></td><td><div class="dg-cell" data-raw="-4.11">-4.11</div></td><td><div class="dg-cell" data-raw="4e-5">4e-5</div></td><td><div class="dg-cell" data-raw="-0.210523">-0.210523</div></td><td><div class="dg-cell" data-raw="-0.074471">-0.074471</div></td></tr><tr><td class="dg-row-num">15</td><td><div class="dg-cell" data-raw="C(VEHAGE_BAND, Treatment(reference=&#x27;02-05&#x27;))[T.06-10]">C(VEHAGE_BAND, Treatment(reference=&#x27;02-05&#x27;))[T.06-10]</div></td><td><div class="dg-cell" data-raw="0.062416">0.062416</div></td><td><div class="dg-cell" data-raw="1.0644">1.0644</div></td><td><div class="dg-cell" data-raw="0.016583">0.016583</div></td><td><div class="dg-cell" data-raw="3.76">3.76</div></td><td><div class="dg-cell" data-raw="0.000167">0.000167</div></td><td><div class="dg-cell" data-raw="0.029914">0.029914</div></td><td><div class="dg-cell" data-raw="0.094918">0.094918</div></td></tr><tr><td class="dg-row-num">16</td><td><div class="dg-cell" data-raw="VEHPOWER">VEHPOWER</div></td><td><div class="dg-cell" data-raw="0.011081">0.011081</div></td><td><div class="dg-cell" data-raw="1.0111">1.0111</div></td><td><div class="dg-cell" data-raw="0.003092">0.003092</div></td><td><div class="dg-cell" data-raw="3.58">3.58</div></td><td><div class="dg-cell" data-raw="0.000338">0.000338</div></td><td><div class="dg-cell" data-raw="0.005021">0.005021</div></td><td><div class="dg-cell" data-raw="0.017141">0.017141</div></td></tr><tr><td class="dg-row-num">17</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Bretagne]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Bretagne]</div></td><td><div class="dg-cell" data-raw="0.107657">0.107657</div></td><td><div class="dg-cell" data-raw="1.1137">1.1137</div></td><td><div class="dg-cell" data-raw="0.032252">0.032252</div></td><td><div class="dg-cell" data-raw="3.34">3.34</div></td><td><div class="dg-cell" data-raw="0.000844">0.000844</div></td><td><div class="dg-cell" data-raw="0.044445">0.044445</div></td><td><div class="dg-cell" data-raw="0.170869">0.170869</div></td></tr><tr><td class="dg-row-num">18</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Auvergne]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Auvergne]</div></td><td><div class="dg-cell" data-raw="-0.257622">-0.257622</div></td><td><div class="dg-cell" data-raw="0.7729">0.7729</div></td><td><div class="dg-cell" data-raw="0.083235">0.083235</div></td><td><div class="dg-cell" data-raw="-3.1">-3.1</div></td><td><div class="dg-cell" data-raw="0.001967">0.001967</div></td><td><div class="dg-cell" data-raw="-0.420758">-0.420758</div></td><td><div class="dg-cell" data-raw="-0.094485">-0.094485</div></td></tr><tr><td class="dg-row-num">19</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Rhone-Alpes]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Rhone-Alpes]</div></td><td><div class="dg-cell" data-raw="0.081958">0.081958</div></td><td><div class="dg-cell" data-raw="1.0854">1.0854</div></td><td><div class="dg-cell" data-raw="0.027173">0.027173</div></td><td><div class="dg-cell" data-raw="3.02">3.02</div></td><td><div class="dg-cell" data-raw="0.00256">0.00256</div></td><td><div class="dg-cell" data-raw="0.0287">0.0287</div></td><td><div class="dg-cell" data-raw="0.135217">0.135217</div></td></tr><tr><td class="dg-row-num">20</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Centre]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Centre]</div></td><td><div class="dg-cell" data-raw="0.082538">0.082538</div></td><td><div class="dg-cell" data-raw="1.086">1.086</div></td><td><div class="dg-cell" data-raw="0.027535">0.027535</div></td><td><div class="dg-cell" data-raw="3">3</div></td><td><div class="dg-cell" data-raw="0.002722">0.002722</div></td><td><div class="dg-cell" data-raw="0.02857">0.02857</div></td><td><div class="dg-cell" data-raw="0.136505">0.136505</div></td></tr><tr><td class="dg-row-num">21</td><td><div class="dg-cell" data-raw="LN_DENSITY">LN_DENSITY</div></td><td><div class="dg-cell" data-raw="0.037354">0.037354</div></td><td><div class="dg-cell" data-raw="1.0381">1.0381</div></td><td><div class="dg-cell" data-raw="0.014333">0.014333</div></td><td><div class="dg-cell" data-raw="2.61">2.61</div></td><td><div class="dg-cell" data-raw="0.009157">0.009157</div></td><td><div class="dg-cell" data-raw="0.009262">0.009262</div></td><td><div class="dg-cell" data-raw="0.065446">0.065446</div></td></tr><tr><td class="dg-row-num">22</td><td><div class="dg-cell" data-raw="C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B5]">C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B5]</div></td><td><div class="dg-cell" data-raw="0.067038">0.067038</div></td><td><div class="dg-cell" data-raw="1.0693">1.0693</div></td><td><div class="dg-cell" data-raw="0.027871">0.027871</div></td><td><div class="dg-cell" data-raw="2.41">2.41</div></td><td><div class="dg-cell" data-raw="0.016159">0.016159</div></td><td><div class="dg-cell" data-raw="0.012412">0.012412</div></td><td><div class="dg-cell" data-raw="0.121663">0.121663</div></td></tr><tr><td class="dg-row-num">23</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Champagne-Ardenne]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Champagne-Ardenne]</div></td><td><div class="dg-cell" data-raw="0.210909">0.210909</div></td><td><div class="dg-cell" data-raw="1.2348">1.2348</div></td><td><div class="dg-cell" data-raw="0.08812">0.08812</div></td><td><div class="dg-cell" data-raw="2.39">2.39</div></td><td><div class="dg-cell" data-raw="0.016692">0.016692</div></td><td><div class="dg-cell" data-raw="0.038197">0.038197</div></td><td><div class="dg-cell" data-raw="0.38362">0.38362</div></td></tr><tr><td class="dg-row-num">24</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Limousin]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Limousin]</div></td><td><div class="dg-cell" data-raw="0.152278">0.152278</div></td><td><div class="dg-cell" data-raw="1.1645">1.1645</div></td><td><div class="dg-cell" data-raw="0.075833">0.075833</div></td><td><div class="dg-cell" data-raw="2.01">2.01</div></td><td><div class="dg-cell" data-raw="0.044635">0.044635</div></td><td><div class="dg-cell" data-raw="0.003649">0.003649</div></td><td><div class="dg-cell" data-raw="0.300907">0.300907</div></td></tr><tr><td class="dg-row-num">25</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Picardie]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Picardie]</div></td><td><div class="dg-cell" data-raw="0.099534">0.099534</div></td><td><div class="dg-cell" data-raw="1.1047">1.1047</div></td><td><div class="dg-cell" data-raw="0.05711">0.05711</div></td><td><div class="dg-cell" data-raw="1.74">1.74</div></td><td><div class="dg-cell" data-raw="0.081362">0.081362</div></td><td><div class="dg-cell" data-raw="-0.0124">-0.0124</div></td><td><div class="dg-cell" data-raw="0.211468">0.211468</div></td></tr><tr><td class="dg-row-num">26</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Midi-Pyrenees]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Midi-Pyrenees]</div></td><td><div class="dg-cell" data-raw="-0.07914">-0.07914</div></td><td><div class="dg-cell" data-raw="0.9239">0.9239</div></td><td><div class="dg-cell" data-raw="0.047604">0.047604</div></td><td><div class="dg-cell" data-raw="-1.66">-1.66</div></td><td><div class="dg-cell" data-raw="0.096424">0.096424</div></td><td><div class="dg-cell" data-raw="-0.172442">-0.172442</div></td><td><div class="dg-cell" data-raw="0.014163">0.014163</div></td></tr><tr><td class="dg-row-num">27</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Aquitaine]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Aquitaine]</div></td><td><div class="dg-cell" data-raw="-0.058362">-0.058362</div></td><td><div class="dg-cell" data-raw="0.9433">0.9433</div></td><td><div class="dg-cell" data-raw="0.037647">0.037647</div></td><td><div class="dg-cell" data-raw="-1.55">-1.55</div></td><td><div class="dg-cell" data-raw="0.121079">0.121079</div></td><td><div class="dg-cell" data-raw="-0.132149">-0.132149</div></td><td><div class="dg-cell" data-raw="0.015424">0.015424</div></td></tr><tr><td class="dg-row-num">28</td><td><div class="dg-cell" data-raw="C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B14]">C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B14]</div></td><td><div class="dg-cell" data-raw="-0.132091">-0.132091</div></td><td><div class="dg-cell" data-raw="0.8763">0.8763</div></td><td><div class="dg-cell" data-raw="0.086711">0.086711</div></td><td><div class="dg-cell" data-raw="-1.52">-1.52</div></td><td><div class="dg-cell" data-raw="0.127674">0.127674</div></td><td><div class="dg-cell" data-raw="-0.302042">-0.302042</div></td><td><div class="dg-cell" data-raw="0.03786">0.03786</div></td></tr><tr><td class="dg-row-num">29</td><td><div class="dg-cell" data-raw="C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B13]">C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B13]</div></td><td><div class="dg-cell" data-raw="0.060898">0.060898</div></td><td><div class="dg-cell" data-raw="1.0628">1.0628</div></td><td><div class="dg-cell" data-raw="0.045321">0.045321</div></td><td><div class="dg-cell" data-raw="1.34">1.34</div></td><td><div class="dg-cell" data-raw="0.179042">0.179042</div></td><td><div class="dg-cell" data-raw="-0.027929">-0.027929</div></td><td><div class="dg-cell" data-raw="0.149725">0.149725</div></td></tr><tr><td class="dg-row-num">30</td><td><div class="dg-cell" data-raw="C(AREA, Treatment(reference=&#x27;C&#x27;))[T.D]">C(AREA, Treatment(reference=&#x27;C&#x27;))[T.D]</div></td><td><div class="dg-cell" data-raw="0.035704">0.035704</div></td><td><div class="dg-cell" data-raw="1.0363">1.0363</div></td><td><div class="dg-cell" data-raw="0.02699">0.02699</div></td><td><div class="dg-cell" data-raw="1.32">1.32</div></td><td><div class="dg-cell" data-raw="0.185891">0.185891</div></td><td><div class="dg-cell" data-raw="-0.017196">-0.017196</div></td><td><div class="dg-cell" data-raw="0.088604">0.088604</div></td></tr><tr><td class="dg-row-num">31</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Corse]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Corse]</div></td><td><div class="dg-cell" data-raw="0.089934">0.089934</div></td><td><div class="dg-cell" data-raw="1.0941">1.0941</div></td><td><div class="dg-cell" data-raw="0.076487">0.076487</div></td><td><div class="dg-cell" data-raw="1.18">1.18</div></td><td><div class="dg-cell" data-raw="0.239673">0.239673</div></td><td><div class="dg-cell" data-raw="-0.059978">-0.059978</div></td><td><div class="dg-cell" data-raw="0.239847">0.239847</div></td></tr><tr><td class="dg-row-num">32</td><td><div class="dg-cell" data-raw="C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.22-25]">C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.22-25]</div></td><td><div class="dg-cell" data-raw="-0.032816">-0.032816</div></td><td><div class="dg-cell" data-raw="0.9677">0.9677</div></td><td><div class="dg-cell" data-raw="0.03059">0.03059</div></td><td><div class="dg-cell" data-raw="-1.07">-1.07</div></td><td><div class="dg-cell" data-raw="0.283376">0.283376</div></td><td><div class="dg-cell" data-raw="-0.09277">-0.09277</div></td><td><div class="dg-cell" data-raw="0.027139">0.027139</div></td></tr><tr><td class="dg-row-num">33</td><td><div class="dg-cell" data-raw="C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B11]">C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B11]</div></td><td><div class="dg-cell" data-raw="0.040988">0.040988</div></td><td><div class="dg-cell" data-raw="1.0418">1.0418</div></td><td><div class="dg-cell" data-raw="0.045135">0.045135</div></td><td><div class="dg-cell" data-raw="0.91">0.91</div></td><td><div class="dg-cell" data-raw="0.363814">0.363814</div></td><td><div class="dg-cell" data-raw="-0.047475">-0.047475</div></td><td><div class="dg-cell" data-raw="0.129451">0.129451</div></td></tr><tr><td class="dg-row-num">34</td><td><div class="dg-cell" data-raw="C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B10]">C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B10]</div></td><td><div class="dg-cell" data-raw="0.036729">0.036729</div></td><td><div class="dg-cell" data-raw="1.0374">1.0374</div></td><td><div class="dg-cell" data-raw="0.040607">0.040607</div></td><td><div class="dg-cell" data-raw="0.9">0.9</div></td><td><div class="dg-cell" data-raw="0.365736">0.365736</div></td><td><div class="dg-cell" data-raw="-0.04286">-0.04286</div></td><td><div class="dg-cell" data-raw="0.116317">0.116317</div></td></tr><tr><td class="dg-row-num">35</td><td><div class="dg-cell" data-raw="C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B3]">C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B3]</div></td><td><div class="dg-cell" data-raw="0.015847">0.015847</div></td><td><div class="dg-cell" data-raw="1.016">1.016</div></td><td><div class="dg-cell" data-raw="0.024504">0.024504</div></td><td><div class="dg-cell" data-raw="0.65">0.65</div></td><td><div class="dg-cell" data-raw="0.517836">0.517836</div></td><td><div class="dg-cell" data-raw="-0.032181">-0.032181</div></td><td><div class="dg-cell" data-raw="0.063874">0.063874</div></td></tr><tr><td class="dg-row-num">36</td><td><div class="dg-cell" data-raw="C(AREA, Treatment(reference=&#x27;C&#x27;))[T.E]">C(AREA, Treatment(reference=&#x27;C&#x27;))[T.E]</div></td><td><div class="dg-cell" data-raw="0.026243">0.026243</div></td><td><div class="dg-cell" data-raw="1.0266">1.0266</div></td><td><div class="dg-cell" data-raw="0.044517">0.044517</div></td><td><div class="dg-cell" data-raw="0.59">0.59</div></td><td><div class="dg-cell" data-raw="0.555516">0.555516</div></td><td><div class="dg-cell" data-raw="-0.061008">-0.061008</div></td><td><div class="dg-cell" data-raw="0.113494">0.113494</div></td></tr><tr><td class="dg-row-num">37</td><td><div class="dg-cell" data-raw="C(AREA, Treatment(reference=&#x27;C&#x27;))[T.B]">C(AREA, Treatment(reference=&#x27;C&#x27;))[T.B]</div></td><td><div class="dg-cell" data-raw="0.01335">0.01335</div></td><td><div class="dg-cell" data-raw="1.0134">1.0134</div></td><td><div class="dg-cell" data-raw="0.026953">0.026953</div></td><td><div class="dg-cell" data-raw="0.5">0.5</div></td><td><div class="dg-cell" data-raw="0.620381">0.620381</div></td><td><div class="dg-cell" data-raw="-0.039477">-0.039477</div></td><td><div class="dg-cell" data-raw="0.066177">0.066177</div></td></tr><tr><td class="dg-row-num">38</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Provence-Alpes-Cotes-D&#x27;Azur]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Provence-Alpes-Cotes-D&#x27;Azur]</div></td><td><div class="dg-cell" data-raw="0.010949">0.010949</div></td><td><div class="dg-cell" data-raw="1.011">1.011</div></td><td><div class="dg-cell" data-raw="0.028146">0.028146</div></td><td><div class="dg-cell" data-raw="0.39">0.39</div></td><td><div class="dg-cell" data-raw="0.697262">0.697262</div></td><td><div class="dg-cell" data-raw="-0.044215">-0.044215</div></td><td><div class="dg-cell" data-raw="0.066114">0.066114</div></td></tr><tr><td class="dg-row-num">39</td><td><div class="dg-cell" data-raw="C(AREA, Treatment(reference=&#x27;C&#x27;))[T.F]">C(AREA, Treatment(reference=&#x27;C&#x27;))[T.F]</div></td><td><div class="dg-cell" data-raw="-0.025055">-0.025055</div></td><td><div class="dg-cell" data-raw="0.9753">0.9753</div></td><td><div class="dg-cell" data-raw="0.075164">0.075164</div></td><td><div class="dg-cell" data-raw="-0.33">-0.33</div></td><td><div class="dg-cell" data-raw="0.738877">0.738877</div></td><td><div class="dg-cell" data-raw="-0.172375">-0.172375</div></td><td><div class="dg-cell" data-raw="0.122264">0.122264</div></td></tr><tr><td class="dg-row-num">40</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Franche-Comte]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Franche-Comte]</div></td><td><div class="dg-cell" data-raw="-0.048619">-0.048619</div></td><td><div class="dg-cell" data-raw="0.9525">0.9525</div></td><td><div class="dg-cell" data-raw="0.147727">0.147727</div></td><td><div class="dg-cell" data-raw="-0.33">-0.33</div></td><td><div class="dg-cell" data-raw="0.742069">0.742069</div></td><td><div class="dg-cell" data-raw="-0.338159">-0.338159</div></td><td><div class="dg-cell" data-raw="0.240921">0.240921</div></td></tr><tr><td class="dg-row-num">41</td><td><div class="dg-cell" data-raw="C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B4]">C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B4]</div></td><td><div class="dg-cell" data-raw="-0.010599">-0.010599</div></td><td><div class="dg-cell" data-raw="0.9895">0.9895</div></td><td><div class="dg-cell" data-raw="0.03322">0.03322</div></td><td><div class="dg-cell" data-raw="-0.32">-0.32</div></td><td><div class="dg-cell" data-raw="0.749681">0.749681</div></td><td><div class="dg-cell" data-raw="-0.075708">-0.075708</div></td><td><div class="dg-cell" data-raw="0.05451">0.05451</div></td></tr><tr><td class="dg-row-num">42</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Pays-de-la-Loire]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Pays-de-la-Loire]</div></td><td><div class="dg-cell" data-raw="0.010408">0.010408</div></td><td><div class="dg-cell" data-raw="1.0105">1.0105</div></td><td><div class="dg-cell" data-raw="0.033808">0.033808</div></td><td><div class="dg-cell" data-raw="0.31">0.31</div></td><td><div class="dg-cell" data-raw="0.758201">0.758201</div></td><td><div class="dg-cell" data-raw="-0.055855">-0.055855</div></td><td><div class="dg-cell" data-raw="0.076671">0.076671</div></td></tr><tr><td class="dg-row-num">43</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Haute-Normandie]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Haute-Normandie]</div></td><td><div class="dg-cell" data-raw="-0.018131">-0.018131</div></td><td><div class="dg-cell" data-raw="0.982">0.982</div></td><td><div class="dg-cell" data-raw="0.067197">0.067197</div></td><td><div class="dg-cell" data-raw="-0.27">-0.27</div></td><td><div class="dg-cell" data-raw="0.787301">0.787301</div></td><td><div class="dg-cell" data-raw="-0.149834">-0.149834</div></td><td><div class="dg-cell" data-raw="0.113572">0.113572</div></td></tr><tr><td class="dg-row-num">44</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Poitou-Charentes]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Poitou-Charentes]</div></td><td><div class="dg-cell" data-raw="-0.009689">-0.009689</div></td><td><div class="dg-cell" data-raw="0.9904">0.9904</div></td><td><div class="dg-cell" data-raw="0.043019">0.043019</div></td><td><div class="dg-cell" data-raw="-0.23">-0.23</div></td><td><div class="dg-cell" data-raw="0.821796">0.821796</div></td><td><div class="dg-cell" data-raw="-0.094005">-0.094005</div></td><td><div class="dg-cell" data-raw="0.074626">0.074626</div></td></tr><tr><td class="dg-row-num">45</td><td><div class="dg-cell" data-raw="C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B2]">C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B2]</div></td><td><div class="dg-cell" data-raw="0.003929">0.003929</div></td><td><div class="dg-cell" data-raw="1.0039">1.0039</div></td><td><div class="dg-cell" data-raw="0.0171">0.0171</div></td><td><div class="dg-cell" data-raw="0.23">0.23</div></td><td><div class="dg-cell" data-raw="0.818292">0.818292</div></td><td><div class="dg-cell" data-raw="-0.029588">-0.029588</div></td><td><div class="dg-cell" data-raw="0.037445">0.037445</div></td></tr><tr><td class="dg-row-num">46</td><td><div class="dg-cell" data-raw="C(AREA, Treatment(reference=&#x27;C&#x27;))[T.A]">C(AREA, Treatment(reference=&#x27;C&#x27;))[T.A]</div></td><td><div class="dg-cell" data-raw="-0.007916">-0.007916</div></td><td><div class="dg-cell" data-raw="0.9921">0.9921</div></td><td><div class="dg-cell" data-raw="0.036953">0.036953</div></td><td><div class="dg-cell" data-raw="-0.21">-0.21</div></td><td><div class="dg-cell" data-raw="0.830388">0.830388</div></td><td><div class="dg-cell" data-raw="-0.080342">-0.080342</div></td><td><div class="dg-cell" data-raw="0.064511">0.064511</div></td></tr><tr><td class="dg-row-num">47</td><td><div class="dg-cell" data-raw="C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B6]">C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B6]</div></td><td><div class="dg-cell" data-raw="-0.006154">-0.006154</div></td><td><div class="dg-cell" data-raw="0.9939">0.9939</div></td><td><div class="dg-cell" data-raw="0.031479">0.031479</div></td><td><div class="dg-cell" data-raw="-0.2">-0.2</div></td><td><div class="dg-cell" data-raw="0.845006">0.845006</div></td><td><div class="dg-cell" data-raw="-0.067852">-0.067852</div></td><td><div class="dg-cell" data-raw="0.055544">0.055544</div></td></tr><tr><td class="dg-row-num">48</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Alsace]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Alsace]</div></td><td><div class="dg-cell" data-raw="-0.014437">-0.014437</div></td><td><div class="dg-cell" data-raw="0.9857">0.9857</div></td><td><div class="dg-cell" data-raw="0.099556">0.099556</div></td><td><div class="dg-cell" data-raw="-0.15">-0.15</div></td><td><div class="dg-cell" data-raw="0.884704">0.884704</div></td><td><div class="dg-cell" data-raw="-0.209563">-0.209563</div></td><td><div class="dg-cell" data-raw="0.18069">0.18069</div></td></tr><tr><td class="dg-row-num">49</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Languedoc-Roussillon]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Languedoc-Roussillon]</div></td><td><div class="dg-cell" data-raw="0.003479">0.003479</div></td><td><div class="dg-cell" data-raw="1.0035">1.0035</div></td><td><div class="dg-cell" data-raw="0.03647">0.03647</div></td><td><div class="dg-cell" data-raw="0.1">0.1</div></td><td><div class="dg-cell" data-raw="0.924011">0.924011</div></td><td><div class="dg-cell" data-raw="-0.068002">-0.068002</div></td><td><div class="dg-cell" data-raw="0.074959">0.074959</div></td></tr><tr><td class="dg-row-num">50</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Basse-Normandie]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Basse-Normandie]</div></td><td><div class="dg-cell" data-raw="-0.003759">-0.003759</div></td><td><div class="dg-cell" data-raw="0.9962">0.9962</div></td><td><div class="dg-cell" data-raw="0.050877">0.050877</div></td><td><div class="dg-cell" data-raw="-0.07">-0.07</div></td><td><div class="dg-cell" data-raw="0.941096">0.941096</div></td><td><div class="dg-cell" data-raw="-0.103477">-0.103477</div></td><td><div class="dg-cell" data-raw="0.095958">0.095958</div></td></tr><tr><td class="dg-row-num">51</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Bourgogne]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Bourgogne]</div></td><td><div class="dg-cell" data-raw="-5.8e-5">-5.8e-5</div></td><td><div class="dg-cell" data-raw="0.9999">0.9999</div></td><td><div class="dg-cell" data-raw="0.055154">0.055154</div></td><td><div class="dg-cell" data-raw="0">0</div></td><td><div class="dg-cell" data-raw="0.999156">0.999156</div></td><td><div class="dg-cell" data-raw="-0.108157">-0.108157</div></td><td><div class="dg-cell" data-raw="0.108041">0.108041</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+  <div class="rv-panel rv-panel-hidden" id="res-4-chart"><div class="ch-layout" id="ch-4"><script type="application/json" id="ch-4-cols">[{"name":"COEFFICIENT_NAME","type":"nominal"},{"name":"ESTIMATE","type":"quantitative"}]</script><script type="application/json" id="ch-4-vals">[{"COEFFICIENT_NAME":"BONUSMALUS_CAPPED","ESTIMATE":"0.023156"},{"COEFFICIENT_NAME":"Intercept","ESTIMATE":"-4.25149"},{"COEFFICIENT_NAME":"C(VEHAGE_BAND, Treatment(reference='02-05'))[T.00-01]","ESTIMATE":"0.509777"},{"COEFFICIENT_NAME":"C(DRIVAGE_BAND, Treatment(reference='31-40'))[T.41-50]","ESTIMATE":"0.287336"},{"COEFFICIENT_NAME":"C(VEHAGE_BAND, Treatment(reference='02-05'))[T.16+]","ESTIMATE":"-0.392159"},{"COEFFICIENT_NAME":"C(DRIVAGE_BAND, Treatment(reference='31-40'))[T.71+]","ESTIMATE":"0.308186"},{"COEFFICIENT_NAME":"C(DRIVAGE_BAND, Treatment(reference='31-40'))[T.51-60]","ESTIMATE":"0.218987"},{"COEFFICIENT_NAME":"C(DRIVAGE_BAND, Treatment(reference='31-40'))[T.61-70]","ESTIMATE":"0.193447"},{"COEFFICIENT_NAME":"C(VEHAGE_BAND, Treatment(reference='02-05'))[T.11-15]","ESTIMATE":"-0.133942"},{"COEFFICIENT_NAME":"C(VEHBRAND, Treatment(reference='B1'))[T.B12]","ESTIMATE":"0.139481"},{"COEFFICIENT_NAME":"C(DRIVAGE_BAND, Treatment(reference='31-40'))[T.18-21]","ESTIMATE":"0.245565"},{"COEFFICIENT_NAME":"C(DRIVAGE_BAND, Treatment(reference='31-40'))[T.26-30]","ESTIMATE":"-0.149618"},{"COEFFICIENT_NAME":"C(VEHGAS, Treatment(reference='Regular'))[T.Diesel]","ESTIMATE":"-0.051449"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Nord-Pas-de-Calais]","ESTIMATE":"-0.142497"},{"COEFFICIENT_NAME":"C(VEHAGE_BAND, Treatment(reference='02-05'))[T.06-10]","ESTIMATE":"0.062416"},{"COEFFICIENT_NAME":"VEHPOWER","ESTIMATE":"0.011081"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Bretagne]","ESTIMATE":"0.107657"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Auvergne]","ESTIMATE":"-0.257622"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Rhone-Alpes]","ESTIMATE":"0.081958"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Centre]","ESTIMATE":"0.082538"},{"COEFFICIENT_NAME":"LN_DENSITY","ESTIMATE":"0.037354"},{"COEFFICIENT_NAME":"C(VEHBRAND, Treatment(reference='B1'))[T.B5]","ESTIMATE":"0.067038"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Champagne-Ardenne]","ESTIMATE":"0.210909"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Limousin]","ESTIMATE":"0.152278"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Picardie]","ESTIMATE":"0.099534"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Midi-Pyrenees]","ESTIMATE":"-0.07914"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Aquitaine]","ESTIMATE":"-0.058362"},{"COEFFICIENT_NAME":"C(VEHBRAND, Treatment(reference='B1'))[T.B14]","ESTIMATE":"-0.132091"},{"COEFFICIENT_NAME":"C(VEHBRAND, Treatment(reference='B1'))[T.B13]","ESTIMATE":"0.060898"},{"COEFFICIENT_NAME":"C(AREA, Treatment(reference='C'))[T.D]","ESTIMATE":"0.035704"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Corse]","ESTIMATE":"0.089934"},{"COEFFICIENT_NAME":"C(DRIVAGE_BAND, Treatment(reference='31-40'))[T.22-25]","ESTIMATE":"-0.032816"},{"COEFFICIENT_NAME":"C(VEHBRAND, Treatment(reference='B1'))[T.B11]","ESTIMATE":"0.040988"},{"COEFFICIENT_NAME":"C(VEHBRAND, Treatment(reference='B1'))[T.B10]","ESTIMATE":"0.036729"},{"COEFFICIENT_NAME":"C(VEHBRAND, Treatment(reference='B1'))[T.B3]","ESTIMATE":"0.015847"},{"COEFFICIENT_NAME":"C(AREA, Treatment(reference='C'))[T.E]","ESTIMATE":"0.026243"},{"COEFFICIENT_NAME":"C(AREA, Treatment(reference='C'))[T.B]","ESTIMATE":"0.01335"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Provence-Alpes-Cotes-D'Azur]","ESTIMATE":"0.010949"},{"COEFFICIENT_NAME":"C(AREA, Treatment(reference='C'))[T.F]","ESTIMATE":"-0.025055"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Franche-Comte]","ESTIMATE":"-0.048619"},{"COEFFICIENT_NAME":"C(VEHBRAND, Treatment(reference='B1'))[T.B4]","ESTIMATE":"-0.010599"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Pays-de-la-Loire]","ESTIMATE":"0.010408"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Haute-Normandie]","ESTIMATE":"-0.018131"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Poitou-Charentes]","ESTIMATE":"-0.009689"},{"COEFFICIENT_NAME":"C(VEHBRAND, Treatment(reference='B1'))[T.B2]","ESTIMATE":"0.003929"},{"COEFFICIENT_NAME":"C(AREA, Treatment(reference='C'))[T.A]","ESTIMATE":"-0.007916"},{"COEFFICIENT_NAME":"C(VEHBRAND, Treatment(reference='B1'))[T.B6]","ESTIMATE":"-0.006154"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Alsace]","ESTIMATE":"-0.014437"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Languedoc-Roussillon]","ESTIMATE":"0.003479"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Basse-Normandie]","ESTIMATE":"-0.003759"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Bourgogne]","ESTIMATE":"-5.8e-5"}]</script><script type="application/json" id="ch-4-state">{"type":"grouped-bar","xField":"COEFFICIENT_NAME","yFields":["ESTIMATE"],"colorField":null,"aggregate":"sum","sortX":"none","timeResolution":"none","limit":0,"xAxisLabelEnabled":true,"xAxisLabel":"COEFFICIENT_NAME","yAxisLabelEnabled":true,"yAxisLabel":"ESTIMATE"}</script></div></div>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="12" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-name">Write predictions back to policy-level feature table</span><span class="cell-counter">[10]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-keyword">ALTER</span> <span class="tok-keyword">TABLE</span> FREMTPL2.FREMTPL2_INVESTIGATION.FREQ_MODEL_FEATURES
+  <span class="tok-keyword">ADD</span> <span class="tok-keyword">COLUMN</span> <span class="tok-keyword">IF</span> <span class="tok-keyword">NOT</span> <span class="tok-keyword">EXISTS</span> PREDICTED_FREQ <span class="tok-typeName">FLOAT</span></code></pre></div></div>
+  <div class="cell-outputs"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="1 row">1 row</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">status</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:64px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">status</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="Statement executed successfully.">Statement executed successfully.</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="13" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-name">Merge predictions into policy-level feature table</span><span class="cell-counter">[11]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql">MERGE <span class="tok-keyword">INTO</span> FREMTPL2.FREMTPL2_INVESTIGATION.FREQ_MODEL_FEATURES t
+<span class="tok-keyword">USING</span> FREMTPL2.FREMTPL2_INVESTIGATION.GLM_POISSON_PREDICTIONS p
+  <span class="tok-keyword">ON</span> t.IDPOL <span class="tok-operator">=</span> p.IDPOL
+<span class="tok-keyword">WHEN</span> MATCHED <span class="tok-keyword">THEN</span> <span class="tok-keyword">UPDATE</span> <span class="tok-keyword">SET</span> t.PREDICTED_FREQ <span class="tok-operator">=</span> p.PREDICTED_FREQ</code></pre></div></div>
+  <div class="cell-outputs"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="1 row">1 row</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">number of rows updated</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:64px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">number of rows updated</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="678013">678013</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="14" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-counter">[12]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-comment">-- Frequency model validation (run AFTER merge populates PREDICTED_FREQ)</span>
+<span class="tok-keyword">SELECT</span>
+  DATASET<span class="tok-punctuation">,</span>
+  <span class="tok-keyword">COUNT</span><span class="tok-punctuation">(</span><span class="tok-operator">*</span><span class="tok-punctuation">)</span>                                                <span class="tok-keyword">AS</span> N_ROWS<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>AVG<span class="tok-punctuation">(</span>CLAIMNB<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">6</span><span class="tok-punctuation">)</span>                                  <span class="tok-keyword">AS</span> AVG_ACTUAL<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>AVG<span class="tok-punctuation">(</span>PREDICTED_FREQ<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">6</span><span class="tok-punctuation">)</span>                            <span class="tok-keyword">AS</span> AVG_PREDICTED<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>AVG<span class="tok-punctuation">(</span>PREDICTED_FREQ<span class="tok-punctuation">)</span> <span class="tok-operator">/</span> NULLIF<span class="tok-punctuation">(</span>AVG<span class="tok-punctuation">(</span>CLAIMNB<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">4</span><span class="tok-punctuation">)</span> <span class="tok-keyword">AS</span> PRED_VS_ACTUAL_RATIO<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>CLAIMNB<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span>                                   <span class="tok-keyword">AS</span> TOTAL_ACTUAL<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>PREDICTED_FREQ<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span>                            <span class="tok-keyword">AS</span> TOTAL_PREDICTED
+<span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.FREQ_MODEL_FEATURES
+<span class="tok-keyword">GROUP</span> <span class="tok-keyword">BY</span> DATASET
+<span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> DATASET</code></pre></div></div>
+  <div class="cell-outputs cell-outputs-no-top-border"><div class="rv-container" id="res-5">
+  <div class="rv-tabs">
+    <button class="rv-tab rv-tab-active" data-target="res-5-table" onclick="switchTab(this)">Table</button>
+    <button class="rv-tab" data-target="res-5-chart" onclick="switchTab(this)">Chart</button>
+  </div>
+  <div class="rv-panel" id="res-5-table"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="2 rows">2 rows</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">DATASET</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="1" onchange="dgToggleCol(this)"><span class="dg-colsel-label">N_ROWS</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="2" onchange="dgToggleCol(this)"><span class="dg-colsel-label">AVG_ACTUAL</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="3" onchange="dgToggleCol(this)"><span class="dg-colsel-label">AVG_PREDICTED</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="4" onchange="dgToggleCol(this)"><span class="dg-colsel-label">PRED_VS_ACTUAL_RATIO</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="5" onchange="dgToggleCol(this)"><span class="dg-colsel-label">TOTAL_ACTUAL</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="6" onchange="dgToggleCol(this)"><span class="dg-colsel-label">TOTAL_PREDICTED</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:92px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">DATASET</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">N_ROWS</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,2)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">AVG_ACTUAL</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,3)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">AVG_PREDICTED</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,4)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">PRED_VS_ACTUAL_RATIO</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,5)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">TOTAL_ACTUAL</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,6)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">TOTAL_PREDICTED</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,7)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="TEST">TEST</div></td><td><div class="dg-cell" data-raw="135603">135603</div></td><td><div class="dg-cell" data-raw="0.053465">0.053465</div></td><td><div class="dg-cell" data-raw="0.053051">0.053051</div></td><td><div class="dg-cell" data-raw="0.9923">0.9923</div></td><td><div class="dg-cell" data-raw="7250">7250</div></td><td><div class="dg-cell" data-raw="7194">7194</div></td></tr><tr><td class="dg-row-num">2</td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td><td><div class="dg-cell" data-raw="542410">542410</div></td><td><div class="dg-cell" data-raw="0.053192">0.053192</div></td><td><div class="dg-cell" data-raw="0.053192">0.053192</div></td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="28852">28852</div></td><td><div class="dg-cell" data-raw="28852">28852</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+  <div class="rv-panel rv-panel-hidden" id="res-5-chart"><div class="ch-layout" id="ch-5"><script type="application/json" id="ch-5-cols">[{"name":"DATASET","type":"nominal"},{"name":"N_ROWS","type":"quantitative"}]</script><script type="application/json" id="ch-5-vals">[{"DATASET":"TEST","N_ROWS":"135603"},{"DATASET":"TRAIN","N_ROWS":"542410"}]</script><script type="application/json" id="ch-5-state">{"type":"grouped-bar","xField":"DATASET","yFields":["N_ROWS"],"colorField":null,"aggregate":"sum","sortX":"none","timeResolution":"none","limit":0,"xAxisLabelEnabled":true,"xAxisLabel":"DATASET","yAxisLabelEnabled":true,"yAxisLabel":"N_ROWS"}</script></div></div>
+</div></div>
+</div>
+<div class="markdown-wrapper">
+  <div class="markdown-block"><hr>
+<h2 id="gamma-glm--claim-severity-model">Gamma GLM — Claim Severity Model</h2>
+<p>Fit a Gamma GLM with log link on <strong>claims-level</strong> data (policies with &gt;= 1 claim).
+Joins <code>FREMTPL2SEV</code> with the policy-level risk factors from <code>FREQ_MODEL_FEATURES</code>.
+No exposure offset — severity is per-claim, not per-year.</p>
+</div>
+</div>
+<div class="cell cell-python" data-index="16" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-python"/></svg>Python</span><span class="cell-name">Register Gamma GLM severity stored procedure</span><span class="cell-counter">[13]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-python"><span class="tok-keyword tok-definitionKeyword">from</span> <span class="tok-variableName">snowflake</span><span class="tok-operator">.</span><span class="tok-variableName">snowpark</span> <span class="tok-keyword">import</span> <span class="tok-variableName">Session</span> <span class="tok-keyword">as</span> <span class="tok-variableName">SnowparkSession</span>
+<span class="tok-keyword tok-definitionKeyword">from</span> <span class="tok-variableName">snowflake</span><span class="tok-operator">.</span><span class="tok-variableName">snowpark</span><span class="tok-operator">.</span><span class="tok-variableName">context</span> <span class="tok-keyword">import</span> <span class="tok-variableName">get_active_session</span>
+<span class="tok-keyword tok-definitionKeyword">from</span> <span class="tok-variableName">snowflake</span><span class="tok-operator">.</span><span class="tok-variableName">snowpark</span><span class="tok-operator">.</span><span class="tok-variableName">types</span> <span class="tok-keyword">import</span> <span class="tok-variableName">StringType</span>
+
+<span class="tok-variableName">session</span> <span class="tok-operator">=</span> <span class="tok-variableName tok-functionName">get_active_session</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span>
+
+<span class="tok-keyword tok-definitionKeyword">def</span> <span class="tok-variableName tok-definition tok-functionName">fit_gamma_glm</span><span class="tok-punctuation">(</span><span class="tok-variableName">session</span>: <span class="tok-variableName">SnowparkSession</span><span class="tok-punctuation">)</span> -&gt; <span class="tok-variableName">str</span>:
+    <span class="tok-keyword">import</span> <span class="tok-variableName">pandas</span> <span class="tok-keyword">as</span> <span class="tok-variableName">pd</span>
+    <span class="tok-keyword">import</span> <span class="tok-variableName">numpy</span> <span class="tok-keyword">as</span> <span class="tok-variableName">np</span>
+    <span class="tok-keyword">import</span> <span class="tok-variableName">statsmodels</span><span class="tok-operator">.</span><span class="tok-variableName">api</span> <span class="tok-keyword">as</span> <span class="tok-variableName">sm</span>
+    <span class="tok-keyword">import</span> <span class="tok-variableName">statsmodels</span><span class="tok-operator">.</span><span class="tok-variableName">formula</span><span class="tok-operator">.</span><span class="tok-variableName">api</span> <span class="tok-keyword">as</span> <span class="tok-variableName">smf</span>
+
+    <span class="tok-variableName">session</span><span class="tok-operator">.</span><span class="tok-propertyName">sql</span><span class="tok-punctuation">(</span><span class="tok-string">&quot;USE DATABASE FREMTPL2&quot;</span><span class="tok-punctuation">)</span><span class="tok-operator">.</span><span class="tok-propertyName">collect</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span>
+    <span class="tok-variableName">session</span><span class="tok-operator">.</span><span class="tok-propertyName">sql</span><span class="tok-punctuation">(</span><span class="tok-string">&quot;USE SCHEMA FREMTPL2_INVESTIGATION&quot;</span><span class="tok-punctuation">)</span><span class="tok-operator">.</span><span class="tok-propertyName">collect</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span>
+
+    <span class="tok-comment"># 1. Build claims-level dataset: severity joined to policy risk factors</span>
+    <span class="tok-variableName">sev_df</span> <span class="tok-operator">=</span> <span class="tok-variableName">session</span><span class="tok-operator">.</span><span class="tok-propertyName">sql</span><span class="tok-punctuation">(</span><span class="tok-string">&quot;&quot;&quot;
+        SELECT
+            s.IDPOL,
+            s.CLAIMAMOUNT,
+            f.DRIVAGE_BAND,
+            f.VEHAGE_BAND,
+            f.AREA,
+            f.REGION,
+            f.VEHBRAND,
+            f.VEHGAS,
+            f.VEHPOWER,
+            f.BONUSMALUS_CAPPED,
+            f.LN_DENSITY,
+            f.DATASET
+        FROM FREMTPL2.FREMTPL2_INVESTIGATION.FREMTPL2SEV s
+        JOIN FREMTPL2.FREMTPL2_INVESTIGATION.FREQ_MODEL_FEATURES f
+          ON s.IDPOL = f.IDPOL
+    &quot;&quot;&quot;</span><span class="tok-punctuation">)</span>
+
+    <span class="tok-variableName">all_pdf</span> <span class="tok-operator">=</span> <span class="tok-variableName">sev_df</span><span class="tok-operator">.</span><span class="tok-propertyName">to_pandas</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span>
+    <span class="tok-variableName">train_pdf</span> <span class="tok-operator">=</span> <span class="tok-variableName">all_pdf</span><span class="tok-punctuation">[</span><span class="tok-variableName">all_pdf</span><span class="tok-punctuation">[</span><span class="tok-string">&quot;DATASET&quot;</span><span class="tok-punctuation">]</span> <span class="tok-operator">==</span> <span class="tok-string">&quot;TRAIN&quot;</span><span class="tok-punctuation">]</span><span class="tok-operator">.</span><span class="tok-propertyName">copy</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span>
+
+    <span class="tok-comment"># 2. Gamma GLM with log link (same reference levels as frequency)</span>
+    <span class="tok-variableName">formula</span> <span class="tok-operator">=</span> <span class="tok-punctuation">(</span>
+        <span class="tok-string">&quot;CLAIMAMOUNT ~ &quot;</span>
+        <span class="tok-string">&quot;C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;)) + &quot;</span>
+        <span class="tok-string">&quot;C(VEHAGE_BAND, Treatment(reference=&#x27;02-05&#x27;)) + &quot;</span>
+        <span class="tok-string">&quot;C(AREA, Treatment(reference=&#x27;C&#x27;)) + &quot;</span>
+        <span class="tok-string">&quot;C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;)) + &quot;</span>
+        <span class="tok-string">&quot;C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;)) + &quot;</span>
+        <span class="tok-string">&quot;C(VEHGAS, Treatment(reference=&#x27;Regular&#x27;)) + &quot;</span>
+        <span class="tok-string">&quot;VEHPOWER + BONUSMALUS_CAPPED + LN_DENSITY&quot;</span>
+    <span class="tok-punctuation">)</span>
+
+    <span class="tok-variableName">model</span> <span class="tok-operator">=</span> <span class="tok-variableName">smf</span><span class="tok-operator">.</span><span class="tok-propertyName">glm</span><span class="tok-punctuation">(</span>
+        <span class="tok-variableName">formula</span><span class="tok-operator">=</span><span class="tok-variableName">formula</span><span class="tok-punctuation">,</span>
+        <span class="tok-variableName">data</span><span class="tok-operator">=</span><span class="tok-variableName">train_pdf</span><span class="tok-punctuation">,</span>
+        <span class="tok-variableName">family</span><span class="tok-operator">=</span><span class="tok-variableName">sm</span><span class="tok-operator">.</span><span class="tok-propertyName">families</span><span class="tok-operator">.</span><span class="tok-propertyName">Gamma</span><span class="tok-punctuation">(</span><span class="tok-variableName">link</span><span class="tok-operator">=</span><span class="tok-variableName">sm</span><span class="tok-operator">.</span><span class="tok-propertyName">families</span><span class="tok-operator">.</span><span class="tok-propertyName">links</span><span class="tok-operator">.</span><span class="tok-propertyName">Log</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span>
+    <span class="tok-punctuation">)</span><span class="tok-operator">.</span><span class="tok-propertyName">fit</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span>
+
+    <span class="tok-comment"># 3. Save coefficients</span>
+    <span class="tok-variableName">ci</span> <span class="tok-operator">=</span> <span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">conf_int</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span>
+    <span class="tok-variableName">coef_pdf</span> <span class="tok-operator">=</span> <span class="tok-variableName">pd</span><span class="tok-operator">.</span><span class="tok-propertyName">DataFrame</span><span class="tok-punctuation">(</span><span class="tok-punctuation">{</span>
+        <span class="tok-string">&quot;COEFFICIENT_NAME&quot;</span>: <span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">params</span><span class="tok-operator">.</span><span class="tok-propertyName">index</span><span class="tok-operator">.</span><span class="tok-propertyName">astype</span><span class="tok-punctuation">(</span><span class="tok-variableName">str</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span>
+        <span class="tok-string">&quot;ESTIMATE&quot;</span>:  <span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">params</span><span class="tok-operator">.</span><span class="tok-propertyName">values</span><span class="tok-punctuation">,</span>
+        <span class="tok-string">&quot;EXP_ESTIMATE&quot;</span>: <span class="tok-variableName">np</span><span class="tok-operator">.</span><span class="tok-propertyName">exp</span><span class="tok-punctuation">(</span><span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">params</span><span class="tok-operator">.</span><span class="tok-propertyName">values</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span>
+        <span class="tok-string">&quot;STD_ERROR&quot;</span>: <span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">bse</span><span class="tok-operator">.</span><span class="tok-propertyName">values</span><span class="tok-punctuation">,</span>
+        <span class="tok-string">&quot;Z_VALUE&quot;</span>:   <span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">tvalues</span><span class="tok-operator">.</span><span class="tok-propertyName">values</span><span class="tok-punctuation">,</span>
+        <span class="tok-string">&quot;P_VALUE&quot;</span>:   <span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">pvalues</span><span class="tok-operator">.</span><span class="tok-propertyName">values</span><span class="tok-punctuation">,</span>
+        <span class="tok-string">&quot;CI_LOWER&quot;</span>:  <span class="tok-variableName">ci</span><span class="tok-punctuation">[</span><span class="tok-number">0</span><span class="tok-punctuation">]</span><span class="tok-operator">.</span><span class="tok-propertyName">values</span><span class="tok-punctuation">,</span>
+        <span class="tok-string">&quot;CI_UPPER&quot;</span>:  <span class="tok-variableName">ci</span><span class="tok-punctuation">[</span><span class="tok-number">1</span><span class="tok-punctuation">]</span><span class="tok-operator">.</span><span class="tok-propertyName">values</span><span class="tok-punctuation">,</span>
+    <span class="tok-punctuation">}</span><span class="tok-punctuation">)</span>
+    <span class="tok-variableName">session</span><span class="tok-operator">.</span><span class="tok-propertyName">create_dataframe</span><span class="tok-punctuation">(</span><span class="tok-variableName">coef_pdf</span><span class="tok-punctuation">)</span><span class="tok-operator">.</span><span class="tok-propertyName">write</span><span class="tok-operator">.</span><span class="tok-propertyName">save_as_table</span><span class="tok-punctuation">(</span>
+        <span class="tok-string">&quot;FREMTPL2.FREMTPL2_INVESTIGATION.GLM_GAMMA_COEFFICIENTS&quot;</span><span class="tok-punctuation">,</span>
+        <span class="tok-variableName">mode</span><span class="tok-operator">=</span><span class="tok-string">&quot;overwrite&quot;</span><span class="tok-punctuation">,</span>
+    <span class="tok-punctuation">)</span>
+
+    <span class="tok-comment"># 4. Score all claims</span>
+    <span class="tok-variableName">all_pdf</span><span class="tok-punctuation">[</span><span class="tok-string">&quot;PREDICTED_SEV&quot;</span><span class="tok-punctuation">]</span> <span class="tok-operator">=</span> <span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">predict</span><span class="tok-punctuation">(</span><span class="tok-variableName">all_pdf</span><span class="tok-punctuation">)</span>
+    <span class="tok-variableName">pred_pdf</span> <span class="tok-operator">=</span> <span class="tok-variableName">all_pdf</span><span class="tok-punctuation">[</span><span class="tok-punctuation">[</span><span class="tok-string">&quot;IDPOL&quot;</span><span class="tok-punctuation">,</span> <span class="tok-string">&quot;CLAIMAMOUNT&quot;</span><span class="tok-punctuation">,</span> <span class="tok-string">&quot;PREDICTED_SEV&quot;</span><span class="tok-punctuation">,</span> <span class="tok-string">&quot;DATASET&quot;</span><span class="tok-punctuation">]</span><span class="tok-punctuation">]</span><span class="tok-operator">.</span><span class="tok-propertyName">copy</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span>
+    <span class="tok-variableName">session</span><span class="tok-operator">.</span><span class="tok-propertyName">create_dataframe</span><span class="tok-punctuation">(</span><span class="tok-variableName">pred_pdf</span><span class="tok-punctuation">)</span><span class="tok-operator">.</span><span class="tok-propertyName">write</span><span class="tok-operator">.</span><span class="tok-propertyName">save_as_table</span><span class="tok-punctuation">(</span>
+        <span class="tok-string">&quot;FREMTPL2.FREMTPL2_INVESTIGATION.GLM_GAMMA_PREDICTIONS&quot;</span><span class="tok-punctuation">,</span>
+        <span class="tok-variableName">mode</span><span class="tok-operator">=</span><span class="tok-string">&quot;overwrite&quot;</span><span class="tok-punctuation">,</span>
+    <span class="tok-punctuation">)</span>
+
+    <span class="tok-variableName">scale</span> <span class="tok-operator">=</span> <span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">scale</span>
+    <span class="tok-variableName">shape</span> <span class="tok-operator">=</span> <span class="tok-number">1.0</span> <span class="tok-operator">/</span> <span class="tok-variableName">scale</span>
+
+    <span class="tok-keyword">return</span> <span class="tok-punctuation">(</span>
+        <span class="tok-string2">f&quot;Gamma GLM fitted.\n&quot;</span>
+        <span class="tok-string2">f&quot;AIC: </span><span class="tok-punctuation">{</span><span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">aic</span>:<span class="tok-keyword">.2f</span><span class="tok-punctuation">}</span><span class="tok-string2">\n&quot;</span>
+        <span class="tok-string2">f&quot;Deviance: </span><span class="tok-punctuation">{</span><span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">deviance</span>:<span class="tok-keyword">.2f</span><span class="tok-punctuation">}</span><span class="tok-string2">\n&quot;</span>
+        <span class="tok-string2">f&quot;Scale (phi): </span><span class="tok-punctuation">{</span><span class="tok-variableName">scale</span>:<span class="tok-keyword">.4f</span><span class="tok-punctuation">}</span><span class="tok-string2">\n&quot;</span>
+        <span class="tok-string2">f&quot;Shape (1/phi): </span><span class="tok-punctuation">{</span><span class="tok-variableName">shape</span>:<span class="tok-keyword">.4f</span><span class="tok-punctuation">}</span><span class="tok-string2">\n&quot;</span>
+        <span class="tok-string2">f&quot;Log-likelihood: </span><span class="tok-punctuation">{</span><span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">llf</span>:<span class="tok-keyword">.2f</span><span class="tok-punctuation">}</span><span class="tok-string2">\n&quot;</span>
+        <span class="tok-string2">f&quot;Coefficients: </span><span class="tok-punctuation">{</span><span class="tok-variableName tok-functionName">len</span><span class="tok-punctuation">(</span><span class="tok-variableName">model</span><span class="tok-operator">.</span><span class="tok-propertyName">params</span><span class="tok-punctuation">)</span><span class="tok-punctuation">}</span><span class="tok-string2">\n&quot;</span>
+        <span class="tok-string2">f&quot;Train claims: </span><span class="tok-punctuation">{</span><span class="tok-variableName tok-functionName">len</span><span class="tok-punctuation">(</span><span class="tok-variableName">train_pdf</span><span class="tok-punctuation">)</span>:<span class="tok-keyword">,</span><span class="tok-punctuation">}</span><span class="tok-string2">\n&quot;</span>
+        <span class="tok-string2">f&quot;Scored claims: </span><span class="tok-punctuation">{</span><span class="tok-variableName tok-functionName">len</span><span class="tok-punctuation">(</span><span class="tok-variableName">all_pdf</span><span class="tok-punctuation">)</span>:<span class="tok-keyword">,</span><span class="tok-punctuation">}</span><span class="tok-string2">&quot;</span>
+    <span class="tok-punctuation">)</span>
+
+<span class="tok-variableName">session</span><span class="tok-operator">.</span><span class="tok-propertyName">sproc</span><span class="tok-operator">.</span><span class="tok-propertyName">register</span><span class="tok-punctuation">(</span>
+    <span class="tok-variableName">func</span><span class="tok-operator">=</span><span class="tok-variableName">fit_gamma_glm</span><span class="tok-punctuation">,</span>
+    <span class="tok-variableName">name</span><span class="tok-operator">=</span><span class="tok-string">&quot;FREMTPL2.FREMTPL2_INVESTIGATION.FIT_GAMMA_GLM&quot;</span><span class="tok-punctuation">,</span>
+    <span class="tok-variableName">packages</span><span class="tok-operator">=</span><span class="tok-punctuation">[</span><span class="tok-string">&quot;snowflake-snowpark-python&quot;</span><span class="tok-punctuation">,</span> <span class="tok-string">&quot;statsmodels&quot;</span><span class="tok-punctuation">,</span> <span class="tok-string">&quot;pandas&quot;</span><span class="tok-punctuation">,</span> <span class="tok-string">&quot;numpy&quot;</span><span class="tok-punctuation">]</span><span class="tok-punctuation">,</span>
+    <span class="tok-variableName">is_permanent</span><span class="tok-operator">=</span><span class="tok-bool">True</span><span class="tok-punctuation">,</span>
+    <span class="tok-variableName">stage_location</span><span class="tok-operator">=</span><span class="tok-string">&quot;@FREMTPL2.FREMTPL2_INVESTIGATION.MODEL_STAGE&quot;</span><span class="tok-punctuation">,</span>
+    <span class="tok-variableName">replace</span><span class="tok-operator">=</span><span class="tok-bool">True</span><span class="tok-punctuation">,</span>
+    <span class="tok-variableName">return_type</span><span class="tok-operator">=</span><span class="tok-variableName tok-functionName">StringType</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span>
+    <span class="tok-variableName">execute_as</span><span class="tok-operator">=</span><span class="tok-string">&quot;caller&quot;</span><span class="tok-punctuation">,</span>
+<span class="tok-punctuation">)</span>
+<span class="tok-variableName tok-functionName">print</span><span class="tok-punctuation">(</span><span class="tok-string">&quot;Stored procedure registered: FREMTPL2.FREMTPL2_INVESTIGATION.FIT_GAMMA_GLM&quot;</span><span class="tok-punctuation">)</span></code></pre></div></div>
+  <div class="cell-outputs"><pre class="output-text">Stored procedure registered: FREMTPL2.FREMTPL2_INVESTIGATION.FIT_GAMMA_GLM
+</pre></div>
+</div>
+<div class="cell cell-sql" data-index="17" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-name">Fit the Gamma GLM</span><span class="cell-counter">[14]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-keyword">CALL</span> FREMTPL2.FREMTPL2_INVESTIGATION.FIT_GAMMA_GLM<span class="tok-punctuation">(</span><span class="tok-punctuation">)</span></code></pre></div></div>
+  <div class="cell-outputs"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="1 row">1 row</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">FIT_GAMMA_GLM</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:64px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">FIT_GAMMA_GLM</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="Gamma GLM fitted.
+AIC: 428887.89
+Deviance: 33201.48
+Scale (phi): 21.4215
+Shape (1/phi): 0.0467
+Log-likelihood: -214392.95
+Coefficients: 51
+Train claims: 21,196
+Scored claims: 26,444">Gamma GLM fitted.
+AIC: 428887.89
+Deviance: 33201.48
+Scale (phi): 21.4215
+Shape (1/phi): 0.0467
+Log-likelihood: -214392.95
+Coefficients: 51
+Train claims: 21,196
+Scored claims: 26,444</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="18" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-name">Severity GLM coefficients ranked by significance</span><span class="cell-counter">[15]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-keyword">select</span> 
+  COEFFICIENT_NAME<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>ESTIMATE<span class="tok-punctuation">,</span> <span class="tok-number">6</span><span class="tok-punctuation">)</span>      <span class="tok-keyword">AS</span> ESTIMATE<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>EXP_ESTIMATE<span class="tok-punctuation">,</span> <span class="tok-number">4</span><span class="tok-punctuation">)</span>  <span class="tok-keyword">AS</span> RELATIVITY<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>STD_ERROR<span class="tok-punctuation">,</span> <span class="tok-number">6</span><span class="tok-punctuation">)</span>     <span class="tok-keyword">AS</span> STD_ERROR<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>Z_VALUE<span class="tok-punctuation">,</span> <span class="tok-number">2</span><span class="tok-punctuation">)</span>       <span class="tok-keyword">AS</span> Z_VALUE<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>P_VALUE<span class="tok-punctuation">,</span> <span class="tok-number">6</span><span class="tok-punctuation">)</span>       <span class="tok-keyword">AS</span> P_VALUE<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>CI_LOWER<span class="tok-punctuation">,</span> <span class="tok-number">6</span><span class="tok-punctuation">)</span>      <span class="tok-keyword">AS</span> CI_LOWER<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>CI_UPPER<span class="tok-punctuation">,</span> <span class="tok-number">6</span><span class="tok-punctuation">)</span>      <span class="tok-keyword">AS</span> CI_UPPER
+<span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.GLM_GAMMA_COEFFICIENTS
+<span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> ABS<span class="tok-punctuation">(</span>Z_VALUE<span class="tok-punctuation">)</span> <span class="tok-keyword">DESC</span></code></pre></div></div>
+  <div class="cell-outputs cell-outputs-no-top-border"><div class="rv-container" id="res-6">
+  <div class="rv-tabs">
+    <button class="rv-tab rv-tab-active" data-target="res-6-table" onclick="switchTab(this)">Table</button>
+    <button class="rv-tab" data-target="res-6-chart" onclick="switchTab(this)">Chart</button>
+  </div>
+  <div class="rv-panel" id="res-6-table"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="51 rows">51 rows</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">COEFFICIENT_NAME</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="1" onchange="dgToggleCol(this)"><span class="dg-colsel-label">ESTIMATE</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="2" onchange="dgToggleCol(this)"><span class="dg-colsel-label">RELATIVITY</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="3" onchange="dgToggleCol(this)"><span class="dg-colsel-label">STD_ERROR</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="4" onchange="dgToggleCol(this)"><span class="dg-colsel-label">Z_VALUE</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="5" onchange="dgToggleCol(this)"><span class="dg-colsel-label">P_VALUE</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="6" onchange="dgToggleCol(this)"><span class="dg-colsel-label">CI_LOWER</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="7" onchange="dgToggleCol(this)"><span class="dg-colsel-label">CI_UPPER</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:316px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">COEFFICIENT_NAME</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">ESTIMATE</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,2)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">RELATIVITY</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,3)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">STD_ERROR</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,4)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">Z_VALUE</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,5)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">P_VALUE</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,6)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">CI_LOWER</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,7)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">CI_UPPER</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,8)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="Intercept">Intercept</div></td><td><div class="dg-cell" data-raw="6.875845">6.875845</div></td><td><div class="dg-cell" data-raw="968.5932">968.5932</div></td><td><div class="dg-cell" data-raw="0.499279">0.499279</div></td><td><div class="dg-cell" data-raw="13.77">13.77</div></td><td><div class="dg-cell" data-raw="0">0</div></td><td><div class="dg-cell" data-raw="5.897276">5.897276</div></td><td><div class="dg-cell" data-raw="7.854414">7.854414</div></td></tr><tr><td class="dg-row-num">2</td><td><div class="dg-cell" data-raw="C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.18-21]">C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.18-21]</div></td><td><div class="dg-cell" data-raw="1.418502">1.418502</div></td><td><div class="dg-cell" data-raw="4.1309">4.1309</div></td><td><div class="dg-cell" data-raw="0.196263">0.196263</div></td><td><div class="dg-cell" data-raw="7.23">7.23</div></td><td><div class="dg-cell" data-raw="0">0</div></td><td><div class="dg-cell" data-raw="1.033833">1.033833</div></td><td><div class="dg-cell" data-raw="1.80317">1.80317</div></td></tr><tr><td class="dg-row-num">3</td><td><div class="dg-cell" data-raw="C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B11]">C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B11]</div></td><td><div class="dg-cell" data-raw="0.657917">0.657917</div></td><td><div class="dg-cell" data-raw="1.9308">1.9308</div></td><td><div class="dg-cell" data-raw="0.218982">0.218982</div></td><td><div class="dg-cell" data-raw="3">3</div></td><td><div class="dg-cell" data-raw="0.002661">0.002661</div></td><td><div class="dg-cell" data-raw="0.228719">0.228719</div></td><td><div class="dg-cell" data-raw="1.087114">1.087114</div></td></tr><tr><td class="dg-row-num">4</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Champagne-Ardenne]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Champagne-Ardenne]</div></td><td><div class="dg-cell" data-raw="1.134288">1.134288</div></td><td><div class="dg-cell" data-raw="3.109">3.109</div></td><td><div class="dg-cell" data-raw="0.576952">0.576952</div></td><td><div class="dg-cell" data-raw="1.97">1.97</div></td><td><div class="dg-cell" data-raw="0.049299">0.049299</div></td><td><div class="dg-cell" data-raw="0.003482">0.003482</div></td><td><div class="dg-cell" data-raw="2.265094">2.265094</div></td></tr><tr><td class="dg-row-num">5</td><td><div class="dg-cell" data-raw="C(AREA, Treatment(reference=&#x27;C&#x27;))[T.A]">C(AREA, Treatment(reference=&#x27;C&#x27;))[T.A]</div></td><td><div class="dg-cell" data-raw="0.386682">0.386682</div></td><td><div class="dg-cell" data-raw="1.4721">1.4721</div></td><td><div class="dg-cell" data-raw="0.201278">0.201278</div></td><td><div class="dg-cell" data-raw="1.92">1.92</div></td><td><div class="dg-cell" data-raw="0.054715">0.054715</div></td><td><div class="dg-cell" data-raw="-0.007817">-0.007817</div></td><td><div class="dg-cell" data-raw="0.78118">0.78118</div></td></tr><tr><td class="dg-row-num">6</td><td><div class="dg-cell" data-raw="C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.41-50]">C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.41-50]</div></td><td><div class="dg-cell" data-raw="-0.169653">-0.169653</div></td><td><div class="dg-cell" data-raw="0.844">0.844</div></td><td><div class="dg-cell" data-raw="0.094178">0.094178</div></td><td><div class="dg-cell" data-raw="-1.8">-1.8</div></td><td><div class="dg-cell" data-raw="0.071638">0.071638</div></td><td><div class="dg-cell" data-raw="-0.354238">-0.354238</div></td><td><div class="dg-cell" data-raw="0.014932">0.014932</div></td></tr><tr><td class="dg-row-num">7</td><td><div class="dg-cell" data-raw="C(AREA, Treatment(reference=&#x27;C&#x27;))[T.B]">C(AREA, Treatment(reference=&#x27;C&#x27;))[T.B]</div></td><td><div class="dg-cell" data-raw="0.250464">0.250464</div></td><td><div class="dg-cell" data-raw="1.2846">1.2846</div></td><td><div class="dg-cell" data-raw="0.148347">0.148347</div></td><td><div class="dg-cell" data-raw="1.69">1.69</div></td><td><div class="dg-cell" data-raw="0.091342">0.091342</div></td><td><div class="dg-cell" data-raw="-0.040291">-0.040291</div></td><td><div class="dg-cell" data-raw="0.541219">0.541219</div></td></tr><tr><td class="dg-row-num">8</td><td><div class="dg-cell" data-raw="C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.71+]">C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.71+]</div></td><td><div class="dg-cell" data-raw="0.231681">0.231681</div></td><td><div class="dg-cell" data-raw="1.2607">1.2607</div></td><td><div class="dg-cell" data-raw="0.147474">0.147474</div></td><td><div class="dg-cell" data-raw="1.57">1.57</div></td><td><div class="dg-cell" data-raw="0.116184">0.116184</div></td><td><div class="dg-cell" data-raw="-0.057363">-0.057363</div></td><td><div class="dg-cell" data-raw="0.520724">0.520724</div></td></tr><tr><td class="dg-row-num">9</td><td><div class="dg-cell" data-raw="C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B4]">C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B4]</div></td><td><div class="dg-cell" data-raw="0.257947">0.257947</div></td><td><div class="dg-cell" data-raw="1.2943">1.2943</div></td><td><div class="dg-cell" data-raw="0.168367">0.168367</div></td><td><div class="dg-cell" data-raw="1.53">1.53</div></td><td><div class="dg-cell" data-raw="0.12551">0.12551</div></td><td><div class="dg-cell" data-raw="-0.072046">-0.072046</div></td><td><div class="dg-cell" data-raw="0.58794">0.58794</div></td></tr><tr><td class="dg-row-num">10</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Provence-Alpes-Cotes-D&#x27;Azur]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Provence-Alpes-Cotes-D&#x27;Azur]</div></td><td><div class="dg-cell" data-raw="0.230372">0.230372</div></td><td><div class="dg-cell" data-raw="1.2591">1.2591</div></td><td><div class="dg-cell" data-raw="0.156152">0.156152</div></td><td><div class="dg-cell" data-raw="1.48">1.48</div></td><td><div class="dg-cell" data-raw="0.140129">0.140129</div></td><td><div class="dg-cell" data-raw="-0.07568">-0.07568</div></td><td><div class="dg-cell" data-raw="0.536424">0.536424</div></td></tr><tr><td class="dg-row-num">11</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Corse]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Corse]</div></td><td><div class="dg-cell" data-raw="0.699611">0.699611</div></td><td><div class="dg-cell" data-raw="2.013">2.013</div></td><td><div class="dg-cell" data-raw="0.493973">0.493973</div></td><td><div class="dg-cell" data-raw="1.42">1.42</div></td><td><div class="dg-cell" data-raw="0.15669">0.15669</div></td><td><div class="dg-cell" data-raw="-0.268559">-0.268559</div></td><td><div class="dg-cell" data-raw="1.667781">1.667781</div></td></tr><tr><td class="dg-row-num">12</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Centre]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Centre]</div></td><td><div class="dg-cell" data-raw="0.205741">0.205741</div></td><td><div class="dg-cell" data-raw="1.2284">1.2284</div></td><td><div class="dg-cell" data-raw="0.150897">0.150897</div></td><td><div class="dg-cell" data-raw="1.36">1.36</div></td><td><div class="dg-cell" data-raw="0.17274">0.17274</div></td><td><div class="dg-cell" data-raw="-0.090012">-0.090012</div></td><td><div class="dg-cell" data-raw="0.501494">0.501494</div></td></tr><tr><td class="dg-row-num">13</td><td><div class="dg-cell" data-raw="C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B6]">C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B6]</div></td><td><div class="dg-cell" data-raw="-0.160417">-0.160417</div></td><td><div class="dg-cell" data-raw="0.8518">0.8518</div></td><td><div class="dg-cell" data-raw="0.158005">0.158005</div></td><td><div class="dg-cell" data-raw="-1.02">-1.02</div></td><td><div class="dg-cell" data-raw="0.309981">0.309981</div></td><td><div class="dg-cell" data-raw="-0.470102">-0.470102</div></td><td><div class="dg-cell" data-raw="0.149268">0.149268</div></td></tr><tr><td class="dg-row-num">14</td><td><div class="dg-cell" data-raw="LN_DENSITY">LN_DENSITY</div></td><td><div class="dg-cell" data-raw="0.079727">0.079727</div></td><td><div class="dg-cell" data-raw="1.083">1.083</div></td><td><div class="dg-cell" data-raw="0.078192">0.078192</div></td><td><div class="dg-cell" data-raw="1.02">1.02</div></td><td><div class="dg-cell" data-raw="0.307904">0.307904</div></td><td><div class="dg-cell" data-raw="-0.073526">-0.073526</div></td><td><div class="dg-cell" data-raw="0.23298">0.23298</div></td></tr><tr><td class="dg-row-num">15</td><td><div class="dg-cell" data-raw="C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B12]">C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B12]</div></td><td><div class="dg-cell" data-raw="0.116506">0.116506</div></td><td><div class="dg-cell" data-raw="1.1236">1.1236</div></td><td><div class="dg-cell" data-raw="0.114995">0.114995</div></td><td><div class="dg-cell" data-raw="1.01">1.01</div></td><td><div class="dg-cell" data-raw="0.310995">0.310995</div></td><td><div class="dg-cell" data-raw="-0.10888">-0.10888</div></td><td><div class="dg-cell" data-raw="0.341892">0.341892</div></td></tr><tr><td class="dg-row-num">16</td><td><div class="dg-cell" data-raw="C(AREA, Treatment(reference=&#x27;C&#x27;))[T.F]">C(AREA, Treatment(reference=&#x27;C&#x27;))[T.F]</div></td><td><div class="dg-cell" data-raw="-0.415364">-0.415364</div></td><td><div class="dg-cell" data-raw="0.6601">0.6601</div></td><td><div class="dg-cell" data-raw="0.413457">0.413457</div></td><td><div class="dg-cell" data-raw="-1">-1</div></td><td><div class="dg-cell" data-raw="0.315083">0.315083</div></td><td><div class="dg-cell" data-raw="-1.225724">-1.225724</div></td><td><div class="dg-cell" data-raw="0.394996">0.394996</div></td></tr><tr><td class="dg-row-num">17</td><td><div class="dg-cell" data-raw="C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B2]">C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B2]</div></td><td><div class="dg-cell" data-raw="0.083202">0.083202</div></td><td><div class="dg-cell" data-raw="1.0868">1.0868</div></td><td><div class="dg-cell" data-raw="0.08877">0.08877</div></td><td><div class="dg-cell" data-raw="0.94">0.94</div></td><td><div class="dg-cell" data-raw="0.348615">0.348615</div></td><td><div class="dg-cell" data-raw="-0.090784">-0.090784</div></td><td><div class="dg-cell" data-raw="0.257189">0.257189</div></td></tr><tr><td class="dg-row-num">18</td><td><div class="dg-cell" data-raw="C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B10]">C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B10]</div></td><td><div class="dg-cell" data-raw="0.180628">0.180628</div></td><td><div class="dg-cell" data-raw="1.198">1.198</div></td><td><div class="dg-cell" data-raw="0.201631">0.201631</div></td><td><div class="dg-cell" data-raw="0.9">0.9</div></td><td><div class="dg-cell" data-raw="0.370341">0.370341</div></td><td><div class="dg-cell" data-raw="-0.214561">-0.214561</div></td><td><div class="dg-cell" data-raw="0.575818">0.575818</div></td></tr><tr><td class="dg-row-num">19</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Auvergne]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Auvergne]</div></td><td><div class="dg-cell" data-raw="-0.373904">-0.373904</div></td><td><div class="dg-cell" data-raw="0.688">0.688</div></td><td><div class="dg-cell" data-raw="0.440821">0.440821</div></td><td><div class="dg-cell" data-raw="-0.85">-0.85</div></td><td><div class="dg-cell" data-raw="0.396327">0.396327</div></td><td><div class="dg-cell" data-raw="-1.237896">-1.237896</div></td><td><div class="dg-cell" data-raw="0.490089">0.490089</div></td></tr><tr><td class="dg-row-num">20</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Picardie]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Picardie]</div></td><td><div class="dg-cell" data-raw="0.269644">0.269644</div></td><td><div class="dg-cell" data-raw="1.3095">1.3095</div></td><td><div class="dg-cell" data-raw="0.317913">0.317913</div></td><td><div class="dg-cell" data-raw="0.85">0.85</div></td><td><div class="dg-cell" data-raw="0.396343">0.396343</div></td><td><div class="dg-cell" data-raw="-0.353454">-0.353454</div></td><td><div class="dg-cell" data-raw="0.892743">0.892743</div></td></tr><tr><td class="dg-row-num">21</td><td><div class="dg-cell" data-raw="C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B14]">C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B14]</div></td><td><div class="dg-cell" data-raw="-0.364786">-0.364786</div></td><td><div class="dg-cell" data-raw="0.6943">0.6943</div></td><td><div class="dg-cell" data-raw="0.450596">0.450596</div></td><td><div class="dg-cell" data-raw="-0.81">-0.81</div></td><td><div class="dg-cell" data-raw="0.418191">0.418191</div></td><td><div class="dg-cell" data-raw="-1.247939">-1.247939</div></td><td><div class="dg-cell" data-raw="0.518366">0.518366</div></td></tr><tr><td class="dg-row-num">22</td><td><div class="dg-cell" data-raw="C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.51-60]">C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.51-60]</div></td><td><div class="dg-cell" data-raw="-0.078838">-0.078838</div></td><td><div class="dg-cell" data-raw="0.9242">0.9242</div></td><td><div class="dg-cell" data-raw="0.100549">0.100549</div></td><td><div class="dg-cell" data-raw="-0.78">-0.78</div></td><td><div class="dg-cell" data-raw="0.432995">0.432995</div></td><td><div class="dg-cell" data-raw="-0.27591">-0.27591</div></td><td><div class="dg-cell" data-raw="0.118234">0.118234</div></td></tr><tr><td class="dg-row-num">23</td><td><div class="dg-cell" data-raw="BONUSMALUS_CAPPED">BONUSMALUS_CAPPED</div></td><td><div class="dg-cell" data-raw="0.001485">0.001485</div></td><td><div class="dg-cell" data-raw="1.0015">1.0015</div></td><td><div class="dg-cell" data-raw="0.002008">0.002008</div></td><td><div class="dg-cell" data-raw="0.74">0.74</div></td><td><div class="dg-cell" data-raw="0.459571">0.459571</div></td><td><div class="dg-cell" data-raw="-0.00245">-0.00245</div></td><td><div class="dg-cell" data-raw="0.005419">0.005419</div></td></tr><tr><td class="dg-row-num">24</td><td><div class="dg-cell" data-raw="C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B5]">C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B5]</div></td><td><div class="dg-cell" data-raw="-0.100854">-0.100854</div></td><td><div class="dg-cell" data-raw="0.9041">0.9041</div></td><td><div class="dg-cell" data-raw="0.142853">0.142853</div></td><td><div class="dg-cell" data-raw="-0.71">-0.71</div></td><td><div class="dg-cell" data-raw="0.480187">0.480187</div></td><td><div class="dg-cell" data-raw="-0.380841">-0.380841</div></td><td><div class="dg-cell" data-raw="0.179132">0.179132</div></td></tr><tr><td class="dg-row-num">25</td><td><div class="dg-cell" data-raw="C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.61-70]">C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.61-70]</div></td><td><div class="dg-cell" data-raw="-0.089982">-0.089982</div></td><td><div class="dg-cell" data-raw="0.9139">0.9139</div></td><td><div class="dg-cell" data-raw="0.128781">0.128781</div></td><td><div class="dg-cell" data-raw="-0.7">-0.7</div></td><td><div class="dg-cell" data-raw="0.484728">0.484728</div></td><td><div class="dg-cell" data-raw="-0.342388">-0.342388</div></td><td><div class="dg-cell" data-raw="0.162424">0.162424</div></td></tr><tr><td class="dg-row-num">26</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Midi-Pyrenees]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Midi-Pyrenees]</div></td><td><div class="dg-cell" data-raw="-0.190002">-0.190002</div></td><td><div class="dg-cell" data-raw="0.827">0.827</div></td><td><div class="dg-cell" data-raw="0.285021">0.285021</div></td><td><div class="dg-cell" data-raw="-0.67">-0.67</div></td><td><div class="dg-cell" data-raw="0.505011">0.505011</div></td><td><div class="dg-cell" data-raw="-0.748633">-0.748633</div></td><td><div class="dg-cell" data-raw="0.368628">0.368628</div></td></tr><tr><td class="dg-row-num">27</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Rhone-Alpes]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Rhone-Alpes]</div></td><td><div class="dg-cell" data-raw="0.093106">0.093106</div></td><td><div class="dg-cell" data-raw="1.0976">1.0976</div></td><td><div class="dg-cell" data-raw="0.14867">0.14867</div></td><td><div class="dg-cell" data-raw="0.63">0.63</div></td><td><div class="dg-cell" data-raw="0.531143">0.531143</div></td><td><div class="dg-cell" data-raw="-0.198281">-0.198281</div></td><td><div class="dg-cell" data-raw="0.384494">0.384494</div></td></tr><tr><td class="dg-row-num">28</td><td><div class="dg-cell" data-raw="C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.22-25]">C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.22-25]</div></td><td><div class="dg-cell" data-raw="-0.094791">-0.094791</div></td><td><div class="dg-cell" data-raw="0.9096">0.9096</div></td><td><div class="dg-cell" data-raw="0.161188">0.161188</div></td><td><div class="dg-cell" data-raw="-0.59">-0.59</div></td><td><div class="dg-cell" data-raw="0.556481">0.556481</div></td><td><div class="dg-cell" data-raw="-0.410713">-0.410713</div></td><td><div class="dg-cell" data-raw="0.221132">0.221132</div></td></tr><tr><td class="dg-row-num">29</td><td><div class="dg-cell" data-raw="C(VEHAGE_BAND, Treatment(reference=&#x27;02-05&#x27;))[T.06-10]">C(VEHAGE_BAND, Treatment(reference=&#x27;02-05&#x27;))[T.06-10]</div></td><td><div class="dg-cell" data-raw="-0.049046">-0.049046</div></td><td><div class="dg-cell" data-raw="0.9521">0.9521</div></td><td><div class="dg-cell" data-raw="0.084967">0.084967</div></td><td><div class="dg-cell" data-raw="-0.58">-0.58</div></td><td><div class="dg-cell" data-raw="0.563783">0.563783</div></td><td><div class="dg-cell" data-raw="-0.215579">-0.215579</div></td><td><div class="dg-cell" data-raw="0.117487">0.117487</div></td></tr><tr><td class="dg-row-num">30</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Basse-Normandie]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Basse-Normandie]</div></td><td><div class="dg-cell" data-raw="0.155023">0.155023</div></td><td><div class="dg-cell" data-raw="1.1677">1.1677</div></td><td><div class="dg-cell" data-raw="0.281086">0.281086</div></td><td><div class="dg-cell" data-raw="0.55">0.55</div></td><td><div class="dg-cell" data-raw="0.581281">0.581281</div></td><td><div class="dg-cell" data-raw="-0.395895">-0.395895</div></td><td><div class="dg-cell" data-raw="0.705942">0.705942</div></td></tr><tr><td class="dg-row-num">31</td><td><div class="dg-cell" data-raw="C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B3]">C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B3]</div></td><td><div class="dg-cell" data-raw="-0.068008">-0.068008</div></td><td><div class="dg-cell" data-raw="0.9343">0.9343</div></td><td><div class="dg-cell" data-raw="0.123338">0.123338</div></td><td><div class="dg-cell" data-raw="-0.55">-0.55</div></td><td><div class="dg-cell" data-raw="0.581362">0.581362</div></td><td><div class="dg-cell" data-raw="-0.309746">-0.309746</div></td><td><div class="dg-cell" data-raw="0.17373">0.17373</div></td></tr><tr><td class="dg-row-num">32</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Bretagne]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Bretagne]</div></td><td><div class="dg-cell" data-raw="0.096876">0.096876</div></td><td><div class="dg-cell" data-raw="1.1017">1.1017</div></td><td><div class="dg-cell" data-raw="0.178471">0.178471</div></td><td><div class="dg-cell" data-raw="0.54">0.54</div></td><td><div class="dg-cell" data-raw="0.587258">0.587258</div></td><td><div class="dg-cell" data-raw="-0.25292">-0.25292</div></td><td><div class="dg-cell" data-raw="0.446673">0.446673</div></td></tr><tr><td class="dg-row-num">33</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Alsace]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Alsace]</div></td><td><div class="dg-cell" data-raw="-0.280834">-0.280834</div></td><td><div class="dg-cell" data-raw="0.7552">0.7552</div></td><td><div class="dg-cell" data-raw="0.549135">0.549135</div></td><td><div class="dg-cell" data-raw="-0.51">-0.51</div></td><td><div class="dg-cell" data-raw="0.609063">0.609063</div></td><td><div class="dg-cell" data-raw="-1.357119">-1.357119</div></td><td><div class="dg-cell" data-raw="0.795451">0.795451</div></td></tr><tr><td class="dg-row-num">34</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Languedoc-Roussillon]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Languedoc-Roussillon]</div></td><td><div class="dg-cell" data-raw="0.092132">0.092132</div></td><td><div class="dg-cell" data-raw="1.0965">1.0965</div></td><td><div class="dg-cell" data-raw="0.203893">0.203893</div></td><td><div class="dg-cell" data-raw="0.45">0.45</div></td><td><div class="dg-cell" data-raw="0.651366">0.651366</div></td><td><div class="dg-cell" data-raw="-0.307491">-0.307491</div></td><td><div class="dg-cell" data-raw="0.491755">0.491755</div></td></tr><tr><td class="dg-row-num">35</td><td><div class="dg-cell" data-raw="C(VEHAGE_BAND, Treatment(reference=&#x27;02-05&#x27;))[T.16+]">C(VEHAGE_BAND, Treatment(reference=&#x27;02-05&#x27;))[T.16+]</div></td><td><div class="dg-cell" data-raw="-0.062449">-0.062449</div></td><td><div class="dg-cell" data-raw="0.9395">0.9395</div></td><td><div class="dg-cell" data-raw="0.144122">0.144122</div></td><td><div class="dg-cell" data-raw="-0.43">-0.43</div></td><td><div class="dg-cell" data-raw="0.664792">0.664792</div></td><td><div class="dg-cell" data-raw="-0.344922">-0.344922</div></td><td><div class="dg-cell" data-raw="0.220024">0.220024</div></td></tr><tr><td class="dg-row-num">36</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Limousin]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Limousin]</div></td><td><div class="dg-cell" data-raw="-0.144443">-0.144443</div></td><td><div class="dg-cell" data-raw="0.8655">0.8655</div></td><td><div class="dg-cell" data-raw="0.406003">0.406003</div></td><td><div class="dg-cell" data-raw="-0.36">-0.36</div></td><td><div class="dg-cell" data-raw="0.722014">0.722014</div></td><td><div class="dg-cell" data-raw="-0.940195">-0.940195</div></td><td><div class="dg-cell" data-raw="0.651308">0.651308</div></td></tr><tr><td class="dg-row-num">37</td><td><div class="dg-cell" data-raw="C(VEHGAS, Treatment(reference=&#x27;Regular&#x27;))[T.Diesel]">C(VEHGAS, Treatment(reference=&#x27;Regular&#x27;))[T.Diesel]</div></td><td><div class="dg-cell" data-raw="-0.023818">-0.023818</div></td><td><div class="dg-cell" data-raw="0.9765">0.9765</div></td><td><div class="dg-cell" data-raw="0.066164">0.066164</div></td><td><div class="dg-cell" data-raw="-0.36">-0.36</div></td><td><div class="dg-cell" data-raw="0.718863">0.718863</div></td><td><div class="dg-cell" data-raw="-0.153497">-0.153497</div></td><td><div class="dg-cell" data-raw="0.105862">0.105862</div></td></tr><tr><td class="dg-row-num">38</td><td><div class="dg-cell" data-raw="C(AREA, Treatment(reference=&#x27;C&#x27;))[T.E]">C(AREA, Treatment(reference=&#x27;C&#x27;))[T.E]</div></td><td><div class="dg-cell" data-raw="-0.081045">-0.081045</div></td><td><div class="dg-cell" data-raw="0.9222">0.9222</div></td><td><div class="dg-cell" data-raw="0.241874">0.241874</div></td><td><div class="dg-cell" data-raw="-0.34">-0.34</div></td><td><div class="dg-cell" data-raw="0.737571">0.737571</div></td><td><div class="dg-cell" data-raw="-0.555109">-0.555109</div></td><td><div class="dg-cell" data-raw="0.393019">0.393019</div></td></tr><tr><td class="dg-row-num">39</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Nord-Pas-de-Calais]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Nord-Pas-de-Calais]</div></td><td><div class="dg-cell" data-raw="0.062827">0.062827</div></td><td><div class="dg-cell" data-raw="1.0648">1.0648</div></td><td><div class="dg-cell" data-raw="0.188161">0.188161</div></td><td><div class="dg-cell" data-raw="0.33">0.33</div></td><td><div class="dg-cell" data-raw="0.738453">0.738453</div></td><td><div class="dg-cell" data-raw="-0.305961">-0.305961</div></td><td><div class="dg-cell" data-raw="0.431615">0.431615</div></td></tr><tr><td class="dg-row-num">40</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Poitou-Charentes]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Poitou-Charentes]</div></td><td><div class="dg-cell" data-raw="-0.067423">-0.067423</div></td><td><div class="dg-cell" data-raw="0.9348">0.9348</div></td><td><div class="dg-cell" data-raw="0.226832">0.226832</div></td><td><div class="dg-cell" data-raw="-0.3">-0.3</div></td><td><div class="dg-cell" data-raw="0.766284">0.766284</div></td><td><div class="dg-cell" data-raw="-0.512007">-0.512007</div></td><td><div class="dg-cell" data-raw="0.37716">0.37716</div></td></tr><tr><td class="dg-row-num">41</td><td><div class="dg-cell" data-raw="C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B13]">C(VEHBRAND, Treatment(reference=&#x27;B1&#x27;))[T.B13]</div></td><td><div class="dg-cell" data-raw="0.069303">0.069303</div></td><td><div class="dg-cell" data-raw="1.0718">1.0718</div></td><td><div class="dg-cell" data-raw="0.231861">0.231861</div></td><td><div class="dg-cell" data-raw="0.3">0.3</div></td><td><div class="dg-cell" data-raw="0.765019">0.765019</div></td><td><div class="dg-cell" data-raw="-0.385137">-0.385137</div></td><td><div class="dg-cell" data-raw="0.523742">0.523742</div></td></tr><tr><td class="dg-row-num">42</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Haute-Normandie]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Haute-Normandie]</div></td><td><div class="dg-cell" data-raw="-0.108527">-0.108527</div></td><td><div class="dg-cell" data-raw="0.8972">0.8972</div></td><td><div class="dg-cell" data-raw="0.368671">0.368671</div></td><td><div class="dg-cell" data-raw="-0.29">-0.29</div></td><td><div class="dg-cell" data-raw="0.768473">0.768473</div></td><td><div class="dg-cell" data-raw="-0.831108">-0.831108</div></td><td><div class="dg-cell" data-raw="0.614055">0.614055</div></td></tr><tr><td class="dg-row-num">43</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Pays-de-la-Loire]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Pays-de-la-Loire]</div></td><td><div class="dg-cell" data-raw="-0.051725">-0.051725</div></td><td><div class="dg-cell" data-raw="0.9496">0.9496</div></td><td><div class="dg-cell" data-raw="0.182921">0.182921</div></td><td><div class="dg-cell" data-raw="-0.28">-0.28</div></td><td><div class="dg-cell" data-raw="0.777353">0.777353</div></td><td><div class="dg-cell" data-raw="-0.410244">-0.410244</div></td><td><div class="dg-cell" data-raw="0.306794">0.306794</div></td></tr><tr><td class="dg-row-num">44</td><td><div class="dg-cell" data-raw="C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.26-30]">C(DRIVAGE_BAND, Treatment(reference=&#x27;31-40&#x27;))[T.26-30]</div></td><td><div class="dg-cell" data-raw="-0.033233">-0.033233</div></td><td><div class="dg-cell" data-raw="0.9673">0.9673</div></td><td><div class="dg-cell" data-raw="0.129182">0.129182</div></td><td><div class="dg-cell" data-raw="-0.26">-0.26</div></td><td><div class="dg-cell" data-raw="0.796982">0.796982</div></td><td><div class="dg-cell" data-raw="-0.286425">-0.286425</div></td><td><div class="dg-cell" data-raw="0.219959">0.219959</div></td></tr><tr><td class="dg-row-num">45</td><td><div class="dg-cell" data-raw="C(VEHAGE_BAND, Treatment(reference=&#x27;02-05&#x27;))[T.11-15]">C(VEHAGE_BAND, Treatment(reference=&#x27;02-05&#x27;))[T.11-15]</div></td><td><div class="dg-cell" data-raw="0.01417">0.01417</div></td><td><div class="dg-cell" data-raw="1.0143">1.0143</div></td><td><div class="dg-cell" data-raw="0.095296">0.095296</div></td><td><div class="dg-cell" data-raw="0.15">0.15</div></td><td><div class="dg-cell" data-raw="0.881796">0.881796</div></td><td><div class="dg-cell" data-raw="-0.172607">-0.172607</div></td><td><div class="dg-cell" data-raw="0.200947">0.200947</div></td></tr><tr><td class="dg-row-num">46</td><td><div class="dg-cell" data-raw="C(AREA, Treatment(reference=&#x27;C&#x27;))[T.D]">C(AREA, Treatment(reference=&#x27;C&#x27;))[T.D]</div></td><td><div class="dg-cell" data-raw="-0.018013">-0.018013</div></td><td><div class="dg-cell" data-raw="0.9821">0.9821</div></td><td><div class="dg-cell" data-raw="0.146914">0.146914</div></td><td><div class="dg-cell" data-raw="-0.12">-0.12</div></td><td><div class="dg-cell" data-raw="0.902419">0.902419</div></td><td><div class="dg-cell" data-raw="-0.305959">-0.305959</div></td><td><div class="dg-cell" data-raw="0.269934">0.269934</div></td></tr><tr><td class="dg-row-num">47</td><td><div class="dg-cell" data-raw="VEHPOWER">VEHPOWER</div></td><td><div class="dg-cell" data-raw="0.0014">0.0014</div></td><td><div class="dg-cell" data-raw="1.0014">1.0014</div></td><td><div class="dg-cell" data-raw="0.016989">0.016989</div></td><td><div class="dg-cell" data-raw="0.08">0.08</div></td><td><div class="dg-cell" data-raw="0.93432">0.93432</div></td><td><div class="dg-cell" data-raw="-0.031897">-0.031897</div></td><td><div class="dg-cell" data-raw="0.034697">0.034697</div></td></tr><tr><td class="dg-row-num">48</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Franche-Comte]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Franche-Comte]</div></td><td><div class="dg-cell" data-raw="0.062276">0.062276</div></td><td><div class="dg-cell" data-raw="1.0643">1.0643</div></td><td><div class="dg-cell" data-raw="0.855623">0.855623</div></td><td><div class="dg-cell" data-raw="0.07">0.07</div></td><td><div class="dg-cell" data-raw="0.941978">0.941978</div></td><td><div class="dg-cell" data-raw="-1.614715">-1.614715</div></td><td><div class="dg-cell" data-raw="1.739266">1.739266</div></td></tr><tr><td class="dg-row-num">49</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Aquitaine]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Aquitaine]</div></td><td><div class="dg-cell" data-raw="-0.006815">-0.006815</div></td><td><div class="dg-cell" data-raw="0.9932">0.9932</div></td><td><div class="dg-cell" data-raw="0.203391">0.203391</div></td><td><div class="dg-cell" data-raw="-0.03">-0.03</div></td><td><div class="dg-cell" data-raw="0.97327">0.97327</div></td><td><div class="dg-cell" data-raw="-0.405454">-0.405454</div></td><td><div class="dg-cell" data-raw="0.391824">0.391824</div></td></tr><tr><td class="dg-row-num">50</td><td><div class="dg-cell" data-raw="C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Bourgogne]">C(REGION, Treatment(reference=&#x27;Ile-de-France&#x27;))[T.Bourgogne]</div></td><td><div class="dg-cell" data-raw="0.004753">0.004753</div></td><td><div class="dg-cell" data-raw="1.0048">1.0048</div></td><td><div class="dg-cell" data-raw="0.308886">0.308886</div></td><td><div class="dg-cell" data-raw="0.02">0.02</div></td><td><div class="dg-cell" data-raw="0.987723">0.987723</div></td><td><div class="dg-cell" data-raw="-0.600652">-0.600652</div></td><td><div class="dg-cell" data-raw="0.610157">0.610157</div></td></tr><tr><td class="dg-row-num">51</td><td><div class="dg-cell" data-raw="C(VEHAGE_BAND, Treatment(reference=&#x27;02-05&#x27;))[T.00-01]">C(VEHAGE_BAND, Treatment(reference=&#x27;02-05&#x27;))[T.00-01]</div></td><td><div class="dg-cell" data-raw="0.001527">0.001527</div></td><td><div class="dg-cell" data-raw="1.0015">1.0015</div></td><td><div class="dg-cell" data-raw="0.107773">0.107773</div></td><td><div class="dg-cell" data-raw="0.01">0.01</div></td><td><div class="dg-cell" data-raw="0.988697">0.988697</div></td><td><div class="dg-cell" data-raw="-0.209705">-0.209705</div></td><td><div class="dg-cell" data-raw="0.212758">0.212758</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+  <div class="rv-panel rv-panel-hidden" id="res-6-chart"><div class="ch-layout" id="ch-6"><script type="application/json" id="ch-6-cols">[{"name":"COEFFICIENT_NAME","type":"nominal"},{"name":"ESTIMATE","type":"quantitative"}]</script><script type="application/json" id="ch-6-vals">[{"COEFFICIENT_NAME":"Intercept","ESTIMATE":"6.875845"},{"COEFFICIENT_NAME":"C(DRIVAGE_BAND, Treatment(reference='31-40'))[T.18-21]","ESTIMATE":"1.418502"},{"COEFFICIENT_NAME":"C(VEHBRAND, Treatment(reference='B1'))[T.B11]","ESTIMATE":"0.657917"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Champagne-Ardenne]","ESTIMATE":"1.134288"},{"COEFFICIENT_NAME":"C(AREA, Treatment(reference='C'))[T.A]","ESTIMATE":"0.386682"},{"COEFFICIENT_NAME":"C(DRIVAGE_BAND, Treatment(reference='31-40'))[T.41-50]","ESTIMATE":"-0.169653"},{"COEFFICIENT_NAME":"C(AREA, Treatment(reference='C'))[T.B]","ESTIMATE":"0.250464"},{"COEFFICIENT_NAME":"C(DRIVAGE_BAND, Treatment(reference='31-40'))[T.71+]","ESTIMATE":"0.231681"},{"COEFFICIENT_NAME":"C(VEHBRAND, Treatment(reference='B1'))[T.B4]","ESTIMATE":"0.257947"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Provence-Alpes-Cotes-D'Azur]","ESTIMATE":"0.230372"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Corse]","ESTIMATE":"0.699611"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Centre]","ESTIMATE":"0.205741"},{"COEFFICIENT_NAME":"C(VEHBRAND, Treatment(reference='B1'))[T.B6]","ESTIMATE":"-0.160417"},{"COEFFICIENT_NAME":"LN_DENSITY","ESTIMATE":"0.079727"},{"COEFFICIENT_NAME":"C(VEHBRAND, Treatment(reference='B1'))[T.B12]","ESTIMATE":"0.116506"},{"COEFFICIENT_NAME":"C(AREA, Treatment(reference='C'))[T.F]","ESTIMATE":"-0.415364"},{"COEFFICIENT_NAME":"C(VEHBRAND, Treatment(reference='B1'))[T.B2]","ESTIMATE":"0.083202"},{"COEFFICIENT_NAME":"C(VEHBRAND, Treatment(reference='B1'))[T.B10]","ESTIMATE":"0.180628"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Auvergne]","ESTIMATE":"-0.373904"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Picardie]","ESTIMATE":"0.269644"},{"COEFFICIENT_NAME":"C(VEHBRAND, Treatment(reference='B1'))[T.B14]","ESTIMATE":"-0.364786"},{"COEFFICIENT_NAME":"C(DRIVAGE_BAND, Treatment(reference='31-40'))[T.51-60]","ESTIMATE":"-0.078838"},{"COEFFICIENT_NAME":"BONUSMALUS_CAPPED","ESTIMATE":"0.001485"},{"COEFFICIENT_NAME":"C(VEHBRAND, Treatment(reference='B1'))[T.B5]","ESTIMATE":"-0.100854"},{"COEFFICIENT_NAME":"C(DRIVAGE_BAND, Treatment(reference='31-40'))[T.61-70]","ESTIMATE":"-0.089982"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Midi-Pyrenees]","ESTIMATE":"-0.190002"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Rhone-Alpes]","ESTIMATE":"0.093106"},{"COEFFICIENT_NAME":"C(DRIVAGE_BAND, Treatment(reference='31-40'))[T.22-25]","ESTIMATE":"-0.094791"},{"COEFFICIENT_NAME":"C(VEHAGE_BAND, Treatment(reference='02-05'))[T.06-10]","ESTIMATE":"-0.049046"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Basse-Normandie]","ESTIMATE":"0.155023"},{"COEFFICIENT_NAME":"C(VEHBRAND, Treatment(reference='B1'))[T.B3]","ESTIMATE":"-0.068008"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Bretagne]","ESTIMATE":"0.096876"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Alsace]","ESTIMATE":"-0.280834"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Languedoc-Roussillon]","ESTIMATE":"0.092132"},{"COEFFICIENT_NAME":"C(VEHAGE_BAND, Treatment(reference='02-05'))[T.16+]","ESTIMATE":"-0.062449"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Limousin]","ESTIMATE":"-0.144443"},{"COEFFICIENT_NAME":"C(VEHGAS, Treatment(reference='Regular'))[T.Diesel]","ESTIMATE":"-0.023818"},{"COEFFICIENT_NAME":"C(AREA, Treatment(reference='C'))[T.E]","ESTIMATE":"-0.081045"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Nord-Pas-de-Calais]","ESTIMATE":"0.062827"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Poitou-Charentes]","ESTIMATE":"-0.067423"},{"COEFFICIENT_NAME":"C(VEHBRAND, Treatment(reference='B1'))[T.B13]","ESTIMATE":"0.069303"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Haute-Normandie]","ESTIMATE":"-0.108527"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Pays-de-la-Loire]","ESTIMATE":"-0.051725"},{"COEFFICIENT_NAME":"C(DRIVAGE_BAND, Treatment(reference='31-40'))[T.26-30]","ESTIMATE":"-0.033233"},{"COEFFICIENT_NAME":"C(VEHAGE_BAND, Treatment(reference='02-05'))[T.11-15]","ESTIMATE":"0.01417"},{"COEFFICIENT_NAME":"C(AREA, Treatment(reference='C'))[T.D]","ESTIMATE":"-0.018013"},{"COEFFICIENT_NAME":"VEHPOWER","ESTIMATE":"0.0014"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Franche-Comte]","ESTIMATE":"0.062276"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Aquitaine]","ESTIMATE":"-0.006815"},{"COEFFICIENT_NAME":"C(REGION, Treatment(reference='Ile-de-France'))[T.Bourgogne]","ESTIMATE":"0.004753"},{"COEFFICIENT_NAME":"C(VEHAGE_BAND, Treatment(reference='02-05'))[T.00-01]","ESTIMATE":"0.001527"}]</script><script type="application/json" id="ch-6-state">{"type":"grouped-bar","xField":"COEFFICIENT_NAME","yFields":["ESTIMATE"],"colorField":null,"aggregate":"sum","sortX":"none","timeResolution":"none","limit":0,"xAxisLabelEnabled":true,"xAxisLabel":"COEFFICIENT_NAME","yAxisLabelEnabled":true,"yAxisLabel":"ESTIMATE"}</script></div></div>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="19" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-name">Add predicted severity column to claims table</span><span class="cell-counter">[16]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-keyword">ALTER</span> <span class="tok-keyword">TABLE</span> FREMTPL2.FREMTPL2_INVESTIGATION.FREMTPL2SEV
+  <span class="tok-keyword">ADD</span> <span class="tok-keyword">COLUMN</span> <span class="tok-keyword">IF</span> <span class="tok-keyword">NOT</span> <span class="tok-keyword">EXISTS</span> PREDICTED_SEV <span class="tok-typeName">FLOAT</span></code></pre></div></div>
+  <div class="cell-outputs"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="1 row">1 row</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">status</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:64px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">status</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="Statement executed successfully.">Statement executed successfully.</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="20" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-name">Merge predicted severity into claims-level table</span><span class="cell-counter">[17]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql">MERGE <span class="tok-keyword">INTO</span> FREMTPL2.FREMTPL2_INVESTIGATION.FREMTPL2SEV t
+<span class="tok-keyword">USING</span> <span class="tok-punctuation">(</span>
+    <span class="tok-keyword">SELECT</span> IDPOL<span class="tok-punctuation">,</span> CLAIMAMOUNT<span class="tok-punctuation">,</span> PREDICTED_SEV<span class="tok-punctuation">,</span>
+           ROW_NUMBER<span class="tok-punctuation">(</span><span class="tok-punctuation">)</span> OVER <span class="tok-punctuation">(</span>PARTITION <span class="tok-keyword">BY</span> IDPOL<span class="tok-punctuation">,</span> CLAIMAMOUNT <span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> PREDICTED_SEV<span class="tok-punctuation">)</span> <span class="tok-keyword">AS</span> rn
+    <span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.GLM_GAMMA_PREDICTIONS
+<span class="tok-punctuation">)</span> p
+  <span class="tok-keyword">ON</span> t.IDPOL <span class="tok-operator">=</span> p.IDPOL <span class="tok-keyword">AND</span> t.CLAIMAMOUNT <span class="tok-operator">=</span> p.CLAIMAMOUNT <span class="tok-keyword">AND</span> p.rn <span class="tok-operator">=</span> <span class="tok-number">1</span>
+<span class="tok-keyword">WHEN</span> MATCHED <span class="tok-keyword">THEN</span> <span class="tok-keyword">UPDATE</span> <span class="tok-keyword">SET</span> t.PREDICTED_SEV <span class="tok-operator">=</span> p.PREDICTED_SEV</code></pre></div></div>
+  <div class="cell-outputs"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="1 row">1 row</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">number of rows updated</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:64px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">number of rows updated</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="26444">26444</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="21" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-name">Severity model validation — actual vs predicted by split</span><span class="cell-counter">[18]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-keyword">SELECT</span>
+  DATASET<span class="tok-punctuation">,</span>
+  <span class="tok-keyword">COUNT</span><span class="tok-punctuation">(</span><span class="tok-operator">*</span><span class="tok-punctuation">)</span>                                                 <span class="tok-keyword">AS</span> N_CLAIMS<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>AVG<span class="tok-punctuation">(</span>CLAIMAMOUNT<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">2</span><span class="tok-punctuation">)</span>                               <span class="tok-keyword">AS</span> AVG_ACTUAL_SEV<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>AVG<span class="tok-punctuation">(</span>PREDICTED_SEV<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">2</span><span class="tok-punctuation">)</span>                              <span class="tok-keyword">AS</span> AVG_PREDICTED_SEV<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>AVG<span class="tok-punctuation">(</span>PREDICTED_SEV<span class="tok-punctuation">)</span> <span class="tok-operator">/</span> NULLIF<span class="tok-punctuation">(</span>AVG<span class="tok-punctuation">(</span>CLAIMAMOUNT<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">4</span><span class="tok-punctuation">)</span> <span class="tok-keyword">AS</span> RATIO<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>CLAIMAMOUNT<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span>                                <span class="tok-keyword">AS</span> TOTAL_ACTUAL<span class="tok-punctuation">,</span>
+  ROUND<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>PREDICTED_SEV<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span>                              <span class="tok-keyword">AS</span> TOTAL_PREDICTED
+<span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.GLM_GAMMA_PREDICTIONS
+<span class="tok-keyword">GROUP</span> <span class="tok-keyword">BY</span> DATASET
+<span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> DATASET</code></pre></div></div>
+  <div class="cell-outputs cell-outputs-no-top-border"><div class="rv-container" id="res-7">
+  <div class="rv-tabs">
+    <button class="rv-tab rv-tab-active" data-target="res-7-table" onclick="switchTab(this)">Table</button>
+    <button class="rv-tab" data-target="res-7-chart" onclick="switchTab(this)">Chart</button>
+  </div>
+  <div class="rv-panel" id="res-7-table"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="2 rows">2 rows</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">DATASET</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="1" onchange="dgToggleCol(this)"><span class="dg-colsel-label">N_CLAIMS</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="2" onchange="dgToggleCol(this)"><span class="dg-colsel-label">AVG_ACTUAL_SEV</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="3" onchange="dgToggleCol(this)"><span class="dg-colsel-label">AVG_PREDICTED_SEV</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="4" onchange="dgToggleCol(this)"><span class="dg-colsel-label">RATIO</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="5" onchange="dgToggleCol(this)"><span class="dg-colsel-label">TOTAL_ACTUAL</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="6" onchange="dgToggleCol(this)"><span class="dg-colsel-label">TOTAL_PREDICTED</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:92px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">DATASET</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">N_CLAIMS</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,2)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">AVG_ACTUAL_SEV</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,3)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">AVG_PREDICTED_SEV</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,4)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">RATIO</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,5)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">TOTAL_ACTUAL</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,6)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">TOTAL_PREDICTED</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,7)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="TEST">TEST</div></td><td><div class="dg-cell" data-raw="5248">5248</div></td><td><div class="dg-cell" data-raw="2107.54">2107.54</div></td><td><div class="dg-cell" data-raw="2284.68">2284.68</div></td><td><div class="dg-cell" data-raw="1.0841">1.0841</div></td><td><div class="dg-cell" data-raw="11060386">11060386</div></td><td><div class="dg-cell" data-raw="11990021">11990021</div></td></tr><tr><td class="dg-row-num">2</td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td><td><div class="dg-cell" data-raw="21196">21196</div></td><td><div class="dg-cell" data-raw="2304.62">2304.62</div></td><td><div class="dg-cell" data-raw="2270.02">2270.02</div></td><td><div class="dg-cell" data-raw="0.985">0.985</div></td><td><div class="dg-cell" data-raw="48848831">48848831</div></td><td><div class="dg-cell" data-raw="48115282">48115282</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+  <div class="rv-panel rv-panel-hidden" id="res-7-chart"><div class="ch-layout" id="ch-7"><script type="application/json" id="ch-7-cols">[{"name":"DATASET","type":"nominal"},{"name":"N_CLAIMS","type":"quantitative"}]</script><script type="application/json" id="ch-7-vals">[{"DATASET":"TEST","N_CLAIMS":"5248"},{"DATASET":"TRAIN","N_CLAIMS":"21196"}]</script><script type="application/json" id="ch-7-state">{"type":"grouped-bar","xField":"DATASET","yFields":["N_CLAIMS"],"colorField":null,"aggregate":"sum","sortX":"none","timeResolution":"none","limit":0,"xAxisLabelEnabled":true,"xAxisLabel":"DATASET","yAxisLabelEnabled":true,"yAxisLabel":"N_CLAIMS"}</script></div></div>
+</div></div>
+</div>
+<div class="markdown-wrapper">
+  <div class="markdown-block"><hr>
+<h2 id="pure-premium--frequency-×-severity">Pure Premium = Frequency × Severity</h2>
+<p>Join policy-level predicted frequency with average predicted severity per policy,
+then compute pure premium. Severity predictions are claim-level, so we aggregate
+to one row per policy before joining.</p>
+</div>
+</div>
+<div class="cell cell-sql" data-index="23" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-counter">[19]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-keyword">CREATE</span> <span class="tok-keyword">OR</span> REPLACE <span class="tok-keyword">TABLE</span> FREMTPL2.FREMTPL2_INVESTIGATION.PURE_PREMIUM <span class="tok-keyword">AS</span>
+<span class="tok-keyword">WITH</span> policy_severity <span class="tok-keyword">AS</span> <span class="tok-punctuation">(</span>
+    <span class="tok-keyword">SELECT</span>
+        IDPOL<span class="tok-punctuation">,</span>
+        AVG<span class="tok-punctuation">(</span>PREDICTED_SEV<span class="tok-punctuation">)</span>  <span class="tok-keyword">AS</span> AVG_PREDICTED_SEV<span class="tok-punctuation">,</span>
+        <span class="tok-keyword">COUNT</span><span class="tok-punctuation">(</span><span class="tok-operator">*</span><span class="tok-punctuation">)</span>            <span class="tok-keyword">AS</span> N_CLAIMS<span class="tok-punctuation">,</span>
+        AVG<span class="tok-punctuation">(</span>CLAIMAMOUNT<span class="tok-punctuation">)</span>    <span class="tok-keyword">AS</span> AVG_ACTUAL_SEV
+    <span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.GLM_GAMMA_PREDICTIONS
+    <span class="tok-keyword">GROUP</span> <span class="tok-keyword">BY</span> IDPOL
+<span class="tok-punctuation">)</span>
+<span class="tok-keyword">SELECT</span>
+    f.IDPOL<span class="tok-punctuation">,</span>
+    f.DATASET<span class="tok-punctuation">,</span>
+    f.CLAIMNB<span class="tok-punctuation">,</span>
+    f.EXPOSURE<span class="tok-punctuation">,</span>
+    f.PREDICTED_FREQ<span class="tok-punctuation">,</span>
+    COALESCE<span class="tok-punctuation">(</span>s.AVG_PREDICTED_SEV<span class="tok-punctuation">,</span>
+             <span class="tok-punctuation">(</span><span class="tok-keyword">SELECT</span> AVG<span class="tok-punctuation">(</span>PREDICTED_SEV<span class="tok-punctuation">)</span> <span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.GLM_GAMMA_PREDICTIONS<span class="tok-punctuation">)</span>
+    <span class="tok-punctuation">)</span>                                                       <span class="tok-keyword">AS</span> PREDICTED_SEV<span class="tok-punctuation">,</span>
+    f.PREDICTED_FREQ
+        <span class="tok-operator">*</span> COALESCE<span class="tok-punctuation">(</span>s.AVG_PREDICTED_SEV<span class="tok-punctuation">,</span>
+                   <span class="tok-punctuation">(</span><span class="tok-keyword">SELECT</span> AVG<span class="tok-punctuation">(</span>PREDICTED_SEV<span class="tok-punctuation">)</span> <span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.GLM_GAMMA_PREDICTIONS<span class="tok-punctuation">)</span>
+          <span class="tok-punctuation">)</span>                                                 <span class="tok-keyword">AS</span> PURE_PREMIUM<span class="tok-punctuation">,</span>
+    COALESCE<span class="tok-punctuation">(</span>s.N_CLAIMS<span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span>                                 <span class="tok-keyword">AS</span> N_CLAIMS_ACTUAL<span class="tok-punctuation">,</span>
+    s.AVG_ACTUAL_SEV
+<span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.FREQ_MODEL_FEATURES f
+<span class="tok-keyword">LEFT</span> <span class="tok-keyword">JOIN</span> policy_severity s
+  <span class="tok-keyword">ON</span> f.IDPOL <span class="tok-operator">=</span> s.IDPOL</code></pre></div></div>
+  <div class="cell-outputs"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="1 row">1 row</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">status</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:64px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">status</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="Table PURE_PREMIUM successfully created.">Table PURE_PREMIUM successfully created.</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="24" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-counter">[20]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-keyword">SELECT</span>
+    DATASET<span class="tok-punctuation">,</span>
+    <span class="tok-keyword">COUNT</span><span class="tok-punctuation">(</span><span class="tok-operator">*</span><span class="tok-punctuation">)</span>                          <span class="tok-keyword">AS</span> N_POLICIES<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span>AVG<span class="tok-punctuation">(</span>PREDICTED_FREQ<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">6</span><span class="tok-punctuation">)</span>     <span class="tok-keyword">AS</span> AVG_PRED_FREQ<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span>AVG<span class="tok-punctuation">(</span>PREDICTED_SEV<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">2</span><span class="tok-punctuation">)</span>      <span class="tok-keyword">AS</span> AVG_PRED_SEV<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span>AVG<span class="tok-punctuation">(</span>PURE_PREMIUM<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">2</span><span class="tok-punctuation">)</span>       <span class="tok-keyword">AS</span> AVG_PURE_PREMIUM<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>PURE_PREMIUM<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span>       <span class="tok-keyword">AS</span> TOTAL_PURE_PREMIUM
+<span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.PURE_PREMIUM
+<span class="tok-keyword">GROUP</span> <span class="tok-keyword">BY</span> DATASET
+<span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> DATASET</code></pre></div></div>
+  <div class="cell-outputs cell-outputs-no-top-border"><div class="rv-container" id="res-8">
+  <div class="rv-tabs">
+    <button class="rv-tab rv-tab-active" data-target="res-8-table" onclick="switchTab(this)">Table</button>
+    <button class="rv-tab" data-target="res-8-chart" onclick="switchTab(this)">Chart</button>
+  </div>
+  <div class="rv-panel" id="res-8-table"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="2 rows">2 rows</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">DATASET</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="1" onchange="dgToggleCol(this)"><span class="dg-colsel-label">N_POLICIES</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="2" onchange="dgToggleCol(this)"><span class="dg-colsel-label">AVG_PRED_FREQ</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="3" onchange="dgToggleCol(this)"><span class="dg-colsel-label">AVG_PRED_SEV</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="4" onchange="dgToggleCol(this)"><span class="dg-colsel-label">AVG_PURE_PREMIUM</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="5" onchange="dgToggleCol(this)"><span class="dg-colsel-label">TOTAL_PURE_PREMIUM</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:92px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">DATASET</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">N_POLICIES</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,2)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">AVG_PRED_FREQ</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,3)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">AVG_PRED_SEV</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,4)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">AVG_PURE_PREMIUM</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,5)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">TOTAL_PURE_PREMIUM</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,6)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="TEST">TEST</div></td><td><div class="dg-cell" data-raw="135603">135603</div></td><td><div class="dg-cell" data-raw="0.053051">0.053051</div></td><td><div class="dg-cell" data-raw="2272.96">2272.96</div></td><td><div class="dg-cell" data-raw="121.29">121.29</div></td><td><div class="dg-cell" data-raw="16446733">16446733</div></td></tr><tr><td class="dg-row-num">2</td><td><div class="dg-cell" data-raw="TRAIN">TRAIN</div></td><td><div class="dg-cell" data-raw="542410">542410</div></td><td><div class="dg-cell" data-raw="0.053192">0.053192</div></td><td><div class="dg-cell" data-raw="2272.68">2272.68</div></td><td><div class="dg-cell" data-raw="121.48">121.48</div></td><td><div class="dg-cell" data-raw="65889648">65889648</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+  <div class="rv-panel rv-panel-hidden" id="res-8-chart"><div class="ch-layout" id="ch-8"><script type="application/json" id="ch-8-cols">[{"name":"DATASET","type":"nominal"},{"name":"N_POLICIES","type":"quantitative"}]</script><script type="application/json" id="ch-8-vals">[{"DATASET":"TEST","N_POLICIES":"135603"},{"DATASET":"TRAIN","N_POLICIES":"542410"}]</script><script type="application/json" id="ch-8-state">{"type":"grouped-bar","xField":"DATASET","yFields":["N_POLICIES"],"colorField":null,"aggregate":"sum","sortX":"none","timeResolution":"none","limit":0,"xAxisLabelEnabled":true,"xAxisLabel":"DATASET","yAxisLabelEnabled":true,"yAxisLabel":"N_POLICIES"}</script></div></div>
+</div></div>
+</div>
+<div class="markdown-wrapper">
+  <div class="markdown-block"><hr>
+<h2 id="rating-table--relativities-by-risk-factor">Rating Table — Relativities by Risk Factor</h2>
+<p>Combine Poisson (frequency) and Gamma (severity) coefficients into a single rating table.
+Relativities are <code>exp(coefficient)</code> — they multiply the base premium for each factor level.
+Base levels have relativity = 1.00.</p>
+</div>
+</div>
+<div class="cell cell-sql" data-index="26" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-counter">[21]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-keyword">CREATE</span> <span class="tok-keyword">OR</span> REPLACE <span class="tok-keyword">TABLE</span> FREMTPL2.FREMTPL2_INVESTIGATION.RATING_TABLE <span class="tok-keyword">AS</span>
+<span class="tok-keyword">WITH</span> freq_coefs <span class="tok-keyword">AS</span> <span class="tok-punctuation">(</span>
+    <span class="tok-keyword">SELECT</span> COEFFICIENT_NAME<span class="tok-punctuation">,</span> ESTIMATE<span class="tok-punctuation">,</span> EXP_ESTIMATE<span class="tok-punctuation">,</span> P_VALUE<span class="tok-punctuation">,</span>
+           <span class="tok-string">&#x27;FREQUENCY&#x27;</span> <span class="tok-keyword">AS</span> MODEL
+    <span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.GLM_POISSON_COEFFICIENTS
+<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span>
+sev_coefs <span class="tok-keyword">AS</span> <span class="tok-punctuation">(</span>
+    <span class="tok-keyword">SELECT</span> COEFFICIENT_NAME<span class="tok-punctuation">,</span> ESTIMATE<span class="tok-punctuation">,</span> EXP_ESTIMATE<span class="tok-punctuation">,</span> P_VALUE<span class="tok-punctuation">,</span>
+           <span class="tok-string">&#x27;SEVERITY&#x27;</span> <span class="tok-keyword">AS</span> MODEL
+    <span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.GLM_GAMMA_COEFFICIENTS
+<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span>
+all_coefs <span class="tok-keyword">AS</span> <span class="tok-punctuation">(</span>
+    <span class="tok-keyword">SELECT</span> <span class="tok-operator">*</span> <span class="tok-keyword">FROM</span> freq_coefs
+    <span class="tok-keyword">UNION</span> <span class="tok-keyword">ALL</span>
+    <span class="tok-keyword">SELECT</span> <span class="tok-operator">*</span> <span class="tok-keyword">FROM</span> sev_coefs
+<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span>
+parsed <span class="tok-keyword">AS</span> <span class="tok-punctuation">(</span>
+    <span class="tok-keyword">SELECT</span>
+        MODEL<span class="tok-punctuation">,</span>
+        COEFFICIENT_NAME<span class="tok-punctuation">,</span>
+        ESTIMATE<span class="tok-punctuation">,</span>
+        EXP_ESTIMATE<span class="tok-punctuation">,</span>
+        P_VALUE<span class="tok-punctuation">,</span>
+        <span class="tok-keyword">CASE</span>
+            <span class="tok-keyword">WHEN</span> COEFFICIENT_NAME <span class="tok-operator">=</span> <span class="tok-string">&#x27;Intercept&#x27;</span>                         <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;Intercept&#x27;</span>
+            <span class="tok-keyword">WHEN</span> COEFFICIENT_NAME <span class="tok-keyword">LIKE</span> <span class="tok-string">&#x27;%DRIVAGE_BAND%&#x27;</span>                 <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;DRIVAGE_BAND&#x27;</span>
+            <span class="tok-keyword">WHEN</span> COEFFICIENT_NAME <span class="tok-keyword">LIKE</span> <span class="tok-string">&#x27;%VEHAGE_BAND%&#x27;</span>                  <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;VEHAGE_BAND&#x27;</span>
+            <span class="tok-keyword">WHEN</span> COEFFICIENT_NAME <span class="tok-keyword">LIKE</span> <span class="tok-string">&#x27;%AREA%&#x27;</span>                         <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;AREA&#x27;</span>
+            <span class="tok-keyword">WHEN</span> COEFFICIENT_NAME <span class="tok-keyword">LIKE</span> <span class="tok-string">&#x27;%REGION%&#x27;</span>                       <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;REGION&#x27;</span>
+            <span class="tok-keyword">WHEN</span> COEFFICIENT_NAME <span class="tok-keyword">LIKE</span> <span class="tok-string">&#x27;%VEHBRAND%&#x27;</span>                     <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;VEHBRAND&#x27;</span>
+            <span class="tok-keyword">WHEN</span> COEFFICIENT_NAME <span class="tok-keyword">LIKE</span> <span class="tok-string">&#x27;%VEHGAS%&#x27;</span>                       <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;VEHGAS&#x27;</span>
+            <span class="tok-keyword">WHEN</span> COEFFICIENT_NAME <span class="tok-operator">=</span> <span class="tok-string">&#x27;VEHPOWER&#x27;</span>                          <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;VEHPOWER&#x27;</span>
+            <span class="tok-keyword">WHEN</span> COEFFICIENT_NAME <span class="tok-operator">=</span> <span class="tok-string">&#x27;BONUSMALUS_CAPPED&#x27;</span>                 <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;BONUSMALUS_CAPPED&#x27;</span>
+            <span class="tok-keyword">WHEN</span> COEFFICIENT_NAME <span class="tok-operator">=</span> <span class="tok-string">&#x27;LN_DENSITY&#x27;</span>                        <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;LN_DENSITY&#x27;</span>
+            <span class="tok-keyword">ELSE</span> <span class="tok-string">&#x27;OTHER&#x27;</span>
+        <span class="tok-keyword">END</span> <span class="tok-keyword">AS</span> RISK_FACTOR<span class="tok-punctuation">,</span>
+        <span class="tok-keyword">CASE</span>
+            <span class="tok-keyword">WHEN</span> COEFFICIENT_NAME <span class="tok-operator">=</span> <span class="tok-string">&#x27;Intercept&#x27;</span>           <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;Intercept&#x27;</span>
+            <span class="tok-keyword">WHEN</span> COEFFICIENT_NAME <span class="tok-keyword">LIKE</span> <span class="tok-string">&#x27;%T.%&#x27;</span>             <span class="tok-keyword">THEN</span> SPLIT_PART<span class="tok-punctuation">(</span>REPLACE<span class="tok-punctuation">(</span>COEFFICIENT_NAME<span class="tok-punctuation">,</span> <span class="tok-string">&#x27;]&#x27;</span><span class="tok-punctuation">,</span> <span class="tok-string">&#x27;&#x27;</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-string">&#x27;T.&#x27;</span><span class="tok-punctuation">,</span> <span class="tok-number">2</span><span class="tok-punctuation">)</span>
+            <span class="tok-keyword">ELSE</span> COEFFICIENT_NAME
+        <span class="tok-keyword">END</span> <span class="tok-keyword">AS</span> FACTOR_LEVEL
+    <span class="tok-keyword">FROM</span> all_coefs
+<span class="tok-punctuation">)</span>
+<span class="tok-keyword">SELECT</span>
+    MODEL<span class="tok-punctuation">,</span>
+    RISK_FACTOR<span class="tok-punctuation">,</span>
+    FACTOR_LEVEL<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span>ESTIMATE<span class="tok-punctuation">,</span> <span class="tok-number">6</span><span class="tok-punctuation">)</span>      <span class="tok-keyword">AS</span> ESTIMATE<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span>EXP_ESTIMATE<span class="tok-punctuation">,</span> <span class="tok-number">4</span><span class="tok-punctuation">)</span>  <span class="tok-keyword">AS</span> RELATIVITY<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span>P_VALUE<span class="tok-punctuation">,</span> <span class="tok-number">6</span><span class="tok-punctuation">)</span>       <span class="tok-keyword">AS</span> P_VALUE<span class="tok-punctuation">,</span>
+    <span class="tok-keyword">CASE</span> <span class="tok-keyword">WHEN</span> P_VALUE <span class="tok-operator">&lt;</span> <span class="tok-number">0.001</span> <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;***&#x27;</span>
+         <span class="tok-keyword">WHEN</span> P_VALUE <span class="tok-operator">&lt;</span> <span class="tok-number">0.01</span>  <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;**&#x27;</span>
+         <span class="tok-keyword">WHEN</span> P_VALUE <span class="tok-operator">&lt;</span> <span class="tok-number">0.05</span>  <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;*&#x27;</span>
+         <span class="tok-keyword">WHEN</span> P_VALUE <span class="tok-operator">&lt;</span> <span class="tok-number">0.10</span>  <span class="tok-keyword">THEN</span> <span class="tok-string">&#x27;.&#x27;</span>
+         <span class="tok-keyword">ELSE</span> <span class="tok-string">&#x27;&#x27;</span>
+    <span class="tok-keyword">END</span>                     <span class="tok-keyword">AS</span> SIGNIFICANCE
+<span class="tok-keyword">FROM</span> parsed
+<span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> MODEL<span class="tok-punctuation">,</span> RISK_FACTOR<span class="tok-punctuation">,</span> FACTOR_LEVEL</code></pre></div></div>
+  <div class="cell-outputs"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="1 row">1 row</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">status</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:64px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">status</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="Table RATING_TABLE successfully created.">Table RATING_TABLE successfully created.</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="27" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-counter">[22]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-comment">-- Rating table: frequency relativities</span>
+<span class="tok-keyword">SELECT</span> RISK_FACTOR<span class="tok-punctuation">,</span> FACTOR_LEVEL<span class="tok-punctuation">,</span> RELATIVITY<span class="tok-punctuation">,</span> SIGNIFICANCE
+<span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.RATING_TABLE
+<span class="tok-keyword">WHERE</span> MODEL <span class="tok-operator">=</span> <span class="tok-string">&#x27;FREQUENCY&#x27;</span>
+  <span class="tok-keyword">AND</span> RISK_FACTOR <span class="tok-keyword">NOT</span> <span class="tok-keyword">IN</span> <span class="tok-punctuation">(</span><span class="tok-string">&#x27;Intercept&#x27;</span><span class="tok-punctuation">,</span> <span class="tok-string">&#x27;VEHPOWER&#x27;</span><span class="tok-punctuation">,</span> <span class="tok-string">&#x27;BONUSMALUS_CAPPED&#x27;</span><span class="tok-punctuation">,</span> <span class="tok-string">&#x27;LN_DENSITY&#x27;</span><span class="tok-punctuation">)</span>
+<span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> RISK_FACTOR<span class="tok-punctuation">,</span> FACTOR_LEVEL</code></pre></div></div>
+  <div class="cell-outputs cell-outputs-no-top-border"><div class="rv-container" id="res-9">
+  <div class="rv-tabs">
+    <button class="rv-tab rv-tab-active" data-target="res-9-table" onclick="switchTab(this)">Table</button>
+    <button class="rv-tab" data-target="res-9-chart" onclick="switchTab(this)">Chart</button>
+  </div>
+  <div class="rv-panel" id="res-9-table"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="47 rows">47 rows</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">RISK_FACTOR</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="1" onchange="dgToggleCol(this)"><span class="dg-colsel-label">FACTOR_LEVEL</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="2" onchange="dgToggleCol(this)"><span class="dg-colsel-label">RELATIVITY</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="3" onchange="dgToggleCol(this)"><span class="dg-colsel-label">SIGNIFICANCE</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:316px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">RISK_FACTOR</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">FACTOR_LEVEL</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,2)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">RELATIVITY</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,3)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">SIGNIFICANCE</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,4)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="AREA">AREA</div></td><td><div class="dg-cell" data-raw="A">A</div></td><td><div class="dg-cell" data-raw="0.9921">0.9921</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">2</td><td><div class="dg-cell" data-raw="AREA">AREA</div></td><td><div class="dg-cell" data-raw="B">B</div></td><td><div class="dg-cell" data-raw="1.0134">1.0134</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">3</td><td><div class="dg-cell" data-raw="AREA">AREA</div></td><td><div class="dg-cell" data-raw="D">D</div></td><td><div class="dg-cell" data-raw="1.0363">1.0363</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">4</td><td><div class="dg-cell" data-raw="AREA">AREA</div></td><td><div class="dg-cell" data-raw="E">E</div></td><td><div class="dg-cell" data-raw="1.0266">1.0266</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">5</td><td><div class="dg-cell" data-raw="AREA">AREA</div></td><td><div class="dg-cell" data-raw="F">F</div></td><td><div class="dg-cell" data-raw="0.9753">0.9753</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">6</td><td><div class="dg-cell" data-raw="DRIVAGE_BAND">DRIVAGE_BAND</div></td><td><div class="dg-cell" data-raw="18-21">18-21</div></td><td><div class="dg-cell" data-raw="1.2783">1.2783</div></td><td><div class="dg-cell" data-raw="***">***</div></td></tr><tr><td class="dg-row-num">7</td><td><div class="dg-cell" data-raw="DRIVAGE_BAND">DRIVAGE_BAND</div></td><td><div class="dg-cell" data-raw="22-25">22-25</div></td><td><div class="dg-cell" data-raw="0.9677">0.9677</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">8</td><td><div class="dg-cell" data-raw="DRIVAGE_BAND">DRIVAGE_BAND</div></td><td><div class="dg-cell" data-raw="26-30">26-30</div></td><td><div class="dg-cell" data-raw="0.861">0.861</div></td><td><div class="dg-cell" data-raw="***">***</div></td></tr><tr><td class="dg-row-num">9</td><td><div class="dg-cell" data-raw="DRIVAGE_BAND">DRIVAGE_BAND</div></td><td><div class="dg-cell" data-raw="41-50">41-50</div></td><td><div class="dg-cell" data-raw="1.3329">1.3329</div></td><td><div class="dg-cell" data-raw="***">***</div></td></tr><tr><td class="dg-row-num">10</td><td><div class="dg-cell" data-raw="DRIVAGE_BAND">DRIVAGE_BAND</div></td><td><div class="dg-cell" data-raw="51-60">51-60</div></td><td><div class="dg-cell" data-raw="1.2448">1.2448</div></td><td><div class="dg-cell" data-raw="***">***</div></td></tr><tr><td class="dg-row-num">11</td><td><div class="dg-cell" data-raw="DRIVAGE_BAND">DRIVAGE_BAND</div></td><td><div class="dg-cell" data-raw="61-70">61-70</div></td><td><div class="dg-cell" data-raw="1.2134">1.2134</div></td><td><div class="dg-cell" data-raw="***">***</div></td></tr><tr><td class="dg-row-num">12</td><td><div class="dg-cell" data-raw="DRIVAGE_BAND">DRIVAGE_BAND</div></td><td><div class="dg-cell" data-raw="71+">71+</div></td><td><div class="dg-cell" data-raw="1.361">1.361</div></td><td><div class="dg-cell" data-raw="***">***</div></td></tr><tr><td class="dg-row-num">13</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Alsace">Alsace</div></td><td><div class="dg-cell" data-raw="0.9857">0.9857</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">14</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Aquitaine">Aquitaine</div></td><td><div class="dg-cell" data-raw="0.9433">0.9433</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">15</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Auvergne">Auvergne</div></td><td><div class="dg-cell" data-raw="0.7729">0.7729</div></td><td><div class="dg-cell" data-raw="**">**</div></td></tr><tr><td class="dg-row-num">16</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Basse-Normandie">Basse-Normandie</div></td><td><div class="dg-cell" data-raw="0.9962">0.9962</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">17</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Bourgogne">Bourgogne</div></td><td><div class="dg-cell" data-raw="0.9999">0.9999</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">18</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Bretagne">Bretagne</div></td><td><div class="dg-cell" data-raw="1.1137">1.1137</div></td><td><div class="dg-cell" data-raw="***">***</div></td></tr><tr><td class="dg-row-num">19</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Centre">Centre</div></td><td><div class="dg-cell" data-raw="1.086">1.086</div></td><td><div class="dg-cell" data-raw="**">**</div></td></tr><tr><td class="dg-row-num">20</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Champagne-Ardenne">Champagne-Ardenne</div></td><td><div class="dg-cell" data-raw="1.2348">1.2348</div></td><td><div class="dg-cell" data-raw="*">*</div></td></tr><tr><td class="dg-row-num">21</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Corse">Corse</div></td><td><div class="dg-cell" data-raw="1.0941">1.0941</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">22</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Franche-Comte">Franche-Comte</div></td><td><div class="dg-cell" data-raw="0.9525">0.9525</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">23</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Haute-Normandie">Haute-Normandie</div></td><td><div class="dg-cell" data-raw="0.982">0.982</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">24</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Languedoc-Roussillon">Languedoc-Roussillon</div></td><td><div class="dg-cell" data-raw="1.0035">1.0035</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">25</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Limousin">Limousin</div></td><td><div class="dg-cell" data-raw="1.1645">1.1645</div></td><td><div class="dg-cell" data-raw="*">*</div></td></tr><tr><td class="dg-row-num">26</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Midi-Pyrenees">Midi-Pyrenees</div></td><td><div class="dg-cell" data-raw="0.9239">0.9239</div></td><td><div class="dg-cell" data-raw=".">.</div></td></tr><tr><td class="dg-row-num">27</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Nord-Pas-de-Calais">Nord-Pas-de-Calais</div></td><td><div class="dg-cell" data-raw="0.8672">0.8672</div></td><td><div class="dg-cell" data-raw="***">***</div></td></tr><tr><td class="dg-row-num">28</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Pays-de-la-Loire">Pays-de-la-Loire</div></td><td><div class="dg-cell" data-raw="1.0105">1.0105</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">29</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Picardie">Picardie</div></td><td><div class="dg-cell" data-raw="1.1047">1.1047</div></td><td><div class="dg-cell" data-raw=".">.</div></td></tr><tr><td class="dg-row-num">30</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Poitou-Charentes">Poitou-Charentes</div></td><td><div class="dg-cell" data-raw="0.9904">0.9904</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">31</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Provence-Alpes-Cotes-D&#x27;Azur">Provence-Alpes-Cotes-D&#x27;Azur</div></td><td><div class="dg-cell" data-raw="1.011">1.011</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">32</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Rhone-Alpes">Rhone-Alpes</div></td><td><div class="dg-cell" data-raw="1.0854">1.0854</div></td><td><div class="dg-cell" data-raw="**">**</div></td></tr><tr><td class="dg-row-num">33</td><td><div class="dg-cell" data-raw="VEHAGE_BAND">VEHAGE_BAND</div></td><td><div class="dg-cell" data-raw="00-01">00-01</div></td><td><div class="dg-cell" data-raw="1.6649">1.6649</div></td><td><div class="dg-cell" data-raw="***">***</div></td></tr><tr><td class="dg-row-num">34</td><td><div class="dg-cell" data-raw="VEHAGE_BAND">VEHAGE_BAND</div></td><td><div class="dg-cell" data-raw="06-10">06-10</div></td><td><div class="dg-cell" data-raw="1.0644">1.0644</div></td><td><div class="dg-cell" data-raw="***">***</div></td></tr><tr><td class="dg-row-num">35</td><td><div class="dg-cell" data-raw="VEHAGE_BAND">VEHAGE_BAND</div></td><td><div class="dg-cell" data-raw="11-15">11-15</div></td><td><div class="dg-cell" data-raw="0.8746">0.8746</div></td><td><div class="dg-cell" data-raw="***">***</div></td></tr><tr><td class="dg-row-num">36</td><td><div class="dg-cell" data-raw="VEHAGE_BAND">VEHAGE_BAND</div></td><td><div class="dg-cell" data-raw="16+">16+</div></td><td><div class="dg-cell" data-raw="0.6756">0.6756</div></td><td><div class="dg-cell" data-raw="***">***</div></td></tr><tr><td class="dg-row-num">37</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B10">B10</div></td><td><div class="dg-cell" data-raw="1.0374">1.0374</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">38</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B11">B11</div></td><td><div class="dg-cell" data-raw="1.0418">1.0418</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">39</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B12">B12</div></td><td><div class="dg-cell" data-raw="1.1497">1.1497</div></td><td><div class="dg-cell" data-raw="***">***</div></td></tr><tr><td class="dg-row-num">40</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B13">B13</div></td><td><div class="dg-cell" data-raw="1.0628">1.0628</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">41</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B14">B14</div></td><td><div class="dg-cell" data-raw="0.8763">0.8763</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">42</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B2">B2</div></td><td><div class="dg-cell" data-raw="1.0039">1.0039</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">43</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B3">B3</div></td><td><div class="dg-cell" data-raw="1.016">1.016</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">44</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B4">B4</div></td><td><div class="dg-cell" data-raw="0.9895">0.9895</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">45</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B5">B5</div></td><td><div class="dg-cell" data-raw="1.0693">1.0693</div></td><td><div class="dg-cell" data-raw="*">*</div></td></tr><tr><td class="dg-row-num">46</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B6">B6</div></td><td><div class="dg-cell" data-raw="0.9939">0.9939</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">47</td><td><div class="dg-cell" data-raw="VEHGAS">VEHGAS</div></td><td><div class="dg-cell" data-raw="Diesel">Diesel</div></td><td><div class="dg-cell" data-raw="0.9499">0.9499</div></td><td><div class="dg-cell" data-raw="***">***</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+  <div class="rv-panel rv-panel-hidden" id="res-9-chart"><div class="ch-layout" id="ch-9"><script type="application/json" id="ch-9-cols">[{"name":"RISK_FACTOR","type":"nominal"},{"name":"RELATIVITY","type":"quantitative"}]</script><script type="application/json" id="ch-9-vals">[{"RISK_FACTOR":"AREA","RELATIVITY":"0.9921"},{"RISK_FACTOR":"AREA","RELATIVITY":"1.0134"},{"RISK_FACTOR":"AREA","RELATIVITY":"1.0363"},{"RISK_FACTOR":"AREA","RELATIVITY":"1.0266"},{"RISK_FACTOR":"AREA","RELATIVITY":"0.9753"},{"RISK_FACTOR":"DRIVAGE_BAND","RELATIVITY":"1.2783"},{"RISK_FACTOR":"DRIVAGE_BAND","RELATIVITY":"0.9677"},{"RISK_FACTOR":"DRIVAGE_BAND","RELATIVITY":"0.861"},{"RISK_FACTOR":"DRIVAGE_BAND","RELATIVITY":"1.3329"},{"RISK_FACTOR":"DRIVAGE_BAND","RELATIVITY":"1.2448"},{"RISK_FACTOR":"DRIVAGE_BAND","RELATIVITY":"1.2134"},{"RISK_FACTOR":"DRIVAGE_BAND","RELATIVITY":"1.361"},{"RISK_FACTOR":"REGION","RELATIVITY":"0.9857"},{"RISK_FACTOR":"REGION","RELATIVITY":"0.9433"},{"RISK_FACTOR":"REGION","RELATIVITY":"0.7729"},{"RISK_FACTOR":"REGION","RELATIVITY":"0.9962"},{"RISK_FACTOR":"REGION","RELATIVITY":"0.9999"},{"RISK_FACTOR":"REGION","RELATIVITY":"1.1137"},{"RISK_FACTOR":"REGION","RELATIVITY":"1.086"},{"RISK_FACTOR":"REGION","RELATIVITY":"1.2348"},{"RISK_FACTOR":"REGION","RELATIVITY":"1.0941"},{"RISK_FACTOR":"REGION","RELATIVITY":"0.9525"},{"RISK_FACTOR":"REGION","RELATIVITY":"0.982"},{"RISK_FACTOR":"REGION","RELATIVITY":"1.0035"},{"RISK_FACTOR":"REGION","RELATIVITY":"1.1645"},{"RISK_FACTOR":"REGION","RELATIVITY":"0.9239"},{"RISK_FACTOR":"REGION","RELATIVITY":"0.8672"},{"RISK_FACTOR":"REGION","RELATIVITY":"1.0105"},{"RISK_FACTOR":"REGION","RELATIVITY":"1.1047"},{"RISK_FACTOR":"REGION","RELATIVITY":"0.9904"},{"RISK_FACTOR":"REGION","RELATIVITY":"1.011"},{"RISK_FACTOR":"REGION","RELATIVITY":"1.0854"},{"RISK_FACTOR":"VEHAGE_BAND","RELATIVITY":"1.6649"},{"RISK_FACTOR":"VEHAGE_BAND","RELATIVITY":"1.0644"},{"RISK_FACTOR":"VEHAGE_BAND","RELATIVITY":"0.8746"},{"RISK_FACTOR":"VEHAGE_BAND","RELATIVITY":"0.6756"},{"RISK_FACTOR":"VEHBRAND","RELATIVITY":"1.0374"},{"RISK_FACTOR":"VEHBRAND","RELATIVITY":"1.0418"},{"RISK_FACTOR":"VEHBRAND","RELATIVITY":"1.1497"},{"RISK_FACTOR":"VEHBRAND","RELATIVITY":"1.0628"},{"RISK_FACTOR":"VEHBRAND","RELATIVITY":"0.8763"},{"RISK_FACTOR":"VEHBRAND","RELATIVITY":"1.0039"},{"RISK_FACTOR":"VEHBRAND","RELATIVITY":"1.016"},{"RISK_FACTOR":"VEHBRAND","RELATIVITY":"0.9895"},{"RISK_FACTOR":"VEHBRAND","RELATIVITY":"1.0693"},{"RISK_FACTOR":"VEHBRAND","RELATIVITY":"0.9939"},{"RISK_FACTOR":"VEHGAS","RELATIVITY":"0.9499"}]</script><script type="application/json" id="ch-9-state">{"type":"grouped-bar","xField":"RISK_FACTOR","yFields":["RELATIVITY"],"colorField":null,"aggregate":"sum","sortX":"none","timeResolution":"none","limit":0,"xAxisLabelEnabled":true,"xAxisLabel":"RISK_FACTOR","yAxisLabelEnabled":true,"yAxisLabel":"RELATIVITY"}</script></div></div>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="28" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-counter">[23]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-comment">-- Rating table: severity relativities</span>
+<span class="tok-keyword">SELECT</span> RISK_FACTOR<span class="tok-punctuation">,</span> FACTOR_LEVEL<span class="tok-punctuation">,</span> RELATIVITY<span class="tok-punctuation">,</span> SIGNIFICANCE
+<span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.RATING_TABLE
+<span class="tok-keyword">WHERE</span> MODEL <span class="tok-operator">=</span> <span class="tok-string">&#x27;SEVERITY&#x27;</span>
+  <span class="tok-keyword">AND</span> RISK_FACTOR <span class="tok-keyword">NOT</span> <span class="tok-keyword">IN</span> <span class="tok-punctuation">(</span><span class="tok-string">&#x27;Intercept&#x27;</span><span class="tok-punctuation">,</span> <span class="tok-string">&#x27;VEHPOWER&#x27;</span><span class="tok-punctuation">,</span> <span class="tok-string">&#x27;BONUSMALUS_CAPPED&#x27;</span><span class="tok-punctuation">,</span> <span class="tok-string">&#x27;LN_DENSITY&#x27;</span><span class="tok-punctuation">)</span>
+<span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> RISK_FACTOR<span class="tok-punctuation">,</span> FACTOR_LEVEL</code></pre></div></div>
+  <div class="cell-outputs cell-outputs-no-top-border"><div class="rv-container" id="res-10">
+  <div class="rv-tabs">
+    <button class="rv-tab rv-tab-active" data-target="res-10-table" onclick="switchTab(this)">Table</button>
+    <button class="rv-tab" data-target="res-10-chart" onclick="switchTab(this)">Chart</button>
+  </div>
+  <div class="rv-panel" id="res-10-table"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="47 rows">47 rows</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">RISK_FACTOR</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="1" onchange="dgToggleCol(this)"><span class="dg-colsel-label">FACTOR_LEVEL</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="2" onchange="dgToggleCol(this)"><span class="dg-colsel-label">RELATIVITY</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="3" onchange="dgToggleCol(this)"><span class="dg-colsel-label">SIGNIFICANCE</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:316px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">RISK_FACTOR</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">FACTOR_LEVEL</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,2)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">RELATIVITY</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,3)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">SIGNIFICANCE</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,4)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="AREA">AREA</div></td><td><div class="dg-cell" data-raw="A">A</div></td><td><div class="dg-cell" data-raw="1.4721">1.4721</div></td><td><div class="dg-cell" data-raw=".">.</div></td></tr><tr><td class="dg-row-num">2</td><td><div class="dg-cell" data-raw="AREA">AREA</div></td><td><div class="dg-cell" data-raw="B">B</div></td><td><div class="dg-cell" data-raw="1.2846">1.2846</div></td><td><div class="dg-cell" data-raw=".">.</div></td></tr><tr><td class="dg-row-num">3</td><td><div class="dg-cell" data-raw="AREA">AREA</div></td><td><div class="dg-cell" data-raw="D">D</div></td><td><div class="dg-cell" data-raw="0.9821">0.9821</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">4</td><td><div class="dg-cell" data-raw="AREA">AREA</div></td><td><div class="dg-cell" data-raw="E">E</div></td><td><div class="dg-cell" data-raw="0.9222">0.9222</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">5</td><td><div class="dg-cell" data-raw="AREA">AREA</div></td><td><div class="dg-cell" data-raw="F">F</div></td><td><div class="dg-cell" data-raw="0.6601">0.6601</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">6</td><td><div class="dg-cell" data-raw="DRIVAGE_BAND">DRIVAGE_BAND</div></td><td><div class="dg-cell" data-raw="18-21">18-21</div></td><td><div class="dg-cell" data-raw="4.1309">4.1309</div></td><td><div class="dg-cell" data-raw="***">***</div></td></tr><tr><td class="dg-row-num">7</td><td><div class="dg-cell" data-raw="DRIVAGE_BAND">DRIVAGE_BAND</div></td><td><div class="dg-cell" data-raw="22-25">22-25</div></td><td><div class="dg-cell" data-raw="0.9096">0.9096</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">8</td><td><div class="dg-cell" data-raw="DRIVAGE_BAND">DRIVAGE_BAND</div></td><td><div class="dg-cell" data-raw="26-30">26-30</div></td><td><div class="dg-cell" data-raw="0.9673">0.9673</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">9</td><td><div class="dg-cell" data-raw="DRIVAGE_BAND">DRIVAGE_BAND</div></td><td><div class="dg-cell" data-raw="41-50">41-50</div></td><td><div class="dg-cell" data-raw="0.844">0.844</div></td><td><div class="dg-cell" data-raw=".">.</div></td></tr><tr><td class="dg-row-num">10</td><td><div class="dg-cell" data-raw="DRIVAGE_BAND">DRIVAGE_BAND</div></td><td><div class="dg-cell" data-raw="51-60">51-60</div></td><td><div class="dg-cell" data-raw="0.9242">0.9242</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">11</td><td><div class="dg-cell" data-raw="DRIVAGE_BAND">DRIVAGE_BAND</div></td><td><div class="dg-cell" data-raw="61-70">61-70</div></td><td><div class="dg-cell" data-raw="0.9139">0.9139</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">12</td><td><div class="dg-cell" data-raw="DRIVAGE_BAND">DRIVAGE_BAND</div></td><td><div class="dg-cell" data-raw="71+">71+</div></td><td><div class="dg-cell" data-raw="1.2607">1.2607</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">13</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Alsace">Alsace</div></td><td><div class="dg-cell" data-raw="0.7552">0.7552</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">14</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Aquitaine">Aquitaine</div></td><td><div class="dg-cell" data-raw="0.9932">0.9932</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">15</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Auvergne">Auvergne</div></td><td><div class="dg-cell" data-raw="0.688">0.688</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">16</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Basse-Normandie">Basse-Normandie</div></td><td><div class="dg-cell" data-raw="1.1677">1.1677</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">17</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Bourgogne">Bourgogne</div></td><td><div class="dg-cell" data-raw="1.0048">1.0048</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">18</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Bretagne">Bretagne</div></td><td><div class="dg-cell" data-raw="1.1017">1.1017</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">19</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Centre">Centre</div></td><td><div class="dg-cell" data-raw="1.2284">1.2284</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">20</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Champagne-Ardenne">Champagne-Ardenne</div></td><td><div class="dg-cell" data-raw="3.109">3.109</div></td><td><div class="dg-cell" data-raw="*">*</div></td></tr><tr><td class="dg-row-num">21</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Corse">Corse</div></td><td><div class="dg-cell" data-raw="2.013">2.013</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">22</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Franche-Comte">Franche-Comte</div></td><td><div class="dg-cell" data-raw="1.0643">1.0643</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">23</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Haute-Normandie">Haute-Normandie</div></td><td><div class="dg-cell" data-raw="0.8972">0.8972</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">24</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Languedoc-Roussillon">Languedoc-Roussillon</div></td><td><div class="dg-cell" data-raw="1.0965">1.0965</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">25</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Limousin">Limousin</div></td><td><div class="dg-cell" data-raw="0.8655">0.8655</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">26</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Midi-Pyrenees">Midi-Pyrenees</div></td><td><div class="dg-cell" data-raw="0.827">0.827</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">27</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Nord-Pas-de-Calais">Nord-Pas-de-Calais</div></td><td><div class="dg-cell" data-raw="1.0648">1.0648</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">28</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Pays-de-la-Loire">Pays-de-la-Loire</div></td><td><div class="dg-cell" data-raw="0.9496">0.9496</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">29</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Picardie">Picardie</div></td><td><div class="dg-cell" data-raw="1.3095">1.3095</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">30</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Poitou-Charentes">Poitou-Charentes</div></td><td><div class="dg-cell" data-raw="0.9348">0.9348</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">31</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Provence-Alpes-Cotes-D&#x27;Azur">Provence-Alpes-Cotes-D&#x27;Azur</div></td><td><div class="dg-cell" data-raw="1.2591">1.2591</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">32</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Rhone-Alpes">Rhone-Alpes</div></td><td><div class="dg-cell" data-raw="1.0976">1.0976</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">33</td><td><div class="dg-cell" data-raw="VEHAGE_BAND">VEHAGE_BAND</div></td><td><div class="dg-cell" data-raw="00-01">00-01</div></td><td><div class="dg-cell" data-raw="1.0015">1.0015</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">34</td><td><div class="dg-cell" data-raw="VEHAGE_BAND">VEHAGE_BAND</div></td><td><div class="dg-cell" data-raw="06-10">06-10</div></td><td><div class="dg-cell" data-raw="0.9521">0.9521</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">35</td><td><div class="dg-cell" data-raw="VEHAGE_BAND">VEHAGE_BAND</div></td><td><div class="dg-cell" data-raw="11-15">11-15</div></td><td><div class="dg-cell" data-raw="1.0143">1.0143</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">36</td><td><div class="dg-cell" data-raw="VEHAGE_BAND">VEHAGE_BAND</div></td><td><div class="dg-cell" data-raw="16+">16+</div></td><td><div class="dg-cell" data-raw="0.9395">0.9395</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">37</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B10">B10</div></td><td><div class="dg-cell" data-raw="1.198">1.198</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">38</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B11">B11</div></td><td><div class="dg-cell" data-raw="1.9308">1.9308</div></td><td><div class="dg-cell" data-raw="**">**</div></td></tr><tr><td class="dg-row-num">39</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B12">B12</div></td><td><div class="dg-cell" data-raw="1.1236">1.1236</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">40</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B13">B13</div></td><td><div class="dg-cell" data-raw="1.0718">1.0718</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">41</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B14">B14</div></td><td><div class="dg-cell" data-raw="0.6943">0.6943</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">42</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B2">B2</div></td><td><div class="dg-cell" data-raw="1.0868">1.0868</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">43</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B3">B3</div></td><td><div class="dg-cell" data-raw="0.9343">0.9343</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">44</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B4">B4</div></td><td><div class="dg-cell" data-raw="1.2943">1.2943</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">45</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B5">B5</div></td><td><div class="dg-cell" data-raw="0.9041">0.9041</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">46</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B6">B6</div></td><td><div class="dg-cell" data-raw="0.8518">0.8518</div></td><td><div class="dg-cell" data-raw=""></div></td></tr><tr><td class="dg-row-num">47</td><td><div class="dg-cell" data-raw="VEHGAS">VEHGAS</div></td><td><div class="dg-cell" data-raw="Diesel">Diesel</div></td><td><div class="dg-cell" data-raw="0.9765">0.9765</div></td><td><div class="dg-cell" data-raw=""></div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+  <div class="rv-panel rv-panel-hidden" id="res-10-chart"><div class="ch-layout" id="ch-10"><script type="application/json" id="ch-10-cols">[{"name":"RISK_FACTOR","type":"nominal"},{"name":"RELATIVITY","type":"quantitative"}]</script><script type="application/json" id="ch-10-vals">[{"RISK_FACTOR":"AREA","RELATIVITY":"1.4721"},{"RISK_FACTOR":"AREA","RELATIVITY":"1.2846"},{"RISK_FACTOR":"AREA","RELATIVITY":"0.9821"},{"RISK_FACTOR":"AREA","RELATIVITY":"0.9222"},{"RISK_FACTOR":"AREA","RELATIVITY":"0.6601"},{"RISK_FACTOR":"DRIVAGE_BAND","RELATIVITY":"4.1309"},{"RISK_FACTOR":"DRIVAGE_BAND","RELATIVITY":"0.9096"},{"RISK_FACTOR":"DRIVAGE_BAND","RELATIVITY":"0.9673"},{"RISK_FACTOR":"DRIVAGE_BAND","RELATIVITY":"0.844"},{"RISK_FACTOR":"DRIVAGE_BAND","RELATIVITY":"0.9242"},{"RISK_FACTOR":"DRIVAGE_BAND","RELATIVITY":"0.9139"},{"RISK_FACTOR":"DRIVAGE_BAND","RELATIVITY":"1.2607"},{"RISK_FACTOR":"REGION","RELATIVITY":"0.7552"},{"RISK_FACTOR":"REGION","RELATIVITY":"0.9932"},{"RISK_FACTOR":"REGION","RELATIVITY":"0.688"},{"RISK_FACTOR":"REGION","RELATIVITY":"1.1677"},{"RISK_FACTOR":"REGION","RELATIVITY":"1.0048"},{"RISK_FACTOR":"REGION","RELATIVITY":"1.1017"},{"RISK_FACTOR":"REGION","RELATIVITY":"1.2284"},{"RISK_FACTOR":"REGION","RELATIVITY":"3.109"},{"RISK_FACTOR":"REGION","RELATIVITY":"2.013"},{"RISK_FACTOR":"REGION","RELATIVITY":"1.0643"},{"RISK_FACTOR":"REGION","RELATIVITY":"0.8972"},{"RISK_FACTOR":"REGION","RELATIVITY":"1.0965"},{"RISK_FACTOR":"REGION","RELATIVITY":"0.8655"},{"RISK_FACTOR":"REGION","RELATIVITY":"0.827"},{"RISK_FACTOR":"REGION","RELATIVITY":"1.0648"},{"RISK_FACTOR":"REGION","RELATIVITY":"0.9496"},{"RISK_FACTOR":"REGION","RELATIVITY":"1.3095"},{"RISK_FACTOR":"REGION","RELATIVITY":"0.9348"},{"RISK_FACTOR":"REGION","RELATIVITY":"1.2591"},{"RISK_FACTOR":"REGION","RELATIVITY":"1.0976"},{"RISK_FACTOR":"VEHAGE_BAND","RELATIVITY":"1.0015"},{"RISK_FACTOR":"VEHAGE_BAND","RELATIVITY":"0.9521"},{"RISK_FACTOR":"VEHAGE_BAND","RELATIVITY":"1.0143"},{"RISK_FACTOR":"VEHAGE_BAND","RELATIVITY":"0.9395"},{"RISK_FACTOR":"VEHBRAND","RELATIVITY":"1.198"},{"RISK_FACTOR":"VEHBRAND","RELATIVITY":"1.9308"},{"RISK_FACTOR":"VEHBRAND","RELATIVITY":"1.1236"},{"RISK_FACTOR":"VEHBRAND","RELATIVITY":"1.0718"},{"RISK_FACTOR":"VEHBRAND","RELATIVITY":"0.6943"},{"RISK_FACTOR":"VEHBRAND","RELATIVITY":"1.0868"},{"RISK_FACTOR":"VEHBRAND","RELATIVITY":"0.9343"},{"RISK_FACTOR":"VEHBRAND","RELATIVITY":"1.2943"},{"RISK_FACTOR":"VEHBRAND","RELATIVITY":"0.9041"},{"RISK_FACTOR":"VEHBRAND","RELATIVITY":"0.8518"},{"RISK_FACTOR":"VEHGAS","RELATIVITY":"0.9765"}]</script><script type="application/json" id="ch-10-state">{"type":"grouped-bar","xField":"RISK_FACTOR","yFields":["RELATIVITY"],"colorField":null,"aggregate":"sum","sortX":"none","timeResolution":"none","limit":0,"xAxisLabelEnabled":true,"xAxisLabel":"RISK_FACTOR","yAxisLabelEnabled":true,"yAxisLabel":"RELATIVITY"}</script></div></div>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="29" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-counter">[24]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-comment">-- Combined frequency x severity relativity per factor level</span>
+<span class="tok-keyword">WITH</span> pivoted <span class="tok-keyword">AS</span> <span class="tok-punctuation">(</span>
+    <span class="tok-keyword">SELECT</span>
+        RISK_FACTOR<span class="tok-punctuation">,</span>
+        FACTOR_LEVEL<span class="tok-punctuation">,</span>
+        MAX<span class="tok-punctuation">(</span><span class="tok-keyword">CASE</span> <span class="tok-keyword">WHEN</span> MODEL <span class="tok-operator">=</span> <span class="tok-string">&#x27;FREQUENCY&#x27;</span> <span class="tok-keyword">THEN</span> RELATIVITY <span class="tok-keyword">END</span><span class="tok-punctuation">)</span> <span class="tok-keyword">AS</span> FREQ_RELATIVITY<span class="tok-punctuation">,</span>
+        MAX<span class="tok-punctuation">(</span><span class="tok-keyword">CASE</span> <span class="tok-keyword">WHEN</span> MODEL <span class="tok-operator">=</span> <span class="tok-string">&#x27;SEVERITY&#x27;</span>  <span class="tok-keyword">THEN</span> RELATIVITY <span class="tok-keyword">END</span><span class="tok-punctuation">)</span> <span class="tok-keyword">AS</span> SEV_RELATIVITY
+    <span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.RATING_TABLE
+    <span class="tok-keyword">WHERE</span> RISK_FACTOR <span class="tok-keyword">NOT</span> <span class="tok-keyword">IN</span> <span class="tok-punctuation">(</span><span class="tok-string">&#x27;Intercept&#x27;</span><span class="tok-punctuation">)</span>
+    <span class="tok-keyword">GROUP</span> <span class="tok-keyword">BY</span> RISK_FACTOR<span class="tok-punctuation">,</span> FACTOR_LEVEL
+<span class="tok-punctuation">)</span>
+<span class="tok-keyword">SELECT</span>
+    RISK_FACTOR<span class="tok-punctuation">,</span>
+    FACTOR_LEVEL<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span>FREQ_RELATIVITY<span class="tok-punctuation">,</span> <span class="tok-number">4</span><span class="tok-punctuation">)</span>                                       <span class="tok-keyword">AS</span> FREQ_RELATIVITY<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span>SEV_RELATIVITY<span class="tok-punctuation">,</span> <span class="tok-number">4</span><span class="tok-punctuation">)</span>                                        <span class="tok-keyword">AS</span> SEV_RELATIVITY<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span>COALESCE<span class="tok-punctuation">(</span>FREQ_RELATIVITY<span class="tok-punctuation">,</span> <span class="tok-number">1</span><span class="tok-punctuation">)</span> <span class="tok-operator">*</span> COALESCE<span class="tok-punctuation">(</span>SEV_RELATIVITY<span class="tok-punctuation">,</span> <span class="tok-number">1</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">4</span><span class="tok-punctuation">)</span>  <span class="tok-keyword">AS</span> COMBINED_RELATIVITY
+<span class="tok-keyword">FROM</span> pivoted
+<span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> RISK_FACTOR<span class="tok-punctuation">,</span> FACTOR_LEVEL</code></pre></div></div>
+  <div class="cell-outputs cell-outputs-no-top-border"><div class="rv-container" id="res-11">
+  <div class="rv-tabs">
+    <button class="rv-tab rv-tab-active" data-target="res-11-table" onclick="switchTab(this)">Table</button>
+    <button class="rv-tab" data-target="res-11-chart" onclick="switchTab(this)">Chart</button>
+  </div>
+  <div class="rv-panel" id="res-11-table"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="50 rows">50 rows</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">RISK_FACTOR</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="1" onchange="dgToggleCol(this)"><span class="dg-colsel-label">FACTOR_LEVEL</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="2" onchange="dgToggleCol(this)"><span class="dg-colsel-label">FREQ_RELATIVITY</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="3" onchange="dgToggleCol(this)"><span class="dg-colsel-label">SEV_RELATIVITY</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="4" onchange="dgToggleCol(this)"><span class="dg-colsel-label">COMBINED_RELATIVITY</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:316px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">RISK_FACTOR</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">FACTOR_LEVEL</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,2)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">FREQ_RELATIVITY</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,3)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">SEV_RELATIVITY</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,4)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">COMBINED_RELATIVITY</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,5)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="AREA">AREA</div></td><td><div class="dg-cell" data-raw="A">A</div></td><td><div class="dg-cell" data-raw="0.9921">0.9921</div></td><td><div class="dg-cell" data-raw="1.4721">1.4721</div></td><td><div class="dg-cell" data-raw="1.4605">1.4605</div></td></tr><tr><td class="dg-row-num">2</td><td><div class="dg-cell" data-raw="AREA">AREA</div></td><td><div class="dg-cell" data-raw="B">B</div></td><td><div class="dg-cell" data-raw="1.0134">1.0134</div></td><td><div class="dg-cell" data-raw="1.2846">1.2846</div></td><td><div class="dg-cell" data-raw="1.3018">1.3018</div></td></tr><tr><td class="dg-row-num">3</td><td><div class="dg-cell" data-raw="AREA">AREA</div></td><td><div class="dg-cell" data-raw="D">D</div></td><td><div class="dg-cell" data-raw="1.0363">1.0363</div></td><td><div class="dg-cell" data-raw="0.9821">0.9821</div></td><td><div class="dg-cell" data-raw="1.0178">1.0178</div></td></tr><tr><td class="dg-row-num">4</td><td><div class="dg-cell" data-raw="AREA">AREA</div></td><td><div class="dg-cell" data-raw="E">E</div></td><td><div class="dg-cell" data-raw="1.0266">1.0266</div></td><td><div class="dg-cell" data-raw="0.9222">0.9222</div></td><td><div class="dg-cell" data-raw="0.9467">0.9467</div></td></tr><tr><td class="dg-row-num">5</td><td><div class="dg-cell" data-raw="AREA">AREA</div></td><td><div class="dg-cell" data-raw="F">F</div></td><td><div class="dg-cell" data-raw="0.9753">0.9753</div></td><td><div class="dg-cell" data-raw="0.6601">0.6601</div></td><td><div class="dg-cell" data-raw="0.6438">0.6438</div></td></tr><tr><td class="dg-row-num">6</td><td><div class="dg-cell" data-raw="BONUSMALUS_CAPPED">BONUSMALUS_CAPPED</div></td><td><div class="dg-cell" data-raw="BONUSMALUS_CAPPED">BONUSMALUS_CAPPED</div></td><td><div class="dg-cell" data-raw="1.0234">1.0234</div></td><td><div class="dg-cell" data-raw="1.0015">1.0015</div></td><td><div class="dg-cell" data-raw="1.0249">1.0249</div></td></tr><tr><td class="dg-row-num">7</td><td><div class="dg-cell" data-raw="DRIVAGE_BAND">DRIVAGE_BAND</div></td><td><div class="dg-cell" data-raw="18-21">18-21</div></td><td><div class="dg-cell" data-raw="1.2783">1.2783</div></td><td><div class="dg-cell" data-raw="4.1309">4.1309</div></td><td><div class="dg-cell" data-raw="5.2805">5.2805</div></td></tr><tr><td class="dg-row-num">8</td><td><div class="dg-cell" data-raw="DRIVAGE_BAND">DRIVAGE_BAND</div></td><td><div class="dg-cell" data-raw="22-25">22-25</div></td><td><div class="dg-cell" data-raw="0.9677">0.9677</div></td><td><div class="dg-cell" data-raw="0.9096">0.9096</div></td><td><div class="dg-cell" data-raw="0.8802">0.8802</div></td></tr><tr><td class="dg-row-num">9</td><td><div class="dg-cell" data-raw="DRIVAGE_BAND">DRIVAGE_BAND</div></td><td><div class="dg-cell" data-raw="26-30">26-30</div></td><td><div class="dg-cell" data-raw="0.861">0.861</div></td><td><div class="dg-cell" data-raw="0.9673">0.9673</div></td><td><div class="dg-cell" data-raw="0.8328">0.8328</div></td></tr><tr><td class="dg-row-num">10</td><td><div class="dg-cell" data-raw="DRIVAGE_BAND">DRIVAGE_BAND</div></td><td><div class="dg-cell" data-raw="41-50">41-50</div></td><td><div class="dg-cell" data-raw="1.3329">1.3329</div></td><td><div class="dg-cell" data-raw="0.844">0.844</div></td><td><div class="dg-cell" data-raw="1.125">1.125</div></td></tr><tr><td class="dg-row-num">11</td><td><div class="dg-cell" data-raw="DRIVAGE_BAND">DRIVAGE_BAND</div></td><td><div class="dg-cell" data-raw="51-60">51-60</div></td><td><div class="dg-cell" data-raw="1.2448">1.2448</div></td><td><div class="dg-cell" data-raw="0.9242">0.9242</div></td><td><div class="dg-cell" data-raw="1.1504">1.1504</div></td></tr><tr><td class="dg-row-num">12</td><td><div class="dg-cell" data-raw="DRIVAGE_BAND">DRIVAGE_BAND</div></td><td><div class="dg-cell" data-raw="61-70">61-70</div></td><td><div class="dg-cell" data-raw="1.2134">1.2134</div></td><td><div class="dg-cell" data-raw="0.9139">0.9139</div></td><td><div class="dg-cell" data-raw="1.1089">1.1089</div></td></tr><tr><td class="dg-row-num">13</td><td><div class="dg-cell" data-raw="DRIVAGE_BAND">DRIVAGE_BAND</div></td><td><div class="dg-cell" data-raw="71+">71+</div></td><td><div class="dg-cell" data-raw="1.361">1.361</div></td><td><div class="dg-cell" data-raw="1.2607">1.2607</div></td><td><div class="dg-cell" data-raw="1.7158">1.7158</div></td></tr><tr><td class="dg-row-num">14</td><td><div class="dg-cell" data-raw="LN_DENSITY">LN_DENSITY</div></td><td><div class="dg-cell" data-raw="LN_DENSITY">LN_DENSITY</div></td><td><div class="dg-cell" data-raw="1.0381">1.0381</div></td><td><div class="dg-cell" data-raw="1.083">1.083</div></td><td><div class="dg-cell" data-raw="1.1243">1.1243</div></td></tr><tr><td class="dg-row-num">15</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Alsace">Alsace</div></td><td><div class="dg-cell" data-raw="0.9857">0.9857</div></td><td><div class="dg-cell" data-raw="0.7552">0.7552</div></td><td><div class="dg-cell" data-raw="0.7444">0.7444</div></td></tr><tr><td class="dg-row-num">16</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Aquitaine">Aquitaine</div></td><td><div class="dg-cell" data-raw="0.9433">0.9433</div></td><td><div class="dg-cell" data-raw="0.9932">0.9932</div></td><td><div class="dg-cell" data-raw="0.9369">0.9369</div></td></tr><tr><td class="dg-row-num">17</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Auvergne">Auvergne</div></td><td><div class="dg-cell" data-raw="0.7729">0.7729</div></td><td><div class="dg-cell" data-raw="0.688">0.688</div></td><td><div class="dg-cell" data-raw="0.5318">0.5318</div></td></tr><tr><td class="dg-row-num">18</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Basse-Normandie">Basse-Normandie</div></td><td><div class="dg-cell" data-raw="0.9962">0.9962</div></td><td><div class="dg-cell" data-raw="1.1677">1.1677</div></td><td><div class="dg-cell" data-raw="1.1633">1.1633</div></td></tr><tr><td class="dg-row-num">19</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Bourgogne">Bourgogne</div></td><td><div class="dg-cell" data-raw="0.9999">0.9999</div></td><td><div class="dg-cell" data-raw="1.0048">1.0048</div></td><td><div class="dg-cell" data-raw="1.0047">1.0047</div></td></tr><tr><td class="dg-row-num">20</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Bretagne">Bretagne</div></td><td><div class="dg-cell" data-raw="1.1137">1.1137</div></td><td><div class="dg-cell" data-raw="1.1017">1.1017</div></td><td><div class="dg-cell" data-raw="1.227">1.227</div></td></tr><tr><td class="dg-row-num">21</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Centre">Centre</div></td><td><div class="dg-cell" data-raw="1.086">1.086</div></td><td><div class="dg-cell" data-raw="1.2284">1.2284</div></td><td><div class="dg-cell" data-raw="1.334">1.334</div></td></tr><tr><td class="dg-row-num">22</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Champagne-Ardenne">Champagne-Ardenne</div></td><td><div class="dg-cell" data-raw="1.2348">1.2348</div></td><td><div class="dg-cell" data-raw="3.109">3.109</div></td><td><div class="dg-cell" data-raw="3.839">3.839</div></td></tr><tr><td class="dg-row-num">23</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Corse">Corse</div></td><td><div class="dg-cell" data-raw="1.0941">1.0941</div></td><td><div class="dg-cell" data-raw="2.013">2.013</div></td><td><div class="dg-cell" data-raw="2.2024">2.2024</div></td></tr><tr><td class="dg-row-num">24</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Franche-Comte">Franche-Comte</div></td><td><div class="dg-cell" data-raw="0.9525">0.9525</div></td><td><div class="dg-cell" data-raw="1.0643">1.0643</div></td><td><div class="dg-cell" data-raw="1.0137">1.0137</div></td></tr><tr><td class="dg-row-num">25</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Haute-Normandie">Haute-Normandie</div></td><td><div class="dg-cell" data-raw="0.982">0.982</div></td><td><div class="dg-cell" data-raw="0.8972">0.8972</div></td><td><div class="dg-cell" data-raw="0.8811">0.8811</div></td></tr><tr><td class="dg-row-num">26</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Languedoc-Roussillon">Languedoc-Roussillon</div></td><td><div class="dg-cell" data-raw="1.0035">1.0035</div></td><td><div class="dg-cell" data-raw="1.0965">1.0965</div></td><td><div class="dg-cell" data-raw="1.1003">1.1003</div></td></tr><tr><td class="dg-row-num">27</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Limousin">Limousin</div></td><td><div class="dg-cell" data-raw="1.1645">1.1645</div></td><td><div class="dg-cell" data-raw="0.8655">0.8655</div></td><td><div class="dg-cell" data-raw="1.0079">1.0079</div></td></tr><tr><td class="dg-row-num">28</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Midi-Pyrenees">Midi-Pyrenees</div></td><td><div class="dg-cell" data-raw="0.9239">0.9239</div></td><td><div class="dg-cell" data-raw="0.827">0.827</div></td><td><div class="dg-cell" data-raw="0.7641">0.7641</div></td></tr><tr><td class="dg-row-num">29</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Nord-Pas-de-Calais">Nord-Pas-de-Calais</div></td><td><div class="dg-cell" data-raw="0.8672">0.8672</div></td><td><div class="dg-cell" data-raw="1.0648">1.0648</div></td><td><div class="dg-cell" data-raw="0.9234">0.9234</div></td></tr><tr><td class="dg-row-num">30</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Pays-de-la-Loire">Pays-de-la-Loire</div></td><td><div class="dg-cell" data-raw="1.0105">1.0105</div></td><td><div class="dg-cell" data-raw="0.9496">0.9496</div></td><td><div class="dg-cell" data-raw="0.9596">0.9596</div></td></tr><tr><td class="dg-row-num">31</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Picardie">Picardie</div></td><td><div class="dg-cell" data-raw="1.1047">1.1047</div></td><td><div class="dg-cell" data-raw="1.3095">1.3095</div></td><td><div class="dg-cell" data-raw="1.4466">1.4466</div></td></tr><tr><td class="dg-row-num">32</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Poitou-Charentes">Poitou-Charentes</div></td><td><div class="dg-cell" data-raw="0.9904">0.9904</div></td><td><div class="dg-cell" data-raw="0.9348">0.9348</div></td><td><div class="dg-cell" data-raw="0.9258">0.9258</div></td></tr><tr><td class="dg-row-num">33</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Provence-Alpes-Cotes-D&#x27;Azur">Provence-Alpes-Cotes-D&#x27;Azur</div></td><td><div class="dg-cell" data-raw="1.011">1.011</div></td><td><div class="dg-cell" data-raw="1.2591">1.2591</div></td><td><div class="dg-cell" data-raw="1.273">1.273</div></td></tr><tr><td class="dg-row-num">34</td><td><div class="dg-cell" data-raw="REGION">REGION</div></td><td><div class="dg-cell" data-raw="Rhone-Alpes">Rhone-Alpes</div></td><td><div class="dg-cell" data-raw="1.0854">1.0854</div></td><td><div class="dg-cell" data-raw="1.0976">1.0976</div></td><td><div class="dg-cell" data-raw="1.1913">1.1913</div></td></tr><tr><td class="dg-row-num">35</td><td><div class="dg-cell" data-raw="VEHAGE_BAND">VEHAGE_BAND</div></td><td><div class="dg-cell" data-raw="00-01">00-01</div></td><td><div class="dg-cell" data-raw="1.6649">1.6649</div></td><td><div class="dg-cell" data-raw="1.0015">1.0015</div></td><td><div class="dg-cell" data-raw="1.6674">1.6674</div></td></tr><tr><td class="dg-row-num">36</td><td><div class="dg-cell" data-raw="VEHAGE_BAND">VEHAGE_BAND</div></td><td><div class="dg-cell" data-raw="06-10">06-10</div></td><td><div class="dg-cell" data-raw="1.0644">1.0644</div></td><td><div class="dg-cell" data-raw="0.9521">0.9521</div></td><td><div class="dg-cell" data-raw="1.0134">1.0134</div></td></tr><tr><td class="dg-row-num">37</td><td><div class="dg-cell" data-raw="VEHAGE_BAND">VEHAGE_BAND</div></td><td><div class="dg-cell" data-raw="11-15">11-15</div></td><td><div class="dg-cell" data-raw="0.8746">0.8746</div></td><td><div class="dg-cell" data-raw="1.0143">1.0143</div></td><td><div class="dg-cell" data-raw="0.8871">0.8871</div></td></tr><tr><td class="dg-row-num">38</td><td><div class="dg-cell" data-raw="VEHAGE_BAND">VEHAGE_BAND</div></td><td><div class="dg-cell" data-raw="16+">16+</div></td><td><div class="dg-cell" data-raw="0.6756">0.6756</div></td><td><div class="dg-cell" data-raw="0.9395">0.9395</div></td><td><div class="dg-cell" data-raw="0.6347">0.6347</div></td></tr><tr><td class="dg-row-num">39</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B10">B10</div></td><td><div class="dg-cell" data-raw="1.0374">1.0374</div></td><td><div class="dg-cell" data-raw="1.198">1.198</div></td><td><div class="dg-cell" data-raw="1.2428">1.2428</div></td></tr><tr><td class="dg-row-num">40</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B11">B11</div></td><td><div class="dg-cell" data-raw="1.0418">1.0418</div></td><td><div class="dg-cell" data-raw="1.9308">1.9308</div></td><td><div class="dg-cell" data-raw="2.0115">2.0115</div></td></tr><tr><td class="dg-row-num">41</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B12">B12</div></td><td><div class="dg-cell" data-raw="1.1497">1.1497</div></td><td><div class="dg-cell" data-raw="1.1236">1.1236</div></td><td><div class="dg-cell" data-raw="1.2918">1.2918</div></td></tr><tr><td class="dg-row-num">42</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B13">B13</div></td><td><div class="dg-cell" data-raw="1.0628">1.0628</div></td><td><div class="dg-cell" data-raw="1.0718">1.0718</div></td><td><div class="dg-cell" data-raw="1.1391">1.1391</div></td></tr><tr><td class="dg-row-num">43</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B14">B14</div></td><td><div class="dg-cell" data-raw="0.8763">0.8763</div></td><td><div class="dg-cell" data-raw="0.6943">0.6943</div></td><td><div class="dg-cell" data-raw="0.6084">0.6084</div></td></tr><tr><td class="dg-row-num">44</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B2">B2</div></td><td><div class="dg-cell" data-raw="1.0039">1.0039</div></td><td><div class="dg-cell" data-raw="1.0868">1.0868</div></td><td><div class="dg-cell" data-raw="1.091">1.091</div></td></tr><tr><td class="dg-row-num">45</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B3">B3</div></td><td><div class="dg-cell" data-raw="1.016">1.016</div></td><td><div class="dg-cell" data-raw="0.9343">0.9343</div></td><td><div class="dg-cell" data-raw="0.9492">0.9492</div></td></tr><tr><td class="dg-row-num">46</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B4">B4</div></td><td><div class="dg-cell" data-raw="0.9895">0.9895</div></td><td><div class="dg-cell" data-raw="1.2943">1.2943</div></td><td><div class="dg-cell" data-raw="1.2807">1.2807</div></td></tr><tr><td class="dg-row-num">47</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B5">B5</div></td><td><div class="dg-cell" data-raw="1.0693">1.0693</div></td><td><div class="dg-cell" data-raw="0.9041">0.9041</div></td><td><div class="dg-cell" data-raw="0.9668">0.9668</div></td></tr><tr><td class="dg-row-num">48</td><td><div class="dg-cell" data-raw="VEHBRAND">VEHBRAND</div></td><td><div class="dg-cell" data-raw="B6">B6</div></td><td><div class="dg-cell" data-raw="0.9939">0.9939</div></td><td><div class="dg-cell" data-raw="0.8518">0.8518</div></td><td><div class="dg-cell" data-raw="0.8466">0.8466</div></td></tr><tr><td class="dg-row-num">49</td><td><div class="dg-cell" data-raw="VEHGAS">VEHGAS</div></td><td><div class="dg-cell" data-raw="Diesel">Diesel</div></td><td><div class="dg-cell" data-raw="0.9499">0.9499</div></td><td><div class="dg-cell" data-raw="0.9765">0.9765</div></td><td><div class="dg-cell" data-raw="0.9276">0.9276</div></td></tr><tr><td class="dg-row-num">50</td><td><div class="dg-cell" data-raw="VEHPOWER">VEHPOWER</div></td><td><div class="dg-cell" data-raw="VEHPOWER">VEHPOWER</div></td><td><div class="dg-cell" data-raw="1.0111">1.0111</div></td><td><div class="dg-cell" data-raw="1.0014">1.0014</div></td><td><div class="dg-cell" data-raw="1.0125">1.0125</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+  <div class="rv-panel rv-panel-hidden" id="res-11-chart"><div class="ch-layout" id="ch-11"><script type="application/json" id="ch-11-cols">[{"name":"RISK_FACTOR","type":"nominal"},{"name":"FREQ_RELATIVITY","type":"quantitative"}]</script><script type="application/json" id="ch-11-vals">[{"RISK_FACTOR":"AREA","FREQ_RELATIVITY":"0.9921"},{"RISK_FACTOR":"AREA","FREQ_RELATIVITY":"1.0134"},{"RISK_FACTOR":"AREA","FREQ_RELATIVITY":"1.0363"},{"RISK_FACTOR":"AREA","FREQ_RELATIVITY":"1.0266"},{"RISK_FACTOR":"AREA","FREQ_RELATIVITY":"0.9753"},{"RISK_FACTOR":"BONUSMALUS_CAPPED","FREQ_RELATIVITY":"1.0234"},{"RISK_FACTOR":"DRIVAGE_BAND","FREQ_RELATIVITY":"1.2783"},{"RISK_FACTOR":"DRIVAGE_BAND","FREQ_RELATIVITY":"0.9677"},{"RISK_FACTOR":"DRIVAGE_BAND","FREQ_RELATIVITY":"0.861"},{"RISK_FACTOR":"DRIVAGE_BAND","FREQ_RELATIVITY":"1.3329"},{"RISK_FACTOR":"DRIVAGE_BAND","FREQ_RELATIVITY":"1.2448"},{"RISK_FACTOR":"DRIVAGE_BAND","FREQ_RELATIVITY":"1.2134"},{"RISK_FACTOR":"DRIVAGE_BAND","FREQ_RELATIVITY":"1.361"},{"RISK_FACTOR":"LN_DENSITY","FREQ_RELATIVITY":"1.0381"},{"RISK_FACTOR":"REGION","FREQ_RELATIVITY":"0.9857"},{"RISK_FACTOR":"REGION","FREQ_RELATIVITY":"0.9433"},{"RISK_FACTOR":"REGION","FREQ_RELATIVITY":"0.7729"},{"RISK_FACTOR":"REGION","FREQ_RELATIVITY":"0.9962"},{"RISK_FACTOR":"REGION","FREQ_RELATIVITY":"0.9999"},{"RISK_FACTOR":"REGION","FREQ_RELATIVITY":"1.1137"},{"RISK_FACTOR":"REGION","FREQ_RELATIVITY":"1.086"},{"RISK_FACTOR":"REGION","FREQ_RELATIVITY":"1.2348"},{"RISK_FACTOR":"REGION","FREQ_RELATIVITY":"1.0941"},{"RISK_FACTOR":"REGION","FREQ_RELATIVITY":"0.9525"},{"RISK_FACTOR":"REGION","FREQ_RELATIVITY":"0.982"},{"RISK_FACTOR":"REGION","FREQ_RELATIVITY":"1.0035"},{"RISK_FACTOR":"REGION","FREQ_RELATIVITY":"1.1645"},{"RISK_FACTOR":"REGION","FREQ_RELATIVITY":"0.9239"},{"RISK_FACTOR":"REGION","FREQ_RELATIVITY":"0.8672"},{"RISK_FACTOR":"REGION","FREQ_RELATIVITY":"1.0105"},{"RISK_FACTOR":"REGION","FREQ_RELATIVITY":"1.1047"},{"RISK_FACTOR":"REGION","FREQ_RELATIVITY":"0.9904"},{"RISK_FACTOR":"REGION","FREQ_RELATIVITY":"1.011"},{"RISK_FACTOR":"REGION","FREQ_RELATIVITY":"1.0854"},{"RISK_FACTOR":"VEHAGE_BAND","FREQ_RELATIVITY":"1.6649"},{"RISK_FACTOR":"VEHAGE_BAND","FREQ_RELATIVITY":"1.0644"},{"RISK_FACTOR":"VEHAGE_BAND","FREQ_RELATIVITY":"0.8746"},{"RISK_FACTOR":"VEHAGE_BAND","FREQ_RELATIVITY":"0.6756"},{"RISK_FACTOR":"VEHBRAND","FREQ_RELATIVITY":"1.0374"},{"RISK_FACTOR":"VEHBRAND","FREQ_RELATIVITY":"1.0418"},{"RISK_FACTOR":"VEHBRAND","FREQ_RELATIVITY":"1.1497"},{"RISK_FACTOR":"VEHBRAND","FREQ_RELATIVITY":"1.0628"},{"RISK_FACTOR":"VEHBRAND","FREQ_RELATIVITY":"0.8763"},{"RISK_FACTOR":"VEHBRAND","FREQ_RELATIVITY":"1.0039"},{"RISK_FACTOR":"VEHBRAND","FREQ_RELATIVITY":"1.016"},{"RISK_FACTOR":"VEHBRAND","FREQ_RELATIVITY":"0.9895"},{"RISK_FACTOR":"VEHBRAND","FREQ_RELATIVITY":"1.0693"},{"RISK_FACTOR":"VEHBRAND","FREQ_RELATIVITY":"0.9939"},{"RISK_FACTOR":"VEHGAS","FREQ_RELATIVITY":"0.9499"},{"RISK_FACTOR":"VEHPOWER","FREQ_RELATIVITY":"1.0111"}]</script><script type="application/json" id="ch-11-state">{"type":"grouped-bar","xField":"RISK_FACTOR","yFields":["FREQ_RELATIVITY"],"colorField":null,"aggregate":"sum","sortX":"none","timeResolution":"none","limit":0,"xAxisLabelEnabled":true,"xAxisLabel":"RISK_FACTOR","yAxisLabelEnabled":true,"yAxisLabel":"FREQ_RELATIVITY"}</script></div></div>
+</div></div>
+</div>
+<div class="markdown-wrapper">
+  <div class="markdown-block"><hr>
+<h2 id="model-validation--actual-vs-expected-lift--gini">Model Validation — Actual vs Expected, Lift &amp; Gini</h2>
+<p>All metrics are computed on the <strong>test set only</strong>, using the frequency model's
+predicted pure premium as the ranking variable.</p>
+<ul>
+<li><strong>A-vs-E by decile</strong>: policies ranked by predicted pure premium, split into 10
+equal-sized buckets. Within each bucket we compare actual vs predicted claim
+counts and exposure-weighted frequency.</li>
+<li><strong>Lift chart</strong>: cumulative % of actual claims captured as we move from the
+riskiest decile to the safest.</li>
+<li><strong>Normalized Gini</strong>: 2 × AUC(Lorenz) − 1, measuring how well the model
+separates high-risk from low-risk policies.</li>
+</ul>
+</div>
+</div>
+<div class="cell cell-sql" data-index="31" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-counter">[25]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-comment">-- A-vs-E by decile: ranked by PREDICTED FREQUENCY RATE, exposure-weighted buckets</span>
+<span class="tok-comment">-- Previous version ranked by raw PURE_PREMIUM in equal-population NTILE(10),</span>
+<span class="tok-comment">-- which mixed short-exposure policies with volatile annualised rates into</span>
+<span class="tok-comment">-- the wrong decile, producing an inverted A/E pattern.</span>
+<span class="tok-keyword">CREATE</span> <span class="tok-keyword">OR</span> REPLACE <span class="tok-keyword">TABLE</span> FREMTPL2.FREMTPL2_INVESTIGATION.AVE_DECILE_TEST <span class="tok-keyword">AS</span>
+<span class="tok-keyword">WITH</span> test_base <span class="tok-keyword">AS</span> <span class="tok-punctuation">(</span>
+    <span class="tok-keyword">SELECT</span>
+        p.IDPOL<span class="tok-punctuation">,</span>
+        p.CLAIMNB<span class="tok-punctuation">,</span>
+        p.EXPOSURE<span class="tok-punctuation">,</span>
+        p.PREDICTED_FREQ<span class="tok-punctuation">,</span>
+        p.PURE_PREMIUM<span class="tok-punctuation">,</span>
+        <span class="tok-comment">-- Rate = annualised predicted frequency (the actual risk ordering)</span>
+        p.PREDICTED_FREQ <span class="tok-operator">/</span> NULLIF<span class="tok-punctuation">(</span>p.EXPOSURE<span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span> <span class="tok-keyword">AS</span> PREDICTED_RATE
+    <span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.PURE_PREMIUM p
+    <span class="tok-keyword">WHERE</span> p.DATASET <span class="tok-operator">=</span> <span class="tok-string">&#x27;TEST&#x27;</span>
+      <span class="tok-keyword">AND</span> p.EXPOSURE <span class="tok-operator">&gt;</span> <span class="tok-number">0</span>
+<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span>
+<span class="tok-comment">-- Cumulative exposure share for exposure-weighted decile boundaries</span>
+ranked <span class="tok-keyword">AS</span> <span class="tok-punctuation">(</span>
+    <span class="tok-keyword">SELECT</span>
+        <span class="tok-operator">*</span><span class="tok-punctuation">,</span>
+        SUM<span class="tok-punctuation">(</span>EXPOSURE<span class="tok-punctuation">)</span> OVER <span class="tok-punctuation">(</span><span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> PREDICTED_RATE <span class="tok-keyword">DESC</span>
+                            <span class="tok-keyword">ROWS</span> <span class="tok-keyword">BETWEEN</span> UNBOUNDED PRECEDING <span class="tok-keyword">AND</span> <span class="tok-keyword">CURRENT</span> <span class="tok-keyword">ROW</span><span class="tok-punctuation">)</span>
+            <span class="tok-operator">/</span> SUM<span class="tok-punctuation">(</span>EXPOSURE<span class="tok-punctuation">)</span> OVER <span class="tok-punctuation">(</span><span class="tok-punctuation">)</span> <span class="tok-keyword">AS</span> CUM_EXPOSURE_SHARE
+    <span class="tok-keyword">FROM</span> test_base
+<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span>
+assigned <span class="tok-keyword">AS</span> <span class="tok-punctuation">(</span>
+    <span class="tok-keyword">SELECT</span>
+        <span class="tok-operator">*</span><span class="tok-punctuation">,</span>
+        <span class="tok-comment">-- Exposure-weighted decile: each bucket holds ~10% of total exposure</span>
+        LEAST<span class="tok-punctuation">(</span>CEIL<span class="tok-punctuation">(</span>CUM_EXPOSURE_SHARE <span class="tok-operator">*</span> <span class="tok-number">10</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">10</span><span class="tok-punctuation">)</span> <span class="tok-keyword">AS</span> DECILE
+    <span class="tok-keyword">FROM</span> ranked
+<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span>
+decile_stats <span class="tok-keyword">AS</span> <span class="tok-punctuation">(</span>
+    <span class="tok-keyword">SELECT</span>
+        DECILE<span class="tok-punctuation">,</span>
+        <span class="tok-keyword">COUNT</span><span class="tok-punctuation">(</span><span class="tok-operator">*</span><span class="tok-punctuation">)</span>                                        <span class="tok-keyword">AS</span> N_POLICIES<span class="tok-punctuation">,</span>
+        ROUND<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>EXPOSURE<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">2</span><span class="tok-punctuation">)</span>                         <span class="tok-keyword">AS</span> TOTAL_EXPOSURE<span class="tok-punctuation">,</span>
+        SUM<span class="tok-punctuation">(</span>CLAIMNB<span class="tok-punctuation">)</span>                                    <span class="tok-keyword">AS</span> ACTUAL_CLAIMS<span class="tok-punctuation">,</span>
+        ROUND<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>PREDICTED_FREQ<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">2</span><span class="tok-punctuation">)</span>                   <span class="tok-keyword">AS</span> EXPECTED_CLAIMS<span class="tok-punctuation">,</span>
+        SUM<span class="tok-punctuation">(</span>CLAIMNB<span class="tok-punctuation">)</span>   <span class="tok-operator">/</span> NULLIF<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>EXPOSURE<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span>       <span class="tok-keyword">AS</span> ACTUAL_FREQ<span class="tok-punctuation">,</span>
+        SUM<span class="tok-punctuation">(</span>PREDICTED_FREQ<span class="tok-punctuation">)</span> <span class="tok-operator">/</span> NULLIF<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>EXPOSURE<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span>  <span class="tok-keyword">AS</span> EXPECTED_FREQ<span class="tok-punctuation">,</span>
+        AVG<span class="tok-punctuation">(</span>PURE_PREMIUM<span class="tok-punctuation">)</span>                               <span class="tok-keyword">AS</span> AVG_PURE_PREMIUM
+    <span class="tok-keyword">FROM</span> assigned
+    <span class="tok-keyword">GROUP</span> <span class="tok-keyword">BY</span> DECILE
+<span class="tok-punctuation">)</span>
+<span class="tok-keyword">SELECT</span>
+    DECILE<span class="tok-punctuation">,</span>
+    N_POLICIES<span class="tok-punctuation">,</span>
+    TOTAL_EXPOSURE<span class="tok-punctuation">,</span>
+    ACTUAL_CLAIMS<span class="tok-punctuation">,</span>
+    EXPECTED_CLAIMS<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span>ACTUAL_FREQ<span class="tok-punctuation">,</span>   <span class="tok-number">6</span><span class="tok-punctuation">)</span>                                           <span class="tok-keyword">AS</span> ACTUAL_FREQ<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span>EXPECTED_FREQ<span class="tok-punctuation">,</span> <span class="tok-number">6</span><span class="tok-punctuation">)</span>                                           <span class="tok-keyword">AS</span> EXPECTED_FREQ<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span>ACTUAL_CLAIMS <span class="tok-operator">/</span> NULLIF<span class="tok-punctuation">(</span>EXPECTED_CLAIMS<span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">4</span><span class="tok-punctuation">)</span>              <span class="tok-keyword">AS</span> AE_RATIO<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span>AVG_PURE_PREMIUM<span class="tok-punctuation">,</span> <span class="tok-number">2</span><span class="tok-punctuation">)</span>                                        <span class="tok-keyword">AS</span> AVG_PURE_PREMIUM<span class="tok-punctuation">,</span>
+    SUM<span class="tok-punctuation">(</span>ACTUAL_CLAIMS<span class="tok-punctuation">)</span>   OVER <span class="tok-punctuation">(</span><span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> DECILE<span class="tok-punctuation">)</span>                       <span class="tok-keyword">AS</span> CUM_ACTUAL<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>EXPECTED_CLAIMS<span class="tok-punctuation">)</span> OVER <span class="tok-punctuation">(</span><span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> DECILE<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">2</span><span class="tok-punctuation">)</span>             <span class="tok-keyword">AS</span> CUM_EXPECTED<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>ACTUAL_CLAIMS<span class="tok-punctuation">)</span> OVER <span class="tok-punctuation">(</span><span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> DECILE<span class="tok-punctuation">)</span>
+        <span class="tok-operator">/</span> NULLIF<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>ACTUAL_CLAIMS<span class="tok-punctuation">)</span> OVER <span class="tok-punctuation">(</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span> <span class="tok-operator">*</span> <span class="tok-number">100</span><span class="tok-punctuation">,</span> <span class="tok-number">2</span><span class="tok-punctuation">)</span>            <span class="tok-keyword">AS</span> CUM_ACTUAL_PCT<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>TOTAL_EXPOSURE<span class="tok-punctuation">)</span> OVER <span class="tok-punctuation">(</span><span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> DECILE<span class="tok-punctuation">)</span>
+        <span class="tok-operator">/</span> NULLIF<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>TOTAL_EXPOSURE<span class="tok-punctuation">)</span> OVER <span class="tok-punctuation">(</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span> <span class="tok-operator">*</span> <span class="tok-number">100</span><span class="tok-punctuation">,</span> <span class="tok-number">2</span><span class="tok-punctuation">)</span>           <span class="tok-keyword">AS</span> CUM_EXPOSURE_PCT
+<span class="tok-keyword">FROM</span> decile_stats
+<span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> DECILE</code></pre></div></div>
+  <div class="cell-outputs"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="1 row">1 row</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">status</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:64px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">status</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="Table AVE_DECILE_TEST successfully created.">Table AVE_DECILE_TEST successfully created.</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="32" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-counter">[26]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-comment">-- Actual vs Expected frequency by decile (chart-ready)</span>
+<span class="tok-keyword">SELECT</span>
+    DECILE<span class="tok-punctuation">,</span>
+    ACTUAL_FREQ   <span class="tok-keyword">AS</span> ACTUAL_FREQUENCY<span class="tok-punctuation">,</span>
+    EXPECTED_FREQ <span class="tok-keyword">AS</span> PREDICTED_FREQUENCY<span class="tok-punctuation">,</span>
+    AE_RATIO
+<span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.AVE_DECILE_TEST
+<span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> DECILE</code></pre></div></div>
+  <div class="cell-outputs cell-outputs-no-top-border"><div class="rv-container" id="res-12">
+  <div class="rv-tabs">
+    <button class="rv-tab rv-tab-active" data-target="res-12-table" onclick="switchTab(this)">Table</button>
+    <button class="rv-tab" data-target="res-12-chart" onclick="switchTab(this)">Chart</button>
+  </div>
+  <div class="rv-panel" id="res-12-table"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="10 rows">10 rows</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">DECILE</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="1" onchange="dgToggleCol(this)"><span class="dg-colsel-label">ACTUAL_FREQUENCY</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="2" onchange="dgToggleCol(this)"><span class="dg-colsel-label">PREDICTED_FREQUENCY</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="3" onchange="dgToggleCol(this)"><span class="dg-colsel-label">AE_RATIO</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:316px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">DECILE</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">ACTUAL_FREQUENCY</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,2)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">PREDICTED_FREQUENCY</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,3)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">AE_RATIO</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,4)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="0.224143">0.224143</div></td><td><div class="dg-cell" data-raw="0.226352">0.226352</div></td><td><div class="dg-cell" data-raw="0.9902">0.9902</div></td></tr><tr><td class="dg-row-num">2</td><td><div class="dg-cell" data-raw="2">2</div></td><td><div class="dg-cell" data-raw="0.142580">0.142580</div></td><td><div class="dg-cell" data-raw="0.141617">0.141617</div></td><td><div class="dg-cell" data-raw="1.0068">1.0068</div></td></tr><tr><td class="dg-row-num">3</td><td><div class="dg-cell" data-raw="3">3</div></td><td><div class="dg-cell" data-raw="0.124287">0.124287</div></td><td><div class="dg-cell" data-raw="0.112951">0.112951</div></td><td><div class="dg-cell" data-raw="1.1004">1.1004</div></td></tr><tr><td class="dg-row-num">4</td><td><div class="dg-cell" data-raw="4">4</div></td><td><div class="dg-cell" data-raw="0.099849">0.099849</div></td><td><div class="dg-cell" data-raw="0.096201">0.096201</div></td><td><div class="dg-cell" data-raw="1.0379">1.0379</div></td></tr><tr><td class="dg-row-num">5</td><td><div class="dg-cell" data-raw="5">5</div></td><td><div class="dg-cell" data-raw="0.088252">0.088252</div></td><td><div class="dg-cell" data-raw="0.08753">0.08753</div></td><td><div class="dg-cell" data-raw="1.0082">1.0082</div></td></tr><tr><td class="dg-row-num">6</td><td><div class="dg-cell" data-raw="6">6</div></td><td><div class="dg-cell" data-raw="0.080997">0.080997</div></td><td><div class="dg-cell" data-raw="0.081278">0.081278</div></td><td><div class="dg-cell" data-raw="0.9965">0.9965</div></td></tr><tr><td class="dg-row-num">7</td><td><div class="dg-cell" data-raw="7">7</div></td><td><div class="dg-cell" data-raw="0.079041">0.079041</div></td><td><div class="dg-cell" data-raw="0.075569">0.075569</div></td><td><div class="dg-cell" data-raw="1.0459">1.0459</div></td></tr><tr><td class="dg-row-num">8</td><td><div class="dg-cell" data-raw="8">8</div></td><td><div class="dg-cell" data-raw="0.070526">0.070526</div></td><td><div class="dg-cell" data-raw="0.069521">0.069521</div></td><td><div class="dg-cell" data-raw="1.0145">1.0145</div></td></tr><tr><td class="dg-row-num">9</td><td><div class="dg-cell" data-raw="9">9</div></td><td><div class="dg-cell" data-raw="0.059490">0.059490</div></td><td><div class="dg-cell" data-raw="0.062361">0.062361</div></td><td><div class="dg-cell" data-raw="0.954">0.954</div></td></tr><tr><td class="dg-row-num">10</td><td><div class="dg-cell" data-raw="10">10</div></td><td><div class="dg-cell" data-raw="0.043287">0.043287</div></td><td><div class="dg-cell" data-raw="0.051233">0.051233</div></td><td><div class="dg-cell" data-raw="0.8449">0.8449</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+  <div class="rv-panel rv-panel-hidden" id="res-12-chart"><div class="ch-layout" id="ch-12"><script type="application/json" id="ch-12-cols">[{"name":"ACTUAL_FREQUENCY","type":"quantitative"},{"name":"DECILE","type":"quantitative"}]</script><script type="application/json" id="ch-12-vals">[{"ACTUAL_FREQUENCY":"0.224143","DECILE":"1"},{"ACTUAL_FREQUENCY":"0.142580","DECILE":"2"},{"ACTUAL_FREQUENCY":"0.124287","DECILE":"3"},{"ACTUAL_FREQUENCY":"0.099849","DECILE":"4"},{"ACTUAL_FREQUENCY":"0.088252","DECILE":"5"},{"ACTUAL_FREQUENCY":"0.080997","DECILE":"6"},{"ACTUAL_FREQUENCY":"0.079041","DECILE":"7"},{"ACTUAL_FREQUENCY":"0.070526","DECILE":"8"},{"ACTUAL_FREQUENCY":"0.059490","DECILE":"9"},{"ACTUAL_FREQUENCY":"0.043287","DECILE":"10"}]</script><script type="application/json" id="ch-12-state">{"type":"grouped-bar","xField":"ACTUAL_FREQUENCY","yFields":["DECILE"],"colorField":null,"aggregate":"sum","sortX":"none","timeResolution":"none","limit":0,"xAxisLabelEnabled":true,"xAxisLabel":"ACTUAL_FREQUENCY","yAxisLabelEnabled":true,"yAxisLabel":"DECILE"}</script></div></div>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="33" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-counter">[27]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-comment">-- Lift chart: cumulative % of claims captured vs cumulative % of exposure</span>
+<span class="tok-keyword">SELECT</span>
+    DECILE<span class="tok-punctuation">,</span>
+    CUM_EXPOSURE_PCT<span class="tok-punctuation">,</span>
+    CUM_ACTUAL_PCT        <span class="tok-keyword">AS</span> CUM_CLAIMS_CAPTURED_PCT<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span>CUM_ACTUAL_PCT <span class="tok-operator">/</span> NULLIF<span class="tok-punctuation">(</span>CUM_EXPOSURE_PCT<span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">2</span><span class="tok-punctuation">)</span> <span class="tok-keyword">AS</span> LIFT
+<span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.AVE_DECILE_TEST
+<span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> DECILE</code></pre></div></div>
+  <div class="cell-outputs cell-outputs-no-top-border"><div class="rv-container" id="res-13">
+  <div class="rv-tabs">
+    <button class="rv-tab rv-tab-active" data-target="res-13-table" onclick="switchTab(this)">Table</button>
+    <button class="rv-tab" data-target="res-13-chart" onclick="switchTab(this)">Chart</button>
+  </div>
+  <div class="rv-panel" id="res-13-table"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="10 rows">10 rows</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">DECILE</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="1" onchange="dgToggleCol(this)"><span class="dg-colsel-label">CUM_EXPOSURE_PCT</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="2" onchange="dgToggleCol(this)"><span class="dg-colsel-label">CUM_CLAIMS_CAPTURED_PCT</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="3" onchange="dgToggleCol(this)"><span class="dg-colsel-label">LIFT</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:316px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">DECILE</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">CUM_EXPOSURE_PCT</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,2)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">CUM_CLAIMS_CAPTURED_PCT</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,3)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">LIFT</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,4)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="10.00">10.00</div></td><td><div class="dg-cell" data-raw="22.14">22.14</div></td><td><div class="dg-cell" data-raw="2.21">2.21</div></td></tr><tr><td class="dg-row-num">2</td><td><div class="dg-cell" data-raw="2">2</div></td><td><div class="dg-cell" data-raw="20.00">20.00</div></td><td><div class="dg-cell" data-raw="36.22">36.22</div></td><td><div class="dg-cell" data-raw="1.81">1.81</div></td></tr><tr><td class="dg-row-num">3</td><td><div class="dg-cell" data-raw="3">3</div></td><td><div class="dg-cell" data-raw="30.00">30.00</div></td><td><div class="dg-cell" data-raw="48.50">48.50</div></td><td><div class="dg-cell" data-raw="1.62">1.62</div></td></tr><tr><td class="dg-row-num">4</td><td><div class="dg-cell" data-raw="4">4</div></td><td><div class="dg-cell" data-raw="40.00">40.00</div></td><td><div class="dg-cell" data-raw="58.36">58.36</div></td><td><div class="dg-cell" data-raw="1.46">1.46</div></td></tr><tr><td class="dg-row-num">5</td><td><div class="dg-cell" data-raw="5">5</div></td><td><div class="dg-cell" data-raw="50.00">50.00</div></td><td><div class="dg-cell" data-raw="67.08">67.08</div></td><td><div class="dg-cell" data-raw="1.34">1.34</div></td></tr><tr><td class="dg-row-num">6</td><td><div class="dg-cell" data-raw="6">6</div></td><td><div class="dg-cell" data-raw="60.00">60.00</div></td><td><div class="dg-cell" data-raw="75.08">75.08</div></td><td><div class="dg-cell" data-raw="1.25">1.25</div></td></tr><tr><td class="dg-row-num">7</td><td><div class="dg-cell" data-raw="7">7</div></td><td><div class="dg-cell" data-raw="70.00">70.00</div></td><td><div class="dg-cell" data-raw="82.88">82.88</div></td><td><div class="dg-cell" data-raw="1.18">1.18</div></td></tr><tr><td class="dg-row-num">8</td><td><div class="dg-cell" data-raw="8">8</div></td><td><div class="dg-cell" data-raw="80.00">80.00</div></td><td><div class="dg-cell" data-raw="89.85">89.85</div></td><td><div class="dg-cell" data-raw="1.12">1.12</div></td></tr><tr><td class="dg-row-num">9</td><td><div class="dg-cell" data-raw="9">9</div></td><td><div class="dg-cell" data-raw="90.00">90.00</div></td><td><div class="dg-cell" data-raw="95.72">95.72</div></td><td><div class="dg-cell" data-raw="1.06">1.06</div></td></tr><tr><td class="dg-row-num">10</td><td><div class="dg-cell" data-raw="10">10</div></td><td><div class="dg-cell" data-raw="100.00">100.00</div></td><td><div class="dg-cell" data-raw="100.00">100.00</div></td><td><div class="dg-cell" data-raw="1.00">1.00</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+  <div class="rv-panel rv-panel-hidden" id="res-13-chart"><div class="ch-layout" id="ch-13"><script type="application/json" id="ch-13-cols">[{"name":"CUM_EXPOSURE_PCT","type":"quantitative"},{"name":"DECILE","type":"quantitative"}]</script><script type="application/json" id="ch-13-vals">[{"CUM_EXPOSURE_PCT":"10.00","DECILE":"1"},{"CUM_EXPOSURE_PCT":"20.00","DECILE":"2"},{"CUM_EXPOSURE_PCT":"30.00","DECILE":"3"},{"CUM_EXPOSURE_PCT":"40.00","DECILE":"4"},{"CUM_EXPOSURE_PCT":"50.00","DECILE":"5"},{"CUM_EXPOSURE_PCT":"60.00","DECILE":"6"},{"CUM_EXPOSURE_PCT":"70.00","DECILE":"7"},{"CUM_EXPOSURE_PCT":"80.00","DECILE":"8"},{"CUM_EXPOSURE_PCT":"90.00","DECILE":"9"},{"CUM_EXPOSURE_PCT":"100.00","DECILE":"10"}]</script><script type="application/json" id="ch-13-state">{"type":"grouped-bar","xField":"CUM_EXPOSURE_PCT","yFields":["DECILE"],"colorField":null,"aggregate":"sum","sortX":"none","timeResolution":"none","limit":0,"xAxisLabelEnabled":true,"xAxisLabel":"CUM_EXPOSURE_PCT","yAxisLabelEnabled":true,"yAxisLabel":"DECILE"}</script></div></div>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="34" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-counter">[28]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-comment">-- Normalized Gini coefficient for the frequency model (test set)</span>
+<span class="tok-comment">-- Gini = 2 * AUC(Lorenz) - 1, normalized by the perfect-model Gini</span>
+<span class="tok-keyword">WITH</span> policy_level <span class="tok-keyword">AS</span> <span class="tok-punctuation">(</span>
+    <span class="tok-keyword">SELECT</span>
+        IDPOL<span class="tok-punctuation">,</span>
+        CLAIMNB<span class="tok-punctuation">,</span>
+        EXPOSURE<span class="tok-punctuation">,</span>
+        PREDICTED_FREQ
+    <span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.PURE_PREMIUM
+    <span class="tok-keyword">WHERE</span> DATASET <span class="tok-operator">=</span> <span class="tok-string">&#x27;TEST&#x27;</span>
+<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span>
+ordered <span class="tok-keyword">AS</span> <span class="tok-punctuation">(</span>
+    <span class="tok-keyword">SELECT</span>
+        CLAIMNB<span class="tok-punctuation">,</span>
+        PREDICTED_FREQ<span class="tok-punctuation">,</span>
+        <span class="tok-comment">-- Cumulative shares ordered by predicted risk ascending (worst last)</span>
+        SUM<span class="tok-punctuation">(</span>EXPOSURE<span class="tok-punctuation">)</span>  OVER <span class="tok-punctuation">(</span><span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> PREDICTED_FREQ <span class="tok-keyword">ASC</span> <span class="tok-keyword">ROWS</span> <span class="tok-keyword">BETWEEN</span> UNBOUNDED PRECEDING <span class="tok-keyword">AND</span> <span class="tok-keyword">CURRENT</span> <span class="tok-keyword">ROW</span><span class="tok-punctuation">)</span>
+            <span class="tok-operator">/</span> SUM<span class="tok-punctuation">(</span>EXPOSURE<span class="tok-punctuation">)</span> OVER <span class="tok-punctuation">(</span><span class="tok-punctuation">)</span>                          <span class="tok-keyword">AS</span> CUM_EXPOSURE_MODEL<span class="tok-punctuation">,</span>
+        SUM<span class="tok-punctuation">(</span>CLAIMNB<span class="tok-punctuation">)</span>   OVER <span class="tok-punctuation">(</span><span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> PREDICTED_FREQ <span class="tok-keyword">ASC</span> <span class="tok-keyword">ROWS</span> <span class="tok-keyword">BETWEEN</span> UNBOUNDED PRECEDING <span class="tok-keyword">AND</span> <span class="tok-keyword">CURRENT</span> <span class="tok-keyword">ROW</span><span class="tok-punctuation">)</span>
+            <span class="tok-operator">/</span> NULLIF<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>CLAIMNB<span class="tok-punctuation">)</span> OVER <span class="tok-punctuation">(</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span>                <span class="tok-keyword">AS</span> CUM_CLAIMS_MODEL<span class="tok-punctuation">,</span>
+        <span class="tok-comment">-- Perfect ordering: sort by actual claim rate ascending</span>
+        SUM<span class="tok-punctuation">(</span>EXPOSURE<span class="tok-punctuation">)</span>  OVER <span class="tok-punctuation">(</span><span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> CLAIMNB <span class="tok-operator">/</span> NULLIF<span class="tok-punctuation">(</span>EXPOSURE<span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span> <span class="tok-keyword">ASC</span><span class="tok-punctuation">,</span> IDPOL <span class="tok-keyword">ROWS</span> <span class="tok-keyword">BETWEEN</span> UNBOUNDED PRECEDING <span class="tok-keyword">AND</span> <span class="tok-keyword">CURRENT</span> <span class="tok-keyword">ROW</span><span class="tok-punctuation">)</span>
+            <span class="tok-operator">/</span> SUM<span class="tok-punctuation">(</span>EXPOSURE<span class="tok-punctuation">)</span> OVER <span class="tok-punctuation">(</span><span class="tok-punctuation">)</span>                          <span class="tok-keyword">AS</span> CUM_EXPOSURE_PERFECT<span class="tok-punctuation">,</span>
+        SUM<span class="tok-punctuation">(</span>CLAIMNB<span class="tok-punctuation">)</span>   OVER <span class="tok-punctuation">(</span><span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> CLAIMNB <span class="tok-operator">/</span> NULLIF<span class="tok-punctuation">(</span>EXPOSURE<span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span> <span class="tok-keyword">ASC</span><span class="tok-punctuation">,</span> IDPOL <span class="tok-keyword">ROWS</span> <span class="tok-keyword">BETWEEN</span> UNBOUNDED PRECEDING <span class="tok-keyword">AND</span> <span class="tok-keyword">CURRENT</span> <span class="tok-keyword">ROW</span><span class="tok-punctuation">)</span>
+            <span class="tok-operator">/</span> NULLIF<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>CLAIMNB<span class="tok-punctuation">)</span> OVER <span class="tok-punctuation">(</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span>                <span class="tok-keyword">AS</span> CUM_CLAIMS_PERFECT
+    <span class="tok-keyword">FROM</span> policy_level
+<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span>
+auc <span class="tok-keyword">AS</span> <span class="tok-punctuation">(</span>
+    <span class="tok-keyword">SELECT</span>
+        <span class="tok-comment">-- Trapezoidal AUC for model Lorenz curve</span>
+        SUM<span class="tok-punctuation">(</span>CUM_CLAIMS_MODEL<span class="tok-punctuation">)</span>   <span class="tok-operator">/</span> <span class="tok-keyword">COUNT</span><span class="tok-punctuation">(</span><span class="tok-operator">*</span><span class="tok-punctuation">)</span>  <span class="tok-keyword">AS</span> AUC_MODEL<span class="tok-punctuation">,</span>
+        <span class="tok-comment">-- Trapezoidal AUC for perfect Lorenz curve</span>
+        SUM<span class="tok-punctuation">(</span>CUM_CLAIMS_PERFECT<span class="tok-punctuation">)</span> <span class="tok-operator">/</span> <span class="tok-keyword">COUNT</span><span class="tok-punctuation">(</span><span class="tok-operator">*</span><span class="tok-punctuation">)</span>  <span class="tok-keyword">AS</span> AUC_PERFECT<span class="tok-punctuation">,</span>
+        <span class="tok-comment">-- Random model AUC = 0.5</span>
+        <span class="tok-number">0.5</span>                                 <span class="tok-keyword">AS</span> AUC_RANDOM
+    <span class="tok-keyword">FROM</span> ordered
+<span class="tok-punctuation">)</span>
+<span class="tok-keyword">SELECT</span>
+    ROUND<span class="tok-punctuation">(</span><span class="tok-number">2</span> <span class="tok-operator">*</span> AUC_MODEL   <span class="tok-operator">-</span> <span class="tok-number">1</span><span class="tok-punctuation">,</span> <span class="tok-number">6</span><span class="tok-punctuation">)</span>                                                     <span class="tok-keyword">AS</span> RAW_GINI_MODEL<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span><span class="tok-number">2</span> <span class="tok-operator">*</span> AUC_PERFECT <span class="tok-operator">-</span> <span class="tok-number">1</span><span class="tok-punctuation">,</span> <span class="tok-number">6</span><span class="tok-punctuation">)</span>                                                     <span class="tok-keyword">AS</span> RAW_GINI_PERFECT<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span><span class="tok-punctuation">(</span><span class="tok-number">2</span> <span class="tok-operator">*</span> AUC_MODEL <span class="tok-operator">-</span> <span class="tok-number">1</span><span class="tok-punctuation">)</span> <span class="tok-operator">/</span> NULLIF<span class="tok-punctuation">(</span><span class="tok-number">2</span> <span class="tok-operator">*</span> AUC_PERFECT <span class="tok-operator">-</span> <span class="tok-number">1</span><span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">6</span><span class="tok-punctuation">)</span>                    <span class="tok-keyword">AS</span> NORMALIZED_GINI
+<span class="tok-keyword">FROM</span> auc</code></pre></div></div>
+  <div class="cell-outputs cell-outputs-no-top-border"><div class="rv-container" id="res-14">
+  <div class="rv-tabs">
+    <button class="rv-tab rv-tab-active" data-target="res-14-table" onclick="switchTab(this)">Table</button>
+    <button class="rv-tab" data-target="res-14-chart" onclick="switchTab(this)">Chart</button>
+  </div>
+  <div class="rv-panel" id="res-14-table"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="1 row">1 row</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">RAW_GINI_MODEL</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="1" onchange="dgToggleCol(this)"><span class="dg-colsel-label">RAW_GINI_PERFECT</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="2" onchange="dgToggleCol(this)"><span class="dg-colsel-label">NORMALIZED_GINI</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:64px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">RAW_GINI_MODEL</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">RAW_GINI_PERFECT</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,2)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">NORMALIZED_GINI</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,3)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="-0.259522">-0.259522</div></td><td><div class="dg-cell" data-raw="-0.951254">-0.951254</div></td><td><div class="dg-cell" data-raw="0.272821">0.272821</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+  <div class="rv-panel rv-panel-hidden" id="res-14-chart"><div class="ch-layout" id="ch-14"><script type="application/json" id="ch-14-cols">[{"name":"RAW_GINI_PERFECT","type":"quantitative"},{"name":"RAW_GINI_MODEL","type":"quantitative"}]</script><script type="application/json" id="ch-14-vals">[{"RAW_GINI_PERFECT":"-0.951254","RAW_GINI_MODEL":"-0.259522"}]</script><script type="application/json" id="ch-14-state">{"type":"grouped-bar","xField":"RAW_GINI_PERFECT","yFields":["RAW_GINI_MODEL"],"colorField":null,"aggregate":"sum","sortX":"none","timeResolution":"none","limit":0,"xAxisLabelEnabled":true,"xAxisLabel":"RAW_GINI_PERFECT","yAxisLabelEnabled":true,"yAxisLabel":"RAW_GINI_MODEL"}</script></div></div>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="35" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-counter">[29]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-comment">-- Lorenz curve data (chart-ready): model vs perfect vs random</span>
+<span class="tok-comment">-- Bucketed into 100 percentile points for smooth charting</span>
+<span class="tok-keyword">WITH</span> policy_level <span class="tok-keyword">AS</span> <span class="tok-punctuation">(</span>
+    <span class="tok-keyword">SELECT</span>
+        IDPOL<span class="tok-punctuation">,</span>
+        CLAIMNB<span class="tok-punctuation">,</span>
+        EXPOSURE<span class="tok-punctuation">,</span>
+        PREDICTED_FREQ
+    <span class="tok-keyword">FROM</span> FREMTPL2.FREMTPL2_INVESTIGATION.PURE_PREMIUM
+    <span class="tok-keyword">WHERE</span> DATASET <span class="tok-operator">=</span> <span class="tok-string">&#x27;TEST&#x27;</span>
+<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span>
+ranked <span class="tok-keyword">AS</span> <span class="tok-punctuation">(</span>
+    <span class="tok-keyword">SELECT</span>
+        CLAIMNB<span class="tok-punctuation">,</span>
+        EXPOSURE<span class="tok-punctuation">,</span>
+        PREDICTED_FREQ<span class="tok-punctuation">,</span>
+        NTILE<span class="tok-punctuation">(</span><span class="tok-number">100</span><span class="tok-punctuation">)</span> OVER <span class="tok-punctuation">(</span><span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> PREDICTED_FREQ <span class="tok-keyword">ASC</span><span class="tok-punctuation">)</span>                   <span class="tok-keyword">AS</span> MODEL_PCTILE<span class="tok-punctuation">,</span>
+        NTILE<span class="tok-punctuation">(</span><span class="tok-number">100</span><span class="tok-punctuation">)</span> OVER <span class="tok-punctuation">(</span><span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> CLAIMNB <span class="tok-operator">/</span> NULLIF<span class="tok-punctuation">(</span>EXPOSURE<span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span> <span class="tok-keyword">ASC</span><span class="tok-punctuation">)</span>    <span class="tok-keyword">AS</span> PERFECT_PCTILE
+    <span class="tok-keyword">FROM</span> policy_level
+<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span>
+model_curve <span class="tok-keyword">AS</span> <span class="tok-punctuation">(</span>
+    <span class="tok-keyword">SELECT</span>
+        MODEL_PCTILE                                                    <span class="tok-keyword">AS</span> PERCENTILE<span class="tok-punctuation">,</span>
+        SUM<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>CLAIMNB<span class="tok-punctuation">)</span><span class="tok-punctuation">)</span> OVER <span class="tok-punctuation">(</span><span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> MODEL_PCTILE<span class="tok-punctuation">)</span>
+            <span class="tok-operator">/</span> NULLIF<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>CLAIMNB<span class="tok-punctuation">)</span><span class="tok-punctuation">)</span> OVER <span class="tok-punctuation">(</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span>                      <span class="tok-keyword">AS</span> CUM_CLAIMS_PCT
+    <span class="tok-keyword">FROM</span> ranked
+    <span class="tok-keyword">GROUP</span> <span class="tok-keyword">BY</span> MODEL_PCTILE
+<span class="tok-punctuation">)</span><span class="tok-punctuation">,</span>
+perfect_curve <span class="tok-keyword">AS</span> <span class="tok-punctuation">(</span>
+    <span class="tok-keyword">SELECT</span>
+        PERFECT_PCTILE                                                  <span class="tok-keyword">AS</span> PERCENTILE<span class="tok-punctuation">,</span>
+        SUM<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>CLAIMNB<span class="tok-punctuation">)</span><span class="tok-punctuation">)</span> OVER <span class="tok-punctuation">(</span><span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> PERFECT_PCTILE<span class="tok-punctuation">)</span>
+            <span class="tok-operator">/</span> NULLIF<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>SUM<span class="tok-punctuation">(</span>CLAIMNB<span class="tok-punctuation">)</span><span class="tok-punctuation">)</span> OVER <span class="tok-punctuation">(</span><span class="tok-punctuation">)</span><span class="tok-punctuation">,</span> <span class="tok-number">0</span><span class="tok-punctuation">)</span>                      <span class="tok-keyword">AS</span> CUM_CLAIMS_PCT
+    <span class="tok-keyword">FROM</span> ranked
+    <span class="tok-keyword">GROUP</span> <span class="tok-keyword">BY</span> PERFECT_PCTILE
+<span class="tok-punctuation">)</span>
+<span class="tok-keyword">SELECT</span>
+    m.PERCENTILE                                    <span class="tok-keyword">AS</span> POPULATION_PERCENTILE<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span>m.PERCENTILE <span class="tok-operator">/</span> <span class="tok-number">100.0</span><span class="tok-punctuation">,</span> <span class="tok-number">2</span><span class="tok-punctuation">)</span>                  <span class="tok-keyword">AS</span> RANDOM_CUM_CLAIMS<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span>m.CUM_CLAIMS_PCT<span class="tok-punctuation">,</span> <span class="tok-number">4</span><span class="tok-punctuation">)</span>                      <span class="tok-keyword">AS</span> MODEL_CUM_CLAIMS<span class="tok-punctuation">,</span>
+    ROUND<span class="tok-punctuation">(</span>p.CUM_CLAIMS_PCT<span class="tok-punctuation">,</span> <span class="tok-number">4</span><span class="tok-punctuation">)</span>                      <span class="tok-keyword">AS</span> PERFECT_CUM_CLAIMS
+<span class="tok-keyword">FROM</span> model_curve m
+<span class="tok-keyword">JOIN</span> perfect_curve p <span class="tok-keyword">ON</span> m.PERCENTILE <span class="tok-operator">=</span> p.PERCENTILE
+<span class="tok-keyword">ORDER</span> <span class="tok-keyword">BY</span> m.PERCENTILE</code></pre></div></div>
+  <div class="cell-outputs cell-outputs-no-top-border"><div class="rv-container" id="res-15">
+  <div class="rv-tabs">
+    <button class="rv-tab rv-tab-active" data-target="res-15-table" onclick="switchTab(this)">Table</button>
+    <button class="rv-tab" data-target="res-15-chart" onclick="switchTab(this)">Chart</button>
+  </div>
+  <div class="rv-panel" id="res-15-table"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="100 rows">100 rows</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">POPULATION_PERCENTILE</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="1" onchange="dgToggleCol(this)"><span class="dg-colsel-label">RANDOM_CUM_CLAIMS</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="2" onchange="dgToggleCol(this)"><span class="dg-colsel-label">MODEL_CUM_CLAIMS</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="3" onchange="dgToggleCol(this)"><span class="dg-colsel-label">PERFECT_CUM_CLAIMS</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:316px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">POPULATION_PERCENTILE</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">RANDOM_CUM_CLAIMS</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,2)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">MODEL_CUM_CLAIMS</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,3)">&#8942;</button></div></th><th data-col-type="quantitative"><div class="dg-col-header"><span class="dg-col-name">PERFECT_CUM_CLAIMS</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,4)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="1">1</div></td><td><div class="dg-cell" data-raw="0.01">0.01</div></td><td><div class="dg-cell" data-raw="0.0026">0.0026</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">2</td><td><div class="dg-cell" data-raw="2">2</div></td><td><div class="dg-cell" data-raw="0.02">0.02</div></td><td><div class="dg-cell" data-raw="0.0080">0.0080</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">3</td><td><div class="dg-cell" data-raw="3">3</div></td><td><div class="dg-cell" data-raw="0.03">0.03</div></td><td><div class="dg-cell" data-raw="0.0120">0.0120</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">4</td><td><div class="dg-cell" data-raw="4">4</div></td><td><div class="dg-cell" data-raw="0.04">0.04</div></td><td><div class="dg-cell" data-raw="0.0164">0.0164</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">5</td><td><div class="dg-cell" data-raw="5">5</div></td><td><div class="dg-cell" data-raw="0.05">0.05</div></td><td><div class="dg-cell" data-raw="0.0214">0.0214</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">6</td><td><div class="dg-cell" data-raw="6">6</div></td><td><div class="dg-cell" data-raw="0.06">0.06</div></td><td><div class="dg-cell" data-raw="0.0251">0.0251</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">7</td><td><div class="dg-cell" data-raw="7">7</div></td><td><div class="dg-cell" data-raw="0.07">0.07</div></td><td><div class="dg-cell" data-raw="0.0297">0.0297</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">8</td><td><div class="dg-cell" data-raw="8">8</div></td><td><div class="dg-cell" data-raw="0.08">0.08</div></td><td><div class="dg-cell" data-raw="0.0335">0.0335</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">9</td><td><div class="dg-cell" data-raw="9">9</div></td><td><div class="dg-cell" data-raw="0.09">0.09</div></td><td><div class="dg-cell" data-raw="0.0372">0.0372</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">10</td><td><div class="dg-cell" data-raw="10">10</div></td><td><div class="dg-cell" data-raw="0.10">0.10</div></td><td><div class="dg-cell" data-raw="0.0400">0.0400</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">11</td><td><div class="dg-cell" data-raw="11">11</div></td><td><div class="dg-cell" data-raw="0.11">0.11</div></td><td><div class="dg-cell" data-raw="0.0441">0.0441</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">12</td><td><div class="dg-cell" data-raw="12">12</div></td><td><div class="dg-cell" data-raw="0.12">0.12</div></td><td><div class="dg-cell" data-raw="0.0484">0.0484</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">13</td><td><div class="dg-cell" data-raw="13">13</div></td><td><div class="dg-cell" data-raw="0.13">0.13</div></td><td><div class="dg-cell" data-raw="0.0517">0.0517</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">14</td><td><div class="dg-cell" data-raw="14">14</div></td><td><div class="dg-cell" data-raw="0.14">0.14</div></td><td><div class="dg-cell" data-raw="0.0567">0.0567</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">15</td><td><div class="dg-cell" data-raw="15">15</div></td><td><div class="dg-cell" data-raw="0.15">0.15</div></td><td><div class="dg-cell" data-raw="0.0621">0.0621</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">16</td><td><div class="dg-cell" data-raw="16">16</div></td><td><div class="dg-cell" data-raw="0.16">0.16</div></td><td><div class="dg-cell" data-raw="0.0674">0.0674</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">17</td><td><div class="dg-cell" data-raw="17">17</div></td><td><div class="dg-cell" data-raw="0.17">0.17</div></td><td><div class="dg-cell" data-raw="0.0730">0.0730</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">18</td><td><div class="dg-cell" data-raw="18">18</div></td><td><div class="dg-cell" data-raw="0.18">0.18</div></td><td><div class="dg-cell" data-raw="0.0789">0.0789</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">19</td><td><div class="dg-cell" data-raw="19">19</div></td><td><div class="dg-cell" data-raw="0.19">0.19</div></td><td><div class="dg-cell" data-raw="0.0855">0.0855</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">20</td><td><div class="dg-cell" data-raw="20">20</div></td><td><div class="dg-cell" data-raw="0.20">0.20</div></td><td><div class="dg-cell" data-raw="0.0910">0.0910</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">21</td><td><div class="dg-cell" data-raw="21">21</div></td><td><div class="dg-cell" data-raw="0.21">0.21</div></td><td><div class="dg-cell" data-raw="0.0971">0.0971</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">22</td><td><div class="dg-cell" data-raw="22">22</div></td><td><div class="dg-cell" data-raw="0.22">0.22</div></td><td><div class="dg-cell" data-raw="0.1061">0.1061</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">23</td><td><div class="dg-cell" data-raw="23">23</div></td><td><div class="dg-cell" data-raw="0.23">0.23</div></td><td><div class="dg-cell" data-raw="0.1138">0.1138</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">24</td><td><div class="dg-cell" data-raw="24">24</div></td><td><div class="dg-cell" data-raw="0.24">0.24</div></td><td><div class="dg-cell" data-raw="0.1203">0.1203</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">25</td><td><div class="dg-cell" data-raw="25">25</div></td><td><div class="dg-cell" data-raw="0.25">0.25</div></td><td><div class="dg-cell" data-raw="0.1266">0.1266</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">26</td><td><div class="dg-cell" data-raw="26">26</div></td><td><div class="dg-cell" data-raw="0.26">0.26</div></td><td><div class="dg-cell" data-raw="0.1337">0.1337</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">27</td><td><div class="dg-cell" data-raw="27">27</div></td><td><div class="dg-cell" data-raw="0.27">0.27</div></td><td><div class="dg-cell" data-raw="0.1401">0.1401</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">28</td><td><div class="dg-cell" data-raw="28">28</div></td><td><div class="dg-cell" data-raw="0.28">0.28</div></td><td><div class="dg-cell" data-raw="0.1461">0.1461</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">29</td><td><div class="dg-cell" data-raw="29">29</div></td><td><div class="dg-cell" data-raw="0.29">0.29</div></td><td><div class="dg-cell" data-raw="0.1524">0.1524</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">30</td><td><div class="dg-cell" data-raw="30">30</div></td><td><div class="dg-cell" data-raw="0.30">0.30</div></td><td><div class="dg-cell" data-raw="0.1610">0.1610</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">31</td><td><div class="dg-cell" data-raw="31">31</div></td><td><div class="dg-cell" data-raw="0.31">0.31</div></td><td><div class="dg-cell" data-raw="0.1677">0.1677</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">32</td><td><div class="dg-cell" data-raw="32">32</div></td><td><div class="dg-cell" data-raw="0.32">0.32</div></td><td><div class="dg-cell" data-raw="0.1749">0.1749</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">33</td><td><div class="dg-cell" data-raw="33">33</div></td><td><div class="dg-cell" data-raw="0.33">0.33</div></td><td><div class="dg-cell" data-raw="0.1822">0.1822</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">34</td><td><div class="dg-cell" data-raw="34">34</div></td><td><div class="dg-cell" data-raw="0.34">0.34</div></td><td><div class="dg-cell" data-raw="0.1887">0.1887</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">35</td><td><div class="dg-cell" data-raw="35">35</div></td><td><div class="dg-cell" data-raw="0.35">0.35</div></td><td><div class="dg-cell" data-raw="0.1972">0.1972</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">36</td><td><div class="dg-cell" data-raw="36">36</div></td><td><div class="dg-cell" data-raw="0.36">0.36</div></td><td><div class="dg-cell" data-raw="0.2044">0.2044</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">37</td><td><div class="dg-cell" data-raw="37">37</div></td><td><div class="dg-cell" data-raw="0.37">0.37</div></td><td><div class="dg-cell" data-raw="0.2121">0.2121</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">38</td><td><div class="dg-cell" data-raw="38">38</div></td><td><div class="dg-cell" data-raw="0.38">0.38</div></td><td><div class="dg-cell" data-raw="0.2218">0.2218</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">39</td><td><div class="dg-cell" data-raw="39">39</div></td><td><div class="dg-cell" data-raw="0.39">0.39</div></td><td><div class="dg-cell" data-raw="0.2319">0.2319</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">40</td><td><div class="dg-cell" data-raw="40">40</div></td><td><div class="dg-cell" data-raw="0.40">0.40</div></td><td><div class="dg-cell" data-raw="0.2394">0.2394</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">41</td><td><div class="dg-cell" data-raw="41">41</div></td><td><div class="dg-cell" data-raw="0.41">0.41</div></td><td><div class="dg-cell" data-raw="0.2497">0.2497</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">42</td><td><div class="dg-cell" data-raw="42">42</div></td><td><div class="dg-cell" data-raw="0.42">0.42</div></td><td><div class="dg-cell" data-raw="0.2574">0.2574</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">43</td><td><div class="dg-cell" data-raw="43">43</div></td><td><div class="dg-cell" data-raw="0.43">0.43</div></td><td><div class="dg-cell" data-raw="0.2666">0.2666</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">44</td><td><div class="dg-cell" data-raw="44">44</div></td><td><div class="dg-cell" data-raw="0.44">0.44</div></td><td><div class="dg-cell" data-raw="0.2761">0.2761</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">45</td><td><div class="dg-cell" data-raw="45">45</div></td><td><div class="dg-cell" data-raw="0.45">0.45</div></td><td><div class="dg-cell" data-raw="0.2866">0.2866</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">46</td><td><div class="dg-cell" data-raw="46">46</div></td><td><div class="dg-cell" data-raw="0.46">0.46</div></td><td><div class="dg-cell" data-raw="0.2952">0.2952</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">47</td><td><div class="dg-cell" data-raw="47">47</div></td><td><div class="dg-cell" data-raw="0.47">0.47</div></td><td><div class="dg-cell" data-raw="0.3036">0.3036</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">48</td><td><div class="dg-cell" data-raw="48">48</div></td><td><div class="dg-cell" data-raw="0.48">0.48</div></td><td><div class="dg-cell" data-raw="0.3117">0.3117</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">49</td><td><div class="dg-cell" data-raw="49">49</div></td><td><div class="dg-cell" data-raw="0.49">0.49</div></td><td><div class="dg-cell" data-raw="0.3212">0.3212</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">50</td><td><div class="dg-cell" data-raw="50">50</div></td><td><div class="dg-cell" data-raw="0.50">0.50</div></td><td><div class="dg-cell" data-raw="0.3280">0.3280</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">51</td><td><div class="dg-cell" data-raw="51">51</div></td><td><div class="dg-cell" data-raw="0.51">0.51</div></td><td><div class="dg-cell" data-raw="0.3386">0.3386</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">52</td><td><div class="dg-cell" data-raw="52">52</div></td><td><div class="dg-cell" data-raw="0.52">0.52</div></td><td><div class="dg-cell" data-raw="0.3480">0.3480</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">53</td><td><div class="dg-cell" data-raw="53">53</div></td><td><div class="dg-cell" data-raw="0.53">0.53</div></td><td><div class="dg-cell" data-raw="0.3572">0.3572</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">54</td><td><div class="dg-cell" data-raw="54">54</div></td><td><div class="dg-cell" data-raw="0.54">0.54</div></td><td><div class="dg-cell" data-raw="0.3679">0.3679</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">55</td><td><div class="dg-cell" data-raw="55">55</div></td><td><div class="dg-cell" data-raw="0.55">0.55</div></td><td><div class="dg-cell" data-raw="0.3748">0.3748</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">56</td><td><div class="dg-cell" data-raw="56">56</div></td><td><div class="dg-cell" data-raw="0.56">0.56</div></td><td><div class="dg-cell" data-raw="0.3832">0.3832</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">57</td><td><div class="dg-cell" data-raw="57">57</div></td><td><div class="dg-cell" data-raw="0.57">0.57</div></td><td><div class="dg-cell" data-raw="0.3908">0.3908</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">58</td><td><div class="dg-cell" data-raw="58">58</div></td><td><div class="dg-cell" data-raw="0.58">0.58</div></td><td><div class="dg-cell" data-raw="0.3979">0.3979</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">59</td><td><div class="dg-cell" data-raw="59">59</div></td><td><div class="dg-cell" data-raw="0.59">0.59</div></td><td><div class="dg-cell" data-raw="0.4069">0.4069</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">60</td><td><div class="dg-cell" data-raw="60">60</div></td><td><div class="dg-cell" data-raw="0.60">0.60</div></td><td><div class="dg-cell" data-raw="0.4177">0.4177</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">61</td><td><div class="dg-cell" data-raw="61">61</div></td><td><div class="dg-cell" data-raw="0.61">0.61</div></td><td><div class="dg-cell" data-raw="0.4274">0.4274</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">62</td><td><div class="dg-cell" data-raw="62">62</div></td><td><div class="dg-cell" data-raw="0.62">0.62</div></td><td><div class="dg-cell" data-raw="0.4381">0.4381</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">63</td><td><div class="dg-cell" data-raw="63">63</div></td><td><div class="dg-cell" data-raw="0.63">0.63</div></td><td><div class="dg-cell" data-raw="0.4455">0.4455</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">64</td><td><div class="dg-cell" data-raw="64">64</div></td><td><div class="dg-cell" data-raw="0.64">0.64</div></td><td><div class="dg-cell" data-raw="0.4563">0.4563</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">65</td><td><div class="dg-cell" data-raw="65">65</div></td><td><div class="dg-cell" data-raw="0.65">0.65</div></td><td><div class="dg-cell" data-raw="0.4650">0.4650</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">66</td><td><div class="dg-cell" data-raw="66">66</div></td><td><div class="dg-cell" data-raw="0.66">0.66</div></td><td><div class="dg-cell" data-raw="0.4760">0.4760</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">67</td><td><div class="dg-cell" data-raw="67">67</div></td><td><div class="dg-cell" data-raw="0.67">0.67</div></td><td><div class="dg-cell" data-raw="0.4862">0.4862</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">68</td><td><div class="dg-cell" data-raw="68">68</div></td><td><div class="dg-cell" data-raw="0.68">0.68</div></td><td><div class="dg-cell" data-raw="0.4957">0.4957</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">69</td><td><div class="dg-cell" data-raw="69">69</div></td><td><div class="dg-cell" data-raw="0.69">0.69</div></td><td><div class="dg-cell" data-raw="0.5081">0.5081</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">70</td><td><div class="dg-cell" data-raw="70">70</div></td><td><div class="dg-cell" data-raw="0.70">0.70</div></td><td><div class="dg-cell" data-raw="0.5214">0.5214</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">71</td><td><div class="dg-cell" data-raw="71">71</div></td><td><div class="dg-cell" data-raw="0.71">0.71</div></td><td><div class="dg-cell" data-raw="0.5332">0.5332</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">72</td><td><div class="dg-cell" data-raw="72">72</div></td><td><div class="dg-cell" data-raw="0.72">0.72</div></td><td><div class="dg-cell" data-raw="0.5444">0.5444</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">73</td><td><div class="dg-cell" data-raw="73">73</div></td><td><div class="dg-cell" data-raw="0.73">0.73</div></td><td><div class="dg-cell" data-raw="0.5550">0.5550</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">74</td><td><div class="dg-cell" data-raw="74">74</div></td><td><div class="dg-cell" data-raw="0.74">0.74</div></td><td><div class="dg-cell" data-raw="0.5684">0.5684</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">75</td><td><div class="dg-cell" data-raw="75">75</div></td><td><div class="dg-cell" data-raw="0.75">0.75</div></td><td><div class="dg-cell" data-raw="0.5807">0.5807</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">76</td><td><div class="dg-cell" data-raw="76">76</div></td><td><div class="dg-cell" data-raw="0.76">0.76</div></td><td><div class="dg-cell" data-raw="0.5930">0.5930</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">77</td><td><div class="dg-cell" data-raw="77">77</div></td><td><div class="dg-cell" data-raw="0.77">0.77</div></td><td><div class="dg-cell" data-raw="0.6062">0.6062</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">78</td><td><div class="dg-cell" data-raw="78">78</div></td><td><div class="dg-cell" data-raw="0.78">0.78</div></td><td><div class="dg-cell" data-raw="0.6185">0.6185</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">79</td><td><div class="dg-cell" data-raw="79">79</div></td><td><div class="dg-cell" data-raw="0.79">0.79</div></td><td><div class="dg-cell" data-raw="0.6313">0.6313</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">80</td><td><div class="dg-cell" data-raw="80">80</div></td><td><div class="dg-cell" data-raw="0.80">0.80</div></td><td><div class="dg-cell" data-raw="0.6434">0.6434</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">81</td><td><div class="dg-cell" data-raw="81">81</div></td><td><div class="dg-cell" data-raw="0.81">0.81</div></td><td><div class="dg-cell" data-raw="0.6543">0.6543</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">82</td><td><div class="dg-cell" data-raw="82">82</div></td><td><div class="dg-cell" data-raw="0.82">0.82</div></td><td><div class="dg-cell" data-raw="0.6672">0.6672</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">83</td><td><div class="dg-cell" data-raw="83">83</div></td><td><div class="dg-cell" data-raw="0.83">0.83</div></td><td><div class="dg-cell" data-raw="0.6794">0.6794</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">84</td><td><div class="dg-cell" data-raw="84">84</div></td><td><div class="dg-cell" data-raw="0.84">0.84</div></td><td><div class="dg-cell" data-raw="0.6937">0.6937</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">85</td><td><div class="dg-cell" data-raw="85">85</div></td><td><div class="dg-cell" data-raw="0.85">0.85</div></td><td><div class="dg-cell" data-raw="0.7087">0.7087</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">86</td><td><div class="dg-cell" data-raw="86">86</div></td><td><div class="dg-cell" data-raw="0.86">0.86</div></td><td><div class="dg-cell" data-raw="0.7247">0.7247</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">87</td><td><div class="dg-cell" data-raw="87">87</div></td><td><div class="dg-cell" data-raw="0.87">0.87</div></td><td><div class="dg-cell" data-raw="0.7397">0.7397</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">88</td><td><div class="dg-cell" data-raw="88">88</div></td><td><div class="dg-cell" data-raw="0.88">0.88</div></td><td><div class="dg-cell" data-raw="0.7542">0.7542</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">89</td><td><div class="dg-cell" data-raw="89">89</div></td><td><div class="dg-cell" data-raw="0.89">0.89</div></td><td><div class="dg-cell" data-raw="0.7677">0.7677</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">90</td><td><div class="dg-cell" data-raw="90">90</div></td><td><div class="dg-cell" data-raw="0.90">0.90</div></td><td><div class="dg-cell" data-raw="0.7829">0.7829</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">91</td><td><div class="dg-cell" data-raw="91">91</div></td><td><div class="dg-cell" data-raw="0.91">0.91</div></td><td><div class="dg-cell" data-raw="0.8006">0.8006</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">92</td><td><div class="dg-cell" data-raw="92">92</div></td><td><div class="dg-cell" data-raw="0.92">0.92</div></td><td><div class="dg-cell" data-raw="0.8183">0.8183</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">93</td><td><div class="dg-cell" data-raw="93">93</div></td><td><div class="dg-cell" data-raw="0.93">0.93</div></td><td><div class="dg-cell" data-raw="0.8346">0.8346</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">94</td><td><div class="dg-cell" data-raw="94">94</div></td><td><div class="dg-cell" data-raw="0.94">0.94</div></td><td><div class="dg-cell" data-raw="0.8554">0.8554</div></td><td><div class="dg-cell" data-raw="0.0000">0.0000</div></td></tr><tr><td class="dg-row-num">95</td><td><div class="dg-cell" data-raw="95">95</div></td><td><div class="dg-cell" data-raw="0.95">0.95</div></td><td><div class="dg-cell" data-raw="0.8743">0.8743</div></td><td><div class="dg-cell" data-raw="0.0044">0.0044</div></td></tr><tr><td class="dg-row-num">96</td><td><div class="dg-cell" data-raw="96">96</div></td><td><div class="dg-cell" data-raw="0.96">0.96</div></td><td><div class="dg-cell" data-raw="0.8921">0.8921</div></td><td><div class="dg-cell" data-raw="0.1914">0.1914</div></td></tr><tr><td class="dg-row-num">97</td><td><div class="dg-cell" data-raw="97">97</div></td><td><div class="dg-cell" data-raw="0.97">0.97</div></td><td><div class="dg-cell" data-raw="0.9103">0.9103</div></td><td><div class="dg-cell" data-raw="0.3785">0.3785</div></td></tr><tr><td class="dg-row-num">98</td><td><div class="dg-cell" data-raw="98">98</div></td><td><div class="dg-cell" data-raw="0.98">0.98</div></td><td><div class="dg-cell" data-raw="0.9338">0.9338</div></td><td><div class="dg-cell" data-raw="0.5794">0.5794</div></td></tr><tr><td class="dg-row-num">99</td><td><div class="dg-cell" data-raw="99">99</div></td><td><div class="dg-cell" data-raw="0.99">0.99</div></td><td><div class="dg-cell" data-raw="0.9599">0.9599</div></td><td><div class="dg-cell" data-raw="0.7903">0.7903</div></td></tr><tr><td class="dg-row-num">100</td><td><div class="dg-cell" data-raw="100">100</div></td><td><div class="dg-cell" data-raw="1.00">1.00</div></td><td><div class="dg-cell" data-raw="1.0000">1.0000</div></td><td><div class="dg-cell" data-raw="1.0000">1.0000</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+  <div class="rv-panel rv-panel-hidden" id="res-15-chart"><div class="ch-layout" id="ch-15"><script type="application/json" id="ch-15-cols">[{"name":"RANDOM_CUM_CLAIMS","type":"quantitative"},{"name":"POPULATION_PERCENTILE","type":"quantitative"}]</script><script type="application/json" id="ch-15-vals">[{"RANDOM_CUM_CLAIMS":"0.01","POPULATION_PERCENTILE":"1"},{"RANDOM_CUM_CLAIMS":"0.02","POPULATION_PERCENTILE":"2"},{"RANDOM_CUM_CLAIMS":"0.03","POPULATION_PERCENTILE":"3"},{"RANDOM_CUM_CLAIMS":"0.04","POPULATION_PERCENTILE":"4"},{"RANDOM_CUM_CLAIMS":"0.05","POPULATION_PERCENTILE":"5"},{"RANDOM_CUM_CLAIMS":"0.06","POPULATION_PERCENTILE":"6"},{"RANDOM_CUM_CLAIMS":"0.07","POPULATION_PERCENTILE":"7"},{"RANDOM_CUM_CLAIMS":"0.08","POPULATION_PERCENTILE":"8"},{"RANDOM_CUM_CLAIMS":"0.09","POPULATION_PERCENTILE":"9"},{"RANDOM_CUM_CLAIMS":"0.10","POPULATION_PERCENTILE":"10"},{"RANDOM_CUM_CLAIMS":"0.11","POPULATION_PERCENTILE":"11"},{"RANDOM_CUM_CLAIMS":"0.12","POPULATION_PERCENTILE":"12"},{"RANDOM_CUM_CLAIMS":"0.13","POPULATION_PERCENTILE":"13"},{"RANDOM_CUM_CLAIMS":"0.14","POPULATION_PERCENTILE":"14"},{"RANDOM_CUM_CLAIMS":"0.15","POPULATION_PERCENTILE":"15"},{"RANDOM_CUM_CLAIMS":"0.16","POPULATION_PERCENTILE":"16"},{"RANDOM_CUM_CLAIMS":"0.17","POPULATION_PERCENTILE":"17"},{"RANDOM_CUM_CLAIMS":"0.18","POPULATION_PERCENTILE":"18"},{"RANDOM_CUM_CLAIMS":"0.19","POPULATION_PERCENTILE":"19"},{"RANDOM_CUM_CLAIMS":"0.20","POPULATION_PERCENTILE":"20"},{"RANDOM_CUM_CLAIMS":"0.21","POPULATION_PERCENTILE":"21"},{"RANDOM_CUM_CLAIMS":"0.22","POPULATION_PERCENTILE":"22"},{"RANDOM_CUM_CLAIMS":"0.23","POPULATION_PERCENTILE":"23"},{"RANDOM_CUM_CLAIMS":"0.24","POPULATION_PERCENTILE":"24"},{"RANDOM_CUM_CLAIMS":"0.25","POPULATION_PERCENTILE":"25"},{"RANDOM_CUM_CLAIMS":"0.26","POPULATION_PERCENTILE":"26"},{"RANDOM_CUM_CLAIMS":"0.27","POPULATION_PERCENTILE":"27"},{"RANDOM_CUM_CLAIMS":"0.28","POPULATION_PERCENTILE":"28"},{"RANDOM_CUM_CLAIMS":"0.29","POPULATION_PERCENTILE":"29"},{"RANDOM_CUM_CLAIMS":"0.30","POPULATION_PERCENTILE":"30"},{"RANDOM_CUM_CLAIMS":"0.31","POPULATION_PERCENTILE":"31"},{"RANDOM_CUM_CLAIMS":"0.32","POPULATION_PERCENTILE":"32"},{"RANDOM_CUM_CLAIMS":"0.33","POPULATION_PERCENTILE":"33"},{"RANDOM_CUM_CLAIMS":"0.34","POPULATION_PERCENTILE":"34"},{"RANDOM_CUM_CLAIMS":"0.35","POPULATION_PERCENTILE":"35"},{"RANDOM_CUM_CLAIMS":"0.36","POPULATION_PERCENTILE":"36"},{"RANDOM_CUM_CLAIMS":"0.37","POPULATION_PERCENTILE":"37"},{"RANDOM_CUM_CLAIMS":"0.38","POPULATION_PERCENTILE":"38"},{"RANDOM_CUM_CLAIMS":"0.39","POPULATION_PERCENTILE":"39"},{"RANDOM_CUM_CLAIMS":"0.40","POPULATION_PERCENTILE":"40"},{"RANDOM_CUM_CLAIMS":"0.41","POPULATION_PERCENTILE":"41"},{"RANDOM_CUM_CLAIMS":"0.42","POPULATION_PERCENTILE":"42"},{"RANDOM_CUM_CLAIMS":"0.43","POPULATION_PERCENTILE":"43"},{"RANDOM_CUM_CLAIMS":"0.44","POPULATION_PERCENTILE":"44"},{"RANDOM_CUM_CLAIMS":"0.45","POPULATION_PERCENTILE":"45"},{"RANDOM_CUM_CLAIMS":"0.46","POPULATION_PERCENTILE":"46"},{"RANDOM_CUM_CLAIMS":"0.47","POPULATION_PERCENTILE":"47"},{"RANDOM_CUM_CLAIMS":"0.48","POPULATION_PERCENTILE":"48"},{"RANDOM_CUM_CLAIMS":"0.49","POPULATION_PERCENTILE":"49"},{"RANDOM_CUM_CLAIMS":"0.50","POPULATION_PERCENTILE":"50"},{"RANDOM_CUM_CLAIMS":"0.51","POPULATION_PERCENTILE":"51"},{"RANDOM_CUM_CLAIMS":"0.52","POPULATION_PERCENTILE":"52"},{"RANDOM_CUM_CLAIMS":"0.53","POPULATION_PERCENTILE":"53"},{"RANDOM_CUM_CLAIMS":"0.54","POPULATION_PERCENTILE":"54"},{"RANDOM_CUM_CLAIMS":"0.55","POPULATION_PERCENTILE":"55"},{"RANDOM_CUM_CLAIMS":"0.56","POPULATION_PERCENTILE":"56"},{"RANDOM_CUM_CLAIMS":"0.57","POPULATION_PERCENTILE":"57"},{"RANDOM_CUM_CLAIMS":"0.58","POPULATION_PERCENTILE":"58"},{"RANDOM_CUM_CLAIMS":"0.59","POPULATION_PERCENTILE":"59"},{"RANDOM_CUM_CLAIMS":"0.60","POPULATION_PERCENTILE":"60"},{"RANDOM_CUM_CLAIMS":"0.61","POPULATION_PERCENTILE":"61"},{"RANDOM_CUM_CLAIMS":"0.62","POPULATION_PERCENTILE":"62"},{"RANDOM_CUM_CLAIMS":"0.63","POPULATION_PERCENTILE":"63"},{"RANDOM_CUM_CLAIMS":"0.64","POPULATION_PERCENTILE":"64"},{"RANDOM_CUM_CLAIMS":"0.65","POPULATION_PERCENTILE":"65"},{"RANDOM_CUM_CLAIMS":"0.66","POPULATION_PERCENTILE":"66"},{"RANDOM_CUM_CLAIMS":"0.67","POPULATION_PERCENTILE":"67"},{"RANDOM_CUM_CLAIMS":"0.68","POPULATION_PERCENTILE":"68"},{"RANDOM_CUM_CLAIMS":"0.69","POPULATION_PERCENTILE":"69"},{"RANDOM_CUM_CLAIMS":"0.70","POPULATION_PERCENTILE":"70"},{"RANDOM_CUM_CLAIMS":"0.71","POPULATION_PERCENTILE":"71"},{"RANDOM_CUM_CLAIMS":"0.72","POPULATION_PERCENTILE":"72"},{"RANDOM_CUM_CLAIMS":"0.73","POPULATION_PERCENTILE":"73"},{"RANDOM_CUM_CLAIMS":"0.74","POPULATION_PERCENTILE":"74"},{"RANDOM_CUM_CLAIMS":"0.75","POPULATION_PERCENTILE":"75"},{"RANDOM_CUM_CLAIMS":"0.76","POPULATION_PERCENTILE":"76"},{"RANDOM_CUM_CLAIMS":"0.77","POPULATION_PERCENTILE":"77"},{"RANDOM_CUM_CLAIMS":"0.78","POPULATION_PERCENTILE":"78"},{"RANDOM_CUM_CLAIMS":"0.79","POPULATION_PERCENTILE":"79"},{"RANDOM_CUM_CLAIMS":"0.80","POPULATION_PERCENTILE":"80"},{"RANDOM_CUM_CLAIMS":"0.81","POPULATION_PERCENTILE":"81"},{"RANDOM_CUM_CLAIMS":"0.82","POPULATION_PERCENTILE":"82"},{"RANDOM_CUM_CLAIMS":"0.83","POPULATION_PERCENTILE":"83"},{"RANDOM_CUM_CLAIMS":"0.84","POPULATION_PERCENTILE":"84"},{"RANDOM_CUM_CLAIMS":"0.85","POPULATION_PERCENTILE":"85"},{"RANDOM_CUM_CLAIMS":"0.86","POPULATION_PERCENTILE":"86"},{"RANDOM_CUM_CLAIMS":"0.87","POPULATION_PERCENTILE":"87"},{"RANDOM_CUM_CLAIMS":"0.88","POPULATION_PERCENTILE":"88"},{"RANDOM_CUM_CLAIMS":"0.89","POPULATION_PERCENTILE":"89"},{"RANDOM_CUM_CLAIMS":"0.90","POPULATION_PERCENTILE":"90"},{"RANDOM_CUM_CLAIMS":"0.91","POPULATION_PERCENTILE":"91"},{"RANDOM_CUM_CLAIMS":"0.92","POPULATION_PERCENTILE":"92"},{"RANDOM_CUM_CLAIMS":"0.93","POPULATION_PERCENTILE":"93"},{"RANDOM_CUM_CLAIMS":"0.94","POPULATION_PERCENTILE":"94"},{"RANDOM_CUM_CLAIMS":"0.95","POPULATION_PERCENTILE":"95"},{"RANDOM_CUM_CLAIMS":"0.96","POPULATION_PERCENTILE":"96"},{"RANDOM_CUM_CLAIMS":"0.97","POPULATION_PERCENTILE":"97"},{"RANDOM_CUM_CLAIMS":"0.98","POPULATION_PERCENTILE":"98"},{"RANDOM_CUM_CLAIMS":"0.99","POPULATION_PERCENTILE":"99"},{"RANDOM_CUM_CLAIMS":"1.00","POPULATION_PERCENTILE":"100"}]</script><script type="application/json" id="ch-15-state">{"type":"grouped-bar","xField":"RANDOM_CUM_CLAIMS","yFields":["POPULATION_PERCENTILE"],"colorField":null,"aggregate":"sum","sortX":"none","timeResolution":"none","limit":0,"xAxisLabelEnabled":true,"xAxisLabel":"RANDOM_CUM_CLAIMS","yAxisLabelEnabled":true,"yAxisLabel":"POPULATION_PERCENTILE"}</script></div></div>
+</div></div>
+</div>
+<div class="markdown-wrapper">
+  <div class="markdown-block"><hr>
+<h2 id="cortex-agent--natural-language-rating-queries">Cortex Agent — Natural-Language Rating Queries</h2>
+<p>A semantic view (<code>INSURANCE_RATING_ANALYTICS</code>) is deployed over the rating table,
+pure premium, validation deciles, and policy features. A Cortex Agent
+(<code>MTPL_RATING_AGENT</code>) wraps it so you can ask plain-English questions like:</p>
+<ul>
+<li><em>"What's the technical premium for a 30-year-old driver with a 5-year-old car in region X?"</em></li>
+<li><em>"Which rating factor has the biggest effect on frequency?"</em></li>
+<li><em>"Show actual vs expected by decile."</em></li>
+</ul>
+</div>
+</div>
+<div class="cell cell-sql" data-index="37" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-counter">[30]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-comment">-- Verify the semantic view exists</span>
+SHOW SEMANTIC VIEWS <span class="tok-keyword">LIKE</span> <span class="tok-string">&#x27;INSURANCE_RATING_ANALYTICS&#x27;</span> <span class="tok-keyword">IN</span> <span class="tok-keyword">SCHEMA</span> FREMTPL2.FREMTPL2_INVESTIGATION</code></pre></div></div>
+  <div class="cell-outputs cell-outputs-no-top-border"><div class="rv-container" id="res-16">
+  <div class="rv-tabs">
+    <button class="rv-tab rv-tab-active" data-target="res-16-table" onclick="switchTab(this)">Table</button>
+    <button class="rv-tab" data-target="res-16-chart" onclick="switchTab(this)">Chart</button>
+  </div>
+  <div class="rv-panel" id="res-16-table"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="1 row">1 row</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">created_on</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="1" onchange="dgToggleCol(this)"><span class="dg-colsel-label">name</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="2" onchange="dgToggleCol(this)"><span class="dg-colsel-label">database_name</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="3" onchange="dgToggleCol(this)"><span class="dg-colsel-label">schema_name</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="4" onchange="dgToggleCol(this)"><span class="dg-colsel-label">comment</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="5" onchange="dgToggleCol(this)"><span class="dg-colsel-label">owner</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="6" onchange="dgToggleCol(this)"><span class="dg-colsel-label">owner_role_type</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="7" onchange="dgToggleCol(this)"><span class="dg-colsel-label">extension</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="8" onchange="dgToggleCol(this)"><span class="dg-colsel-label">max_staleness</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:64px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="temporal"><div class="dg-col-header"><span class="dg-col-name">created_on</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">name</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,2)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">database_name</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,3)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">schema_name</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,4)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">comment</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,5)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">owner</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,6)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">owner_role_type</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,7)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">extension</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,8)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">max_staleness</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,9)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="2026-09-21 10:17:25.661 +0000">2026-09-21 10:17:25.661 +0000</div></td><td><div class="dg-cell" data-raw="INSURANCE_RATING_ANALYTICS">INSURANCE_RATING_ANALYTICS</div></td><td><div class="dg-cell" data-raw="FREMTPL2">FREMTPL2</div></td><td><div class="dg-cell" data-raw="FREMTPL2_INVESTIGATION">FREMTPL2_INVESTIGATION</div></td><td><div class="dg-cell" data-raw="Insurance pricing analytics for the French MTPL2 portfolio. Contains GLM rating relativities (exp(coefficient)) from Poisson frequency and Gamma severity models, policy-level pure premiums (frequency x severity), model validation decile analysis (actual vs expected), and policy risk factor features. Supports questions about rating factors, technical premiums, model performance, and risk segmentation.">Insurance pricing analytics for the French MTPL2 portfolio. Contains GLM rating relativities (exp(coefficient)) from Poisson frequency and Gamma severity models, policy-level pure premiums (frequency x severity), model validation decile analysis (actual vs expected), and policy risk factor features. Supports questions about rating factors, technical premiums, model performance, and risk segmentation.</div></td><td><div class="dg-cell" data-raw="ACCOUNTADMIN">ACCOUNTADMIN</div></td><td><div class="dg-cell" data-raw="ROLE">ROLE</div></td><td><div class="dg-cell" data-raw="[&quot;CA&quot;,&quot;AI&quot;]">[&quot;CA&quot;,&quot;AI&quot;]</div></td><td><div class="dg-cell" data-raw="null">null</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+  <div class="rv-panel rv-panel-hidden" id="res-16-chart"><div class="ch-layout" id="ch-16"><script type="application/json" id="ch-16-cols">[{"name":"created_on","type":"temporal"},{"name":"name","type":"nominal"}]</script><script type="application/json" id="ch-16-vals">[{"created_on":"2026-09-21 10:17:25.661 +0000","name":"INSURANCE_RATING_ANALYTICS"}]</script><script type="application/json" id="ch-16-state">{"type":"grouped-bar","xField":"created_on","yFields":["name"],"colorField":null,"aggregate":"sum","sortX":"none","timeResolution":"none","limit":0,"xAxisLabelEnabled":true,"xAxisLabel":"created_on","yAxisLabelEnabled":true,"yAxisLabel":"name"}</script></div></div>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="38" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-counter">[31]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-comment">-- Verify the agent exists</span>
+SHOW AGENTS <span class="tok-keyword">LIKE</span> <span class="tok-string">&#x27;MTPL_RATING_AGENT&#x27;</span> <span class="tok-keyword">IN</span> <span class="tok-keyword">SCHEMA</span> FREMTPL2.FREMTPL2_INVESTIGATION</code></pre></div></div>
+  <div class="cell-outputs cell-outputs-no-top-border"><div class="rv-container" id="res-17">
+  <div class="rv-tabs">
+    <button class="rv-tab rv-tab-active" data-target="res-17-table" onclick="switchTab(this)">Table</button>
+    <button class="rv-tab" data-target="res-17-chart" onclick="switchTab(this)">Chart</button>
+  </div>
+  <div class="rv-panel" id="res-17-table"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="1 row">1 row</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">created_on</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="1" onchange="dgToggleCol(this)"><span class="dg-colsel-label">name</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="2" onchange="dgToggleCol(this)"><span class="dg-colsel-label">database_name</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="3" onchange="dgToggleCol(this)"><span class="dg-colsel-label">schema_name</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="4" onchange="dgToggleCol(this)"><span class="dg-colsel-label">owner</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="5" onchange="dgToggleCol(this)"><span class="dg-colsel-label">comment</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="6" onchange="dgToggleCol(this)"><span class="dg-colsel-label">profile</span></label><label class="dg-colsel-item"><input type="checkbox" checked data-col="7" onchange="dgToggleCol(this)"><span class="dg-colsel-label">is_secure</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:64px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="temporal"><div class="dg-col-header"><span class="dg-col-name">created_on</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">name</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,2)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">database_name</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,3)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">schema_name</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,4)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">owner</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,5)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">comment</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,6)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">profile</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,7)">&#8942;</button></div></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">is_secure</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,8)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="2026-09-21 10:18:54.155 +0000">2026-09-21 10:18:54.155 +0000</div></td><td><div class="dg-cell" data-raw="MTPL_RATING_AGENT">MTPL_RATING_AGENT</div></td><td><div class="dg-cell" data-raw="FREMTPL2">FREMTPL2</div></td><td><div class="dg-cell" data-raw="FREMTPL2_INVESTIGATION">FREMTPL2_INVESTIGATION</div></td><td><div class="dg-cell" data-raw="CORTEX_DEVELOPER">CORTEX_DEVELOPER</div></td><td><div class="dg-cell" data-raw="null">null</div></td><td><div class="dg-cell" data-raw="null">null</div></td><td><div class="dg-cell" data-raw="false">false</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+  <div class="rv-panel rv-panel-hidden" id="res-17-chart"><div class="ch-layout" id="ch-17"><script type="application/json" id="ch-17-cols">[{"name":"created_on","type":"temporal"},{"name":"name","type":"nominal"}]</script><script type="application/json" id="ch-17-vals">[{"created_on":"2026-09-21 10:18:54.155 +0000","name":"MTPL_RATING_AGENT"}]</script><script type="application/json" id="ch-17-state">{"type":"grouped-bar","xField":"created_on","yFields":["name"],"colorField":null,"aggregate":"sum","sortX":"none","timeResolution":"none","limit":0,"xAxisLabelEnabled":true,"xAxisLabel":"created_on","yAxisLabelEnabled":true,"yAxisLabel":"name"}</script></div></div>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="39" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-counter">[32]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-comment">-- Test the agent: which rating factor has the biggest effect on frequency?</span>
+<span class="tok-keyword">SELECT</span> TRY_PARSE_JSON<span class="tok-punctuation">(</span>
+    SNOWFLAKE.CORTEX.DATA_AGENT_RUN<span class="tok-punctuation">(</span>
+        <span class="tok-string">&#x27;FREMTPL2.FREMTPL2_INVESTIGATION.MTPL_RATING_AGENT&#x27;</span><span class="tok-punctuation">,</span>
+        <span class="tok-string">$${ &quot;messages&quot;: [{ &quot;role&quot;: &quot;user&quot;, &quot;content&quot;: [{ &quot;type&quot;: &quot;text&quot;, &quot;text&quot;: &quot;Which rating factor has the biggest effect on claim frequency?&quot; }] }] }$$</span><span class="tok-punctuation">,</span>
+        <span class="tok-bool">TRUE</span>
+    <span class="tok-punctuation">)</span>
+<span class="tok-punctuation">)</span> <span class="tok-keyword">AS</span> AGENT_RESPONSE</code></pre></div></div>
+  <div class="cell-outputs"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="1 row">1 row</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">AGENT_RESPONSE</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:64px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">AGENT_RESPONSE</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="{
+  &quot;content&quot;: [
+    {
+      &quot;thinking&quot;: {
+        &quot;text&quot;: &quot;This question looks like a verified query. Let me get a better understanding of the semantic context.&quot;
+      },
+      &quot;type&quot;: &quot;thinking&quot;
+    },
+    {
+      &quot;tool_use&quot;: {
+        &quot;client_side_execute&quot;: false,
+        &quot;input&quot;: {},
+        &quot;name&quot;: &quot;rating_analytics&quot;,
+        &quot;tool_use_id&quot;: &quot;tooluse_aa81b82da52740a693cf47&quot;,
+        &quot;type&quot;: &quot;system_agentic_semantic_context&quot;
+      },
+      &quot;type&quot;: &quot;tool_use&quot;
+    },
+    {
+      &quot;tool_result&quot;: {
+        &quot;content&quot;: [
+          {
+            &quot;json&quot;: {
+              &quot;pruned_note&quot;: &quot;**Note**: This semantic model fits within the agent&#x27;s token budget, so it is shown in full. You do not need to set pruning_question on future calls referencing this same semantic model.&quot;,
+              &quot;relationships&quot;: [
+                {
+                  &quot;join_type&quot;: &quot;inner&quot;,
+                  &quot;left_table&quot;: &quot;freq_model_features&quot;,
+                  &quot;name&quot;: &quot;FREQ_MODEL_FEATURES_TO_PURE_PREMIUM&quot;,
+                  &quot;relationship_columns&quot;: [
+                    {
+                      &quot;left_column&quot;: &quot;idpol&quot;,
+                      &quot;right_column&quot;: &quot;idpol&quot;
+                    }
+                  ],
+                  &quot;relationship_type&quot;: &quot;one_to_one&quot;,
+                  &quot;right_table&quot;: &quot;pure_premium&quot;
+                }
+              ],
+              &quot;semantic_model_description&quot;: &quot;Insurance pricing analytics for the French MTPL2 portfolio. Contains GLM rating relativities (exp(coefficient)) from Poisson frequency and Gamma severity models, policy-level pure premiums (frequency x severity), model validation decile analysis (actual vs expected), and policy risk factor features. Supports questions about rating factors, technical premiums, model performance, and risk segmentation.&quot;,
+              &quot;semantic_model_key&quot;: &quot;rating_analytics&quot;,
+              &quot;semantic_model_name&quot;: &quot;insurance_rating_analytics&quot;,
+              &quot;semantic_view_fqn&quot;: &quot;FREMTPL2.FREMTPL2_INVESTIGATION.INSURANCE_RATING_ANALYTICS&quot;,
+              &quot;sql_best_practices&quot;: &quot;## SQL Generation Rules and Best Practices\n\n**CRITICAL — Ambiguity Gate (check BEFORE writing SQL):**\nIf the user&#x27;s question contains a business term that could map to more than one metric or dimension in the semantic model, STOP and do the following:\n1. Check the [Additional Instructions] section of your system prompt for an ambiguous terms table or clarification rules.\n2. If those instructions say to ask for clarification, you MUST respond with a clarification question to the user. Do NOT generate SQL. Do NOT pick what seems \&quot;most likely.\&quot;\n3. Only generate SQL if the term unambiguously maps to exactly one metric, or if no clarification rules exist in the Additional Instructions.\nViolating this gate by guessing a metric when clarification is required will produce incorrect results for the user.\n\nYou can write SQL against the provided semantic model to retrieve data. When doing so, you are an expert data scientist well-versed in BI concepts and your goal is to write accurate, readable queries to fetch the relevant data. Use the following sections as guidelines for your task.\n\nThe semantic model is explained in section 1. Standard SQL (using logical names from the semantic model, which are postprocessed to physical SQL) is detailed in section 2. General SQL rules are in section 3.\n\n### 1. How to use the Semantic Model\n\nA semantic model is intended to provide additional information about the relevant entities that you may want to query for an analysis.\n\nA semantic model is comprised of a set of logical tables. A logical table maps onto an actual SQL table or view, called a base table. Each logical table is comprised of facts, dimensions, and metrics.\n\n- **Facts** are row-level quantitative values (e.g., sales amount, quantity, cost). They are unaggregated and exist at the granularity of the table.\n- **Dimensions** are categorical attributes used to group, filter, and slice data (e.g., region, product category, date). They provide context to metrics. They are commonly used to GROUP BY.\n- **Metrics** are aggregations over facts using functions like SUM, AVG, COUNT. They represent business KPIs. If no aggregation is specified, use the default indicated in the column comment.\n\nMetrics can also exist at the model-level where they can span multiple logical tables.\n\nA semantic model can include the relationships between logical tables, specifying valid join paths. Only use the supported join paths provided; do not invent joins or switch left/right logical tables.\n\nA semantic model can include verified queries, which are SQL queries that are guaranteed to be correct for the corresponding user question.\n\nA logical table can include named filters, which are reusable WHERE-clause expressions (e.g., `is_active = TRUE`). Use these filters in your SQL when they match the user&#x27;s intent rather than writing equivalent expressions from scratch.\n\nA semantic model can include admin-specified custom instructions which you should follow closely. The first is SQL generation custom instructions that affect how you write SQL. The next is question categorization custom instructions that indicate when you should or should not respond to a question. Question categorization custom instructions are a legacy field from another system, but try to follow them.\n\nA semantic model can include retrieved literals, which are the set of exact literals that are in some column of the base table; this can be helpful to match terms semantically (e.g. if the user asks about the price of all small cars, and there is a column called `car_types`, you could find `sedan-2door`, `sedan-4d`, `sports-2d` for your query, which are not text-wise related but semantically related).\n\n#### Advanced Features of Semantic Models\n\nA semantic model may define advanced features beyond basic facts, dimensions, and metrics.\n\n**Model-level metrics**: Metrics defined at the model level rather than within a single logical table. These metrics may span multiple tables. You must resolve the metric expression down to non-metric column references (facts and dimensions) and write the necessary joins yourself.\n\n**Asof joins**: A semantic model may contain **asof** relationship keys. Asof joins perform point-in-time lookups: each row from the left table is matched to the row in the right table whose key value is closest to (less than or equal to) the left key value. Use Snowflake&#x27;s `ASOF JOIN ... MATCH_CONDITION(left.col &gt;= right.col) ON equi_conditions` syntax as shown in the supported join paths.\n\n**Range joins**: A semantic model may contain **range** relationship keys. Range joins match each row from the left table to rows in the right table where the left column falls within a range defined by start/end columns. Use the non-equi join conditions as shown in the supported join paths (e.g., `(start_col IS NULL OR left_col &gt;= start_col) AND (end_col IS NULL OR left_col &lt; end_col)`).\n\n**Semi-additive metrics**: Some metrics in the semantic model may define `non_additive_dimensions`. These indicate the metric is **semi-additive** (e.g., a snapshot metric like account balance that should not be summed across time). Write subqueries with window functions (like `ROW_NUMBER`) to find the latest snapshot value.\n\n### 2. Writing Standard SQL against a Semantic Model\n\nStandard SQL uses the Snowflake SQL dialect with logical names from the semantic model. In this mode, you write queries using the logical table and column names (dimensions, facts, time_dimensions) defined in the semantic model. The SQL will be automatically postprocessed to resolve to physical table and column names before execution.\n\n- **Use Semantic Model Column Names**: ALWAYS use column names from the semantic model (dimensions and facts). The SQL will be automatically postprocessed to resolve to physical column names.\n- **Reference Logical Tables**: Use the logical table names from the semantic model with a `__` prefix. Do NOT use fully qualified physical table names (e.g., use `__orders` not `orders` or `DATABASE.SCHEMA.ORDERS`). This prefix is required for all table references, including in FROM, JOIN, and column qualifiers (e.g., `__orders.order_total`).\n- **Always query logical tables, not the underlying base tables**: The base tables can only be accessed through the logical tables using logical SQL. If you encounter errors running logical SQL, fix the query — do not fall back to querying base tables directly.\n- **Do not rewrite logical table CTEs**: The postprocessing step creates CTEs in the final SQL like `WITH __logical_table AS (SELECT ... FROM DB.SCH.BASE_TABLE)` to resolve the logical tables. You should NOT write these CTEs again on subsequent turns, as the SQL you write on logical tables in subsequent turns will be postprocessed to get the CTEs back. You can fully ignore those logical table CTEs.\n- **Identify metrics**: Metrics are typically calculations upon facts. If no specific aggregation mentioned, use the default aggregation indicated in the column comment.\n- **Identify dimensions for GROUP BY**: Dimensions provide context to data - they are descriptive attributes used to slice and dice data (e.g., geography, product categories, customer segments).\n- **Identify facts**: Facts are quantitative data that can be aggregated, summed, averaged, or counted. They are typically numeric fields.\n- **Count Correctly**: In single-table queries, use COUNT(DISTINCT column) for dimension columns that may have duplicate values. Use COUNT(column) without DISTINCT only if the column has unique values like a primary key.\n\nNote that you are not allowed to use all of the Snowflake SQL dialect, which is detailed in Section 3.\n\n### 3. Rules for SQL Generation\n\nAcross all queries you write, you should keep in mind these guidelines when they are relevant.\n\n**Current Date: 2026-09-24 (i.e., today is September 24, 2026)** - Use this as reference for relative time filters.\n\n#### Aggregation and Granularity\n- The primary key defines data granularity. When calculating metrics on different granularity, ALWAYS use GROUP BY to ensure correct aggregation.\n- Every column in SELECT must either have an aggregation function OR be included in GROUP BY.\n- Use PARTITION BY for window functions as needed.\n\n#### Time Series Analysis\n\n**IMPORTANT: ALWAYS use CURRENT_DATE (or CURRENT_TIMESTAMP) in SQL for any reference to \&quot;today\&quot;, \&quot;now\&quot;, or the current date. Do NOT hardcode specific date literals like &#x27;2026-03-22&#x27;. The current date provided above is for interpreting ambiguous time references only (e.g., inferring the year when not specified).**\n\n##### Current Date Reference\n- If a question asks about a specific month without a year (e.g., \&quot;sales for March\&quot;), assume the current year 2026.\n\n##### Time Frequency Conversion\n- For questions requiring time aggregation at different frequency than provided, use DATE_TRUNC() to convert and aggregate facts properly with GROUP BY.\n- To compare time to a NUMBER column, use DATE_PART() to extract year/month/day from a timestamp.\n- For day of week, use DAYOFWEEK() function.\n\n##### Calendar Time Units (week, month, year)\n- If the user asks about \&quot;last week\&quot;, \&quot;this month\&quot;, \&quot;last year\&quot;, ALWAYS assume they mean the CALENDAR unit:\n  - \&quot;last week\&quot;: DATE &gt;= DATE_TRUNC(&#x27;week&#x27;, CURRENT_DATE - INTERVAL &#x27;1 week&#x27;) AND DATE &lt; DATE_TRUNC(&#x27;week&#x27;, CURRENT_DATE)\n  - \&quot;this month\&quot;: DATE &gt;= DATE_TRUNC(&#x27;month&#x27;, CURRENT_DATE)\n  - \&quot;last year\&quot;: DATE &gt;= DATE_TRUNC(&#x27;year&#x27;, CURRENT_DATE - INTERVAL &#x27;1 year&#x27;) AND DATE &lt; DATE_TRUNC(&#x27;year&#x27;, CURRENT_DATE)\n\n##### Past N Days\n- If the user asks \&quot;past X days\&quot; or \&quot;last X days\&quot;, use: DATE &gt;= DATEADD(day, -X, CURRENT_DATE)\n\n##### References to \&quot;Today\&quot; or \&quot;Now\&quot;\n- If the user mentions \&quot;today\&quot;, \&quot;as of today\&quot;, \&quot;to today\&quot;, \&quot;up to now\&quot;, \&quot;until now\&quot;, or similar, ALWAYS use CURRENT_DATE in SQL.\n  - Example: \&quot;from June 2025 to today\&quot; → DATE &gt;= &#x27;2025-06-01&#x27; AND DATE &lt;= CURRENT_DATE\n  - Example: \&quot;sales up to today\&quot; → DATE &lt;= CURRENT_DATE\n- Do NOT resolve \&quot;today\&quot; to a hardcoded date literal.\n\n##### Period-over-Period (DoD, MoM, YoY)\n- ALWAYS include current period, previous period, current value, and previous value in output columns.\n- Calculate BOTH absolute change AND percentage change unless specified otherwise.\n- DO NOT use LEAD() or LAG() for previous period values - these assume consecutive time data which may not be true.\n- Use self-joins or CTEs instead:\n```sql\nSELECT\n    curr.date AS curr_date,\n    prev.date AS prev_date,\n    curr.value AS curr_value,\n    prev.value AS prev_value,\n    curr.value - prev.value AS change,\n    (curr.value - prev.value) / NULLIF(prev.value, 0) AS pct_change\nFROM daily_table AS curr\nLEFT JOIN daily_table AS prev ON curr.date = prev.date + INTERVAL &#x27;1 day&#x27;\nORDER BY curr_date DESC NULLS LAST;\n```\n\n##### Rolling Window Metrics\n- For rolling metrics, ALWAYS: (1) aggregate by day/time granularity first, (2) create CTE to compute rolling metrics, (3) filter to time period last.\n```sql\nWITH daily_sales AS (\n    SELECT date, SUM(sales) AS daily_sales FROM table GROUP BY date\n),\nrolling_avg AS (\n    SELECT date, AVG(daily_sales) OVER (ORDER BY date ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS rolling_avg_3d\n    FROM daily_sales\n)\nSELECT * FROM rolling_avg WHERE DATE_PART(&#x27;YEAR&#x27;, date) = 2026 ORDER BY date DESC NULLS LAST;\n```\n\n##### Missing Time Period\n- If no time range is specified, assume the ENTIRE available time period in the data.\n- Include MIN(date) as start_date and MAX(date) as end_date in output to show the time range used.\n\n#### Ranking, Sorting, and Top-K\n\n##### Sorting\n- When sorting by highest/lowest metric, ALWAYS include NULLS LAST: ORDER BY ratio DESC NULLS LAST\n- For time series without specific sorting, default to sorting time DESCENDING to show latest information first.\n\n##### Top K Queries\n- For simple top-K without partitions: use ORDER BY ... LIMIT K\n- For top-K within partitions (e.g., \&quot;top 5 per month\&quot;): use RANK() or ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)\n```sql\nWITH ranked AS (\n    SELECT *, RANK() OVER (PARTITION BY month ORDER BY sales DESC NULLS LAST) AS rnk\n    FROM monthly_sales\n)\nSELECT * FROM ranked WHERE rnk &lt;= 5 ORDER BY month DESC, rnk NULLS LAST;\n```\n\n#### Joins and Relationships\n\n##### Choosing the JOIN type (LEFT vs INNER)\nThe JOIN type must match the question&#x27;s granularity:\n\n- **Identify the driving table first** — the entity in phrases like \&quot;for each X\&quot;, \&quot;every X\&quot;, \&quot;per X\&quot;, or \&quot;show me each X&#x27;s ...\&quot;. Put it in `FROM`; join everything else to it. The driving table MUST be the table named in `FROM`, never one joined onto another via `JOIN` — the driving table on the wrong side of a `LEFT JOIN` still drops its rows.\n- **`LEFT JOIN`** related tables onto the driving table when the question asks about *every* / *all* / *for each* of the driving entity. This preserves driving-entity rows that have no matching related row. Handle the resulting NULLs explicitly in aggregates (`COALESCE`, or `CASE WHEN COUNT(...) = 0 THEN NULL ELSE ... END`).\n- **`INNER JOIN`** ONLY when the question explicitly restricts to rows *with* related data (\&quot;X **with** Y\&quot;, \&quot;X **that have** Y\&quot;), or when a metric formula requires the related row to exist (e.g., a ratio whose denominator comes from the joined table).\n- **Never** use `INNER JOIN` to \&quot;filter out NULLs\&quot; implicitly — that silently drops rows the user wanted to see. If you need to filter NULLs, do it explicitly with `WHERE x IS NOT NULL`.\n- When in doubt between LEFT and INNER, prefer LEFT — silently dropping rows is a worse failure mode than including a row with NULL aggregates.\n\n```sql\n-- For \&quot;show me the order count for each customer\&quot;:\n-- WRONG: __customers is on the right side of LEFT JOIN, so customers without orders are dropped\nSELECT c.id, COUNT(o.id) FROM __orders o LEFT JOIN __customers c ON o.cust_id = c.id GROUP BY c.id;\n\n-- CORRECT: __customers (the driving entity) is on the left\nSELECT c.id, COUNT(o.id) FROM __customers c LEFT JOIN __orders o ON o.cust_id = c.id GROUP BY c.id;\n```\n\n##### Other join rules\n- Use ONLY the supported join paths provided in the semantic model.\n- When joining multiple tables, assign aliases and ALWAYS qualify columns with table alias in ALL clauses.\n- Avoid joins in subqueries; use CTEs instead.\n- Be aware of data granularity: when joining one-to-many or many-to-many, consider data duplication during aggregations.\n- Extract unique records when necessary to avoid double-counting:\n```sql\n-- WRONG: AVG(income) on joined table counts each customer multiple times\n-- CORRECT: Extract unique customers first, then aggregate\nWITH unique_customers AS (\n    SELECT DISTINCT customer_id, income, region FROM orders o JOIN customers c ON ...\n)\nSELECT region, AVG(income) FROM unique_customers GROUP BY region;\n```\n\n#### Handling Text and Literal Values\n- **Use sample_values for exact matching**: Dimensions include sample_values showing actual data values. Use these to match user-mentioned entities:\n  - If user says \&quot;California\&quot;, check sample_values to see if values are \&quot;CA\&quot;, \&quot;California\&quot;, \&quot;CALIFORNIA\&quot;, etc.\n  - If user mentions a product name, find the closest match in sample_values\n- **Case-Insensitive Matching**: Use ILIKE instead of LIKE or = when exact case is uncertain\n- **Pattern Matching**: Use ILIKE &#x27;%pattern%&#x27; to find partial matches when sample_values don&#x27;t have an exact match\n- **Escape single quotes**: Use two single quotes (&#x27;&#x27;) to escape literal single quotes in strings\n\n#### Ratios and Percentages\n- DO NOT multiply by 100 for ratio/percentage calculations. Keep numbers as decimals.\n\n#### Error Prevention and Snowflake Syntax\n- When creating table or column aliases, avoid Snowflake SQL keywords (e.g., \&quot;to\&quot;, \&quot;date\&quot;, \&quot;order\&quot;)\n- Handle NULL values with COALESCE(column, default_value)\n- Use NULLIF to prevent division by zero: value / NULLIF(denominator, 0)\n- Use double quotes for case-sensitive identifiers: \&quot;ColumnName\&quot;\n- Use FLATTEN() for semi-structured/array data\n- Use QUALIFY for post-aggregation filtering with window functions\n- Use TRY_CAST or TRY_TO_NUMBER for safe type conversions\n&quot;,
+              &quot;tables&quot;: [
+                {
+                  &quot;dimensions&quot;: [
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;actual_claims&quot;,
+                      &quot;name&quot;: &quot;actual_claims&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;cum_actual&quot;,
+                      &quot;name&quot;: &quot;cum_actual&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(18,0)&quot;,
+                      &quot;expr&quot;: &quot;decile&quot;,
+                      &quot;name&quot;: &quot;decile&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(18,0)&quot;,
+                      &quot;expr&quot;: &quot;n_policies&quot;,
+                      &quot;name&quot;: &quot;n_policies&quot;
+                    }
+                  ],
+                  &quot;facts&quot;: [
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,6)&quot;,
+                      &quot;expr&quot;: &quot;actual_freq&quot;,
+                      &quot;name&quot;: &quot;actual_freq&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;ae_ratio&quot;,
+                      &quot;name&quot;: &quot;ae_ratio&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;avg_pure_premium&quot;,
+                      &quot;name&quot;: &quot;avg_pure_premium&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,2)&quot;,
+                      &quot;expr&quot;: &quot;cum_actual_pct&quot;,
+                      &quot;name&quot;: &quot;cum_actual_pct&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;cum_expected&quot;,
+                      &quot;name&quot;: &quot;cum_expected&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,2)&quot;,
+                      &quot;expr&quot;: &quot;cum_population_pct&quot;,
+                      &quot;name&quot;: &quot;cum_population_pct&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;expected_claims&quot;,
+                      &quot;name&quot;: &quot;expected_claims&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;expected_freq&quot;,
+                      &quot;name&quot;: &quot;expected_freq&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,2)&quot;,
+                      &quot;expr&quot;: &quot;total_exposure&quot;,
+                      &quot;name&quot;: &quot;total_exposure&quot;
+                    }
+                  ],
+                  &quot;name&quot;: &quot;ave_decile_test&quot;
+                },
+                {
+                  &quot;dimensions&quot;: [
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(16777216)&quot;,
+                      &quot;expr&quot;: &quot;area&quot;,
+                      &quot;name&quot;: &quot;area&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;bonusmalus&quot;,
+                      &quot;name&quot;: &quot;bonusmalus&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;bonusmalus_capped&quot;,
+                      &quot;name&quot;: &quot;bonusmalus_capped&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;claimnb&quot;,
+                      &quot;name&quot;: &quot;claimnb&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(5)&quot;,
+                      &quot;expr&quot;: &quot;dataset&quot;,
+                      &quot;name&quot;: &quot;dataset&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;density&quot;,
+                      &quot;name&quot;: &quot;density&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;drivage&quot;,
+                      &quot;name&quot;: &quot;drivage&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(5)&quot;,
+                      &quot;expr&quot;: &quot;drivage_band&quot;,
+                      &quot;name&quot;: &quot;drivage_band&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(1,0)&quot;,
+                      &quot;expr&quot;: &quot;has_claim&quot;,
+                      &quot;name&quot;: &quot;has_claim&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;idpol&quot;,
+                      &quot;name&quot;: &quot;idpol&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(16777216)&quot;,
+                      &quot;expr&quot;: &quot;region&quot;,
+                      &quot;name&quot;: &quot;region&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;vehage&quot;,
+                      &quot;name&quot;: &quot;vehage&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(5)&quot;,
+                      &quot;expr&quot;: &quot;vehage_band&quot;,
+                      &quot;name&quot;: &quot;vehage_band&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(16777216)&quot;,
+                      &quot;expr&quot;: &quot;vehbrand&quot;,
+                      &quot;name&quot;: &quot;vehbrand&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(16777216)&quot;,
+                      &quot;expr&quot;: &quot;vehgas&quot;,
+                      &quot;name&quot;: &quot;vehgas&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;vehpower&quot;,
+                      &quot;name&quot;: &quot;vehpower&quot;
+                    }
+                  ],
+                  &quot;facts&quot;: [
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,9)&quot;,
+                      &quot;expr&quot;: &quot;exposure&quot;,
+                      &quot;name&quot;: &quot;exposure&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;ln_density&quot;,
+                      &quot;name&quot;: &quot;ln_density&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;predicted_freq&quot;,
+                      &quot;name&quot;: &quot;predicted_freq&quot;
+                    }
+                  ],
+                  &quot;name&quot;: &quot;freq_model_features&quot;,
+                  &quot;primary_key&quot;: [
+                    &quot;idpol&quot;
+                  ]
+                },
+                {
+                  &quot;dimensions&quot;: [
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;claimnb&quot;,
+                      &quot;name&quot;: &quot;claimnb&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(5)&quot;,
+                      &quot;expr&quot;: &quot;dataset&quot;,
+                      &quot;name&quot;: &quot;dataset&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;idpol&quot;,
+                      &quot;name&quot;: &quot;idpol&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(18,0)&quot;,
+                      &quot;expr&quot;: &quot;n_claims_actual&quot;,
+                      &quot;name&quot;: &quot;n_claims_actual&quot;
+                    }
+                  ],
+                  &quot;facts&quot;: [
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;avg_actual_sev&quot;,
+                      &quot;name&quot;: &quot;avg_actual_sev&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,9)&quot;,
+                      &quot;expr&quot;: &quot;exposure&quot;,
+                      &quot;name&quot;: &quot;exposure&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;predicted_freq&quot;,
+                      &quot;name&quot;: &quot;predicted_freq&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;predicted_sev&quot;,
+                      &quot;name&quot;: &quot;predicted_sev&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;pure_premium&quot;,
+                      &quot;name&quot;: &quot;pure_premium&quot;
+                    }
+                  ],
+                  &quot;name&quot;: &quot;pure_premium&quot;,
+                  &quot;primary_key&quot;: [
+                    &quot;idpol&quot;
+                  ]
+                },
+                {
+                  &quot;dimensions&quot;: [
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(16777216)&quot;,
+                      &quot;expr&quot;: &quot;factor_level&quot;,
+                      &quot;name&quot;: &quot;factor_level&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(9)&quot;,
+                      &quot;expr&quot;: &quot;model&quot;,
+                      &quot;name&quot;: &quot;model&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(17)&quot;,
+                      &quot;expr&quot;: &quot;risk_factor&quot;,
+                      &quot;name&quot;: &quot;risk_factor&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(3)&quot;,
+                      &quot;expr&quot;: &quot;significance&quot;,
+                      &quot;name&quot;: &quot;significance&quot;
+                    }
+                  ],
+                  &quot;facts&quot;: [
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;estimate&quot;,
+                      &quot;name&quot;: &quot;estimate&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;p_value&quot;,
+                      &quot;name&quot;: &quot;p_value&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;relativity&quot;,
+                      &quot;name&quot;: &quot;relativity&quot;
+                    }
+                  ],
+                  &quot;name&quot;: &quot;rating_table&quot;
+                }
+              ],
+              &quot;verified_queries&quot;: [
+                {
+                  &quot;question&quot;: &quot;What are the frequency rating relativities for each risk factor level?&quot;,
+                  &quot;sql&quot;: &quot;SELECT risk_factor, factor_level, relativity, significance FROM __rating_table WHERE model = &#x27;FREQUENCY&#x27; AND NOT risk_factor IN (&#x27;Intercept&#x27;, &#x27;VEHPOWER&#x27;, &#x27;BONUSMALUS_CAPPED&#x27;, &#x27;LN_DENSITY&#x27;) ORDER BY risk_factor, factor_level&quot;
+                },
+                {
+                  &quot;question&quot;: &quot;What are the severity rating relativities for each risk factor level?&quot;,
+                  &quot;sql&quot;: &quot;SELECT risk_factor, factor_level, relativity, significance FROM __rating_table WHERE model = &#x27;SEVERITY&#x27; AND NOT risk_factor IN (&#x27;Intercept&#x27;, &#x27;VEHPOWER&#x27;, &#x27;BONUSMALUS_CAPPED&#x27;, &#x27;LN_DENSITY&#x27;) ORDER BY risk_factor, factor_level&quot;
+                },
+                {
+                  &quot;question&quot;: &quot;What are the combined frequency and severity relativities for each rating factor level?&quot;,
+                  &quot;sql&quot;: &quot;SELECT r1.risk_factor, r1.factor_level, r1.relativity AS freq_relativity, r2.relativity AS sev_relativity, ROUND(r1.relativity * r2.relativity, 4) AS combined_relativity FROM __rating_table AS r1 JOIN __rating_table AS r2 ON r1.risk_factor = r2.risk_factor AND r1.factor_level = r2.factor_level WHERE r1.model = &#x27;FREQUENCY&#x27; AND r2.model = &#x27;SEVERITY&#x27; ORDER BY r1.risk_factor, r1.factor_level&quot;
+                },
+                {
+                  &quot;question&quot;: &quot;What is the relativity for each driver age band?&quot;,
+                  &quot;sql&quot;: &quot;SELECT risk_factor, factor_level, model, relativity FROM __rating_table WHERE risk_factor = &#x27;DRIVAGE_BAND&#x27; ORDER BY model, factor_level&quot;
+                },
+                {
+                  &quot;question&quot;: &quot;Which rating factors have the biggest impact on claim frequency?&quot;,
+                  &quot;sql&quot;: &quot;SELECT risk_factor, factor_level, model, ABS(estimate) AS abs_effect, relativity FROM __rating_table WHERE model = &#x27;FREQUENCY&#x27; ORDER BY ABS(estimate) DESC LIMIT 10&quot;
+                },
+                {
+                  &quot;question&quot;: &quot;How does model performance vary across risk deciles in terms of predicted versus actual claim frequency?&quot;,
+                  &quot;sql&quot;: &quot;SELECT decile, actual_freq, expected_freq, ae_ratio, avg_pure_premium FROM __ave_decile_test ORDER BY decile&quot;
+                },
+                {
+                  &quot;question&quot;: &quot;How do the average pure premiums and model predictions compare between the training and test datasets?&quot;,
+                  &quot;sql&quot;: &quot;SELECT dataset, COUNT(*) AS n_policies, ROUND(AVG(pure_premium), 2) AS avg_pure_premium, ROUND(AVG(predicted_freq), 6) AS avg_predicted_freq, ROUND(AVG(predicted_sev), 2) AS avg_predicted_sev FROM __pure_premium GROUP BY dataset ORDER BY dataset&quot;
+                },
+                {
+                  &quot;question&quot;: &quot;What is the average pure premium by driver age band and area?&quot;,
+                  &quot;sql&quot;: &quot;SELECT drivage_band, area, ROUND(AVG(pure_premium), 2) AS avg_pure_premium, COUNT(*) AS n_policies FROM __freq_model_features AS f JOIN __pure_premium AS p ON f.idpol = p.idpol GROUP BY drivage_band, area ORDER BY avg_pure_premium DESC&quot;
+                }
+              ]
+            },
+            &quot;type&quot;: &quot;json&quot;
+          }
+        ],
+        &quot;name&quot;: &quot;rating_analytics&quot;,
+        &quot;status&quot;: &quot;success&quot;,
+        &quot;tool_use_id&quot;: &quot;tooluse_aa81b82da52740a693cf47&quot;,
+        &quot;type&quot;: &quot;system_agentic_semantic_context&quot;
+      },
+      &quot;type&quot;: &quot;tool_result&quot;
+    },
+    {
+      &quot;thinking&quot;: {
+        &quot;text&quot;: &quot;There&#x27;s a verified query for this exact question. Let me use it.&quot;
+      },
+      &quot;type&quot;: &quot;thinking&quot;
+    },
+    {
+      &quot;tool_use&quot;: {
+        &quot;client_side_execute&quot;: false,
+        &quot;input&quot;: {
+          &quot;semantic_model&quot;: &quot;rating_analytics&quot;,
+          &quot;sql&quot;: &quot;SELECT risk_factor, factor_level, ABS(estimate) AS abs_effect, relativity, significance FROM __rating_table WHERE model = &#x27;FREQUENCY&#x27; AND risk_factor &lt;&gt; &#x27;Intercept&#x27; ORDER BY ABS(estimate) DESC LIMIT 10&quot;,
+          &quot;verified_query_used&quot;: true
+        },
+        &quot;name&quot;: &quot;system_execute_sql&quot;,
+        &quot;tool_use_id&quot;: &quot;toolu_bdrk_01VdAqGfsbwzfpgRp4dXAYUm&quot;,
+        &quot;type&quot;: &quot;system_execute_sql&quot;
+      },
+      &quot;type&quot;: &quot;tool_use&quot;
+    },
+    {
+      &quot;tool_result&quot;: {
+        &quot;content&quot;: [
+          {
+            &quot;json&quot;: {
+              &quot;query_id&quot;: &quot;01c74689-0107-27ce-0002-0716066c2aea&quot;,
+              &quot;result_set&quot;: {
+                &quot;data&quot;: [
+                  [
+                    &quot;VEHAGE_BAND&quot;,
+                    &quot;00-01&quot;,
+                    &quot;0.50977700000000004&quot;,
+                    &quot;1.6649&quot;,
+                    &quot;***&quot;
+                  ],
+                  [
+                    &quot;VEHAGE_BAND&quot;,
+                    &quot;16+&quot;,
+                    &quot;0.39215899999999998&quot;,
+                    &quot;0.67559999999999998&quot;,
+                    &quot;***&quot;
+                  ],
+                  [
+                    &quot;DRIVAGE_BAND&quot;,
+                    &quot;71+&quot;,
+                    &quot;0.30818600000000002&quot;,
+                    &quot;1.361&quot;,
+                    &quot;***&quot;
+                  ],
+                  [
+                    &quot;DRIVAGE_BAND&quot;,
+                    &quot;41-50&quot;,
+                    &quot;0.28733599999999998&quot;,
+                    &quot;1.3329&quot;,
+                    &quot;***&quot;
+                  ],
+                  [
+                    &quot;REGION&quot;,
+                    &quot;Auvergne&quot;,
+                    &quot;0.25762200000000002&quot;,
+                    &quot;0.77290000000000003&quot;,
+                    &quot;**&quot;
+                  ],
+                  [
+                    &quot;DRIVAGE_BAND&quot;,
+                    &quot;18-21&quot;,
+                    &quot;0.24556500000000001&quot;,
+                    &quot;1.2783&quot;,
+                    &quot;***&quot;
+                  ],
+                  [
+                    &quot;DRIVAGE_BAND&quot;,
+                    &quot;51-60&quot;,
+                    &quot;0.21898699999999999&quot;,
+                    &quot;1.2447999999999999&quot;,
+                    &quot;***&quot;
+                  ],
+                  [
+                    &quot;REGION&quot;,
+                    &quot;Champagne-Ardenne&quot;,
+                    &quot;0.21090900000000001&quot;,
+                    &quot;1.2347999999999999&quot;,
+                    &quot;*&quot;
+                  ],
+                  [
+                    &quot;DRIVAGE_BAND&quot;,
+                    &quot;61-70&quot;,
+                    &quot;0.19344700000000001&quot;,
+                    &quot;1.2134&quot;,
+                    &quot;***&quot;
+                  ],
+                  [
+                    &quot;REGION&quot;,
+                    &quot;Limousin&quot;,
+                    &quot;0.152278&quot;,
+                    &quot;1.1645000000000001&quot;,
+                    &quot;*&quot;
+                  ]
+                ],
+                &quot;resultSetMetaData&quot;: {
+                  &quot;format&quot;: &quot;jsonv2&quot;,
+                  &quot;numRows&quot;: 10,
+                  &quot;partition&quot;: 0,
+                  &quot;partitionInfo&quot;: [
+                    {
+                      &quot;rowCount&quot;: 10,
+                      &quot;uncompressedSize&quot;: 678
+                    }
+                  ],
+                  &quot;rowType&quot;: [
+                    {
+                      &quot;length&quot;: 17,
+                      &quot;name&quot;: &quot;RISK_FACTOR&quot;,
+                      &quot;nullable&quot;: true,
+                      &quot;precision&quot;: 0,
+                      &quot;scale&quot;: 0,
+                      &quot;type&quot;: &quot;text&quot;
+                    },
+                    {
+                      &quot;length&quot;: 16777216,
+                      &quot;name&quot;: &quot;FACTOR_LEVEL&quot;,
+                      &quot;nullable&quot;: true,
+                      &quot;precision&quot;: 0,
+                      &quot;scale&quot;: 0,
+                      &quot;type&quot;: &quot;text&quot;
+                    },
+                    {
+                      &quot;length&quot;: 0,
+                      &quot;name&quot;: &quot;ABS_EFFECT&quot;,
+                      &quot;nullable&quot;: true,
+                      &quot;precision&quot;: 0,
+                      &quot;scale&quot;: 0,
+                      &quot;type&quot;: &quot;real&quot;
+                    },
+                    {
+                      &quot;length&quot;: 0,
+                      &quot;name&quot;: &quot;RELATIVITY&quot;,
+                      &quot;nullable&quot;: true,
+                      &quot;precision&quot;: 0,
+                      &quot;scale&quot;: 0,
+                      &quot;type&quot;: &quot;real&quot;
+                    },
+                    {
+                      &quot;length&quot;: 3,
+                      &quot;name&quot;: &quot;SIGNIFICANCE&quot;,
+                      &quot;nullable&quot;: true,
+                      &quot;precision&quot;: 0,
+                      &quot;scale&quot;: 0,
+                      &quot;type&quot;: &quot;text&quot;
+                    }
+                  ]
+                },
+                &quot;statementHandle&quot;: &quot;01c74689-0107-27ce-0002-0716066c2aea&quot;
+              },
+              &quot;semantic_model_path&quot;: &quot;FREMTPL2.FREMTPL2_INVESTIGATION.INSURANCE_RATING_ANALYTICS&quot;,
+              &quot;sql&quot;: &quot;WITH __rating_table AS (\n  SELECT\n    factor_level,\n    model,\n    risk_factor,\n    significance,\n    estimate,\n    relativity\n  FROM FREMTPL2.FREMTPL2_INVESTIGATION.RATING_TABLE\n)\nSELECT\n  risk_factor,\n  factor_level,\n  ABS(estimate) AS abs_effect,\n  relativity,\n  significance\nFROM __rating_table\nWHERE\n  model = &#x27;FREQUENCY&#x27; AND risk_factor &lt;&gt; &#x27;Intercept&#x27;\nORDER BY\n  ABS(estimate) DESC\nLIMIT 10 /* Generated by Cortex */;&quot;,
+              &quot;verified_query_used&quot;: true
+            },
+            &quot;type&quot;: &quot;json&quot;
+          }
+        ],
+        &quot;name&quot;: &quot;system_execute_sql&quot;,
+        &quot;status&quot;: &quot;success&quot;,
+        &quot;tool_use_id&quot;: &quot;toolu_bdrk_01VdAqGfsbwzfpgRp4dXAYUm&quot;,
+        &quot;type&quot;: &quot;system_execute_sql&quot;
+      },
+      &quot;type&quot;: &quot;tool_result&quot;
+    },
+    {
+      &quot;thinking&quot;: {
+        &quot;text&quot;: &quot;The biggest effect on claim frequency is vehicle age band. The single largest coefficient (in absolute terms) is VEHAGE_BAND 00-01 with an effect of 0.510 and relativity 1.6649. Vehicle age appears twice at the top, so vehicle age band is the rating factor with the biggest effect.&quot;
+      },
+      &quot;type&quot;: &quot;thinking&quot;
+    },
+    {
+      &quot;text&quot;: &quot;The rating factor with the biggest effect on claim frequency is **vehicle age band (VEHAGE_BAND)**.\n\nThe single strongest coefficient belongs to the newest vehicles (age band **00-01**), with an absolute log-coefficient of **0.51** and a relativity of **1.66** — meaning brand-new vehicles have roughly **66% higher** expected claim frequency than the base level (vehicle age 02-05). Vehicle age also produces the second-largest effect at the opposite end: the oldest vehicles (**16+**) have a relativity of **0.68**, cutting frequency by about **32%**. Both are highly significant (***).\n\nAfter vehicle age, **driver age band** dominates the rest of the top effects, followed by a few regional adjustments.\n\n&quot;,
+      &quot;type&quot;: &quot;text&quot;
+    },
+    {
+      &quot;table&quot;: {
+        &quot;query_id&quot;: &quot;01c74689-0107-27ce-0002-0716066c2aea&quot;,
+        &quot;result_set&quot;: {
+          &quot;data&quot;: [
+            [
+              &quot;VEHAGE_BAND&quot;,
+              &quot;00-01&quot;,
+              &quot;0.50977700000000004&quot;,
+              &quot;1.6649&quot;,
+              &quot;***&quot;
+            ],
+            [
+              &quot;VEHAGE_BAND&quot;,
+              &quot;16+&quot;,
+              &quot;0.39215899999999998&quot;,
+              &quot;0.67559999999999998&quot;,
+              &quot;***&quot;
+            ],
+            [
+              &quot;DRIVAGE_BAND&quot;,
+              &quot;71+&quot;,
+              &quot;0.30818600000000002&quot;,
+              &quot;1.361&quot;,
+              &quot;***&quot;
+            ],
+            [
+              &quot;DRIVAGE_BAND&quot;,
+              &quot;41-50&quot;,
+              &quot;0.28733599999999998&quot;,
+              &quot;1.3329&quot;,
+              &quot;***&quot;
+            ],
+            [
+              &quot;REGION&quot;,
+              &quot;Auvergne&quot;,
+              &quot;0.25762200000000002&quot;,
+              &quot;0.77290000000000003&quot;,
+              &quot;**&quot;
+            ],
+            [
+              &quot;DRIVAGE_BAND&quot;,
+              &quot;18-21&quot;,
+              &quot;0.24556500000000001&quot;,
+              &quot;1.2783&quot;,
+              &quot;***&quot;
+            ],
+            [
+              &quot;DRIVAGE_BAND&quot;,
+              &quot;51-60&quot;,
+              &quot;0.21898699999999999&quot;,
+              &quot;1.2447999999999999&quot;,
+              &quot;***&quot;
+            ],
+            [
+              &quot;REGION&quot;,
+              &quot;Champagne-Ardenne&quot;,
+              &quot;0.21090900000000001&quot;,
+              &quot;1.2347999999999999&quot;,
+              &quot;*&quot;
+            ],
+            [
+              &quot;DRIVAGE_BAND&quot;,
+              &quot;61-70&quot;,
+              &quot;0.19344700000000001&quot;,
+              &quot;1.2134&quot;,
+              &quot;***&quot;
+            ],
+            [
+              &quot;REGION&quot;,
+              &quot;Limousin&quot;,
+              &quot;0.152278&quot;,
+              &quot;1.1645000000000001&quot;,
+              &quot;*&quot;
+            ]
+          ],
+          &quot;resultSetMetaData&quot;: {
+            &quot;format&quot;: &quot;jsonv2&quot;,
+            &quot;numRows&quot;: 10,
+            &quot;partition&quot;: 0,
+            &quot;rowType&quot;: [
+              {
+                &quot;length&quot;: 17,
+                &quot;name&quot;: &quot;RISK_FACTOR&quot;,
+                &quot;nullable&quot;: true,
+                &quot;precision&quot;: 0,
+                &quot;scale&quot;: 0,
+                &quot;type&quot;: &quot;text&quot;
+              },
+              {
+                &quot;length&quot;: 16777216,
+                &quot;name&quot;: &quot;FACTOR_LEVEL&quot;,
+                &quot;nullable&quot;: true,
+                &quot;precision&quot;: 0,
+                &quot;scale&quot;: 0,
+                &quot;type&quot;: &quot;text&quot;
+              },
+              {
+                &quot;length&quot;: 0,
+                &quot;name&quot;: &quot;ABS_EFFECT&quot;,
+                &quot;nullable&quot;: true,
+                &quot;precision&quot;: 0,
+                &quot;scale&quot;: 0,
+                &quot;type&quot;: &quot;real&quot;
+              },
+              {
+                &quot;length&quot;: 0,
+                &quot;name&quot;: &quot;RELATIVITY&quot;,
+                &quot;nullable&quot;: true,
+                &quot;precision&quot;: 0,
+                &quot;scale&quot;: 0,
+                &quot;type&quot;: &quot;real&quot;
+              },
+              {
+                &quot;length&quot;: 3,
+                &quot;name&quot;: &quot;SIGNIFICANCE&quot;,
+                &quot;nullable&quot;: true,
+                &quot;precision&quot;: 0,
+                &quot;scale&quot;: 0,
+                &quot;type&quot;: &quot;text&quot;
+              }
+            ]
+          },
+          &quot;statementHandle&quot;: &quot;01c74689-0107-27ce-0002-0716066c2aea&quot;
+        },
+        &quot;title&quot;: &quot;Top 10 Frequency Rating Effects (by absolute coefficient)&quot;,
+        &quot;tool_use_id&quot;: &quot;toolu_bdrk_01VdAqGfsbwzfpgRp4dXAYUm&quot;
+      },
+      &quot;type&quot;: &quot;table&quot;
+    },
+    {
+      &quot;text&quot;: &quot;\n\nHere&#x27;s the ranked view of the strongest effects:&quot;,
+      &quot;type&quot;: &quot;text&quot;
+    },
+    {
+      &quot;tool_use&quot;: {
+        &quot;client_side_execute&quot;: false,
+        &quot;input&quot;: {
+          &quot;skill_name&quot;: &quot;chart_instructions&quot;
+        },
+        &quot;name&quot;: &quot;server_skill&quot;,
+        &quot;tool_use_id&quot;: &quot;toolu_bdrk_01EtbUJZ5hntXqcTJSJN7NyA&quot;,
+        &quot;type&quot;: &quot;server_skill&quot;
+      },
+      &quot;type&quot;: &quot;tool_use&quot;
+    },
+    {
+      &quot;tool_result&quot;: {
+        &quot;content&quot;: [
+          {
+            &quot;json&quot;: {
+              &quot;content&quot;: &quot;# Skill: chart_instructions\n\n**Description**: Instructions for generating Vega-Lite chart specifications with unrestricted chart types\n\n## Instructions\n\n\n# WHEN TO GENERATE A CHART\n\n**PHASE 1: DECIDING TO GENERATE A CHART** (happens DURING your reasoning, BEFORE you have a chart tool result)\n\nInspecting results from system_execute_sql, you MUST evaluate in &lt;thinking&gt;:\n\n**Step 1: Should I generate a chart?**\n  - Prefer charts over tables for: comparisons, trends, rankings, distributions, time-series\n  - MUST generate charts when SQL results have 2+ rows with numerical metrics (revenue, sales, counts, growth rates, percentages)\n  - Example of MANDATORY chart scenarios:\n    - Comparisons: revenue by region, sales by product, performance by team\n    - Rankings: top 10 customers, bottom performers, leaderboards\n    - Time series: monthly trends, year-over-year growth, daily metrics\n    - Distributions: category breakdowns, segment analysis\n  - Do NOT chart: singular values (e.g., \&quot;What is total revenue?\&quot; → just answer \&quot;The total revenue is $X\&quot;)\n  - Prefer using the prior SQL result&#x27;s `tool_use_id` as `tool_result_id` when available\n  - If you do NOT have a usable `tool_use_id` but you do have a Snowflake `query_id`, you MAY call the chart tool with `query_id` instead\n  - If you do NOT have any SQL-backed source but you DO have small, well-formed records you computed yourself or that came from a non-SQL tool, you MAY pass them as inline `values`. Do NOT paste raw CSV — convert to structured row objects first.\n  - In a code-execution sandbox, prefer writing larger datasets to a CSV file on a Snowflake stage and passing its path as `csv_path` instead of inflating your context with inline `values`.\n\n**Step 2: Is the SQL result visualization-ready?**\n  - Check: row count, column names, aggregation level, data shape\n  - Check if the question mentions a specific chart type that should be generated. If it does, check if the SQL result is visualization-ready for the requested chart type.\n  - **IMPORTANT - Check custom instructions**: Review the system prompt for any custom response instructions or chart-related preferences. Custom instructions should take precedence over recommendations in this guide, unless they are breaking the system. For example, if custom instructions say \&quot;always use bar charts for time series\&quot;, you MUST use a bar chart even though this guide recommends line charts for time series. Double-check any instructions under \&quot;[Important Case-specific Instructions]\&quot; section in the system prompt, and apply any chart-relevant guidance.\n\n**Step 3: Prepare data and generate a chart**\n  - If data is NOT visualization-ready → Use a vega-lite transform to reshape the data before calling data_to_chart again. Reuse the prior SQL result&#x27;s tool_use_id; do NOT run a new SQL query for chart data reshaping unless absolutely necessary and you need different data.\n  - Always provide context text BEFORE the chart block, then show the chart (both inline in your answer text).\n\n**Step 4: Consider generating multiple charts**\n  - You CAN generate multiple charts when a single chart would be insufficient or misleading:\n    - **Different scales**: When metrics have vastly different magnitudes (e.g., revenue in millions vs. growth rate in percentages), a single chart may hide patterns in smaller values. Create separate charts for each scale.\n    - **Different perspectives**: When the user&#x27;s question benefits from multiple views (e.g., \&quot;analyze sales performance\&quot; could show both a trend over time AND a breakdown by category).\n    - **Comparison clarity**: When comparing items with very different value ranges, separate charts can make each comparison more straightforward.\n  - To generate multiple charts:\n    1. Call data_to_chart multiple times, once for each chart\n    2. Present each chart with a brief label explaining what it shows. Remember to cite each chart separately\n    3. Example: \&quot;Here&#x27;s the revenue trend:\&quot; followed by chart 1, then \&quot;And here&#x27;s the growth rate trend:\&quot; followed by chart 2\n  - Do NOT generate multiple charts just to show more visualizations - only when it genuinely improves understanding.\n\n**PHASE 2: PRESENTING THE CHART** (happens AFTER you have a chart tool result in conversation history)\n\nOnce you have called data_to_chart tool and received a tool result:\n  * Find the data_to_chart tool result with the chart in conversation history\n  * Provide the &lt;chart&gt;toolUseId&lt;/chart&gt; block inline in your answer text after the thinking block where toolUseId is from the data_to_chart tool result\n  * Valid chart block format: &lt;chart&gt;tooluse_8n3P5qRk7aWzJ1cYxTvEfg&lt;/chart&gt;\n  * If you cannot find ANY valid tool results from data_to_chart tool in conversation history, just say \&quot;I couldn&#x27;t generate a valid visualization.\&quot;\n  * **AVOID REPETITION**: When user did not ask for a chart explicitly, your chart response comes AFTER your initial response in the conversation. Do NOT repeat information already provided in your previous answer before generating the chart:\n    - Do NOT repeat the summary or analysis from your first response\n    - Introduce the chart and optionally add NEW observations visible only in the visualization (e.g., visual patterns, outliers that stand out graphically) or new findings that you were not aware of before.\n  * All chart blocks must be placed inline in your answer text, not before the thinking block.\n  * DO NOT use tool IDs from system_execute_sql tool results to generate a chart block. These will cause rendering errors. ONLY use data_to_chart tool use IDs in chart blocks.\n  * DO NOT reference or describe chart colors (e.g., \&quot;the blue line\&quot;, \&quot;red bars\&quot;) in your &lt;thinking&gt; sections, unless you explicitly specified them in chart specification.\n  * **Colors**: The chart&#x27;s Vega-Lite spec may include a `color_mapping` object at `usermeta.snowflake.color_mapping` (e.g. `{\&quot;Health\&quot;:{\&quot;hex\&quot;:\&quot;#1a6ce7\&quot;,\&quot;name\&quot;:\&quot;blue\&quot;}}`) where each entry maps a category to its rendered hex and color name. Whenever the user refers to a series by color or asks to recolor one, you MUST consult `color_mapping` to identify the category. Match the user&#x27;s color word to the closest `name` — do not require an exact match; map approximate or near human color words to the nearest name (e.g. \&quot;sky\&quot;/\&quot;sky blue\&quot;/\&quot;navy\&quot;/\&quot;azure\&quot;/\&quot;cobalt\&quot; → \&quot;blue\&quot;, \&quot;crimson\&quot;/\&quot;maroon\&quot;/\&quot;scarlet\&quot; → \&quot;red\&quot;, \&quot;lime\&quot;/\&quot;emerald\&quot;/\&quot;olive\&quot; → \&quot;green\&quot;, \&quot;gold\&quot;/\&quot;amber\&quot; → \&quot;orange\&quot;). Use the matched category whether they ask about a color (e.g. \&quot;what does the red line show?\&quot;) or ask to recolor it (e.g. \&quot;change the sky-blue bar to yellow\&quot;); for recolor, change only that category&#x27;s color and preserve all other encodings.\n\n# HOW TO USE\n\n## Step 1: Call data_to_chart\n\nProvide:\n\n1. **`chart`**: a complete Vega-Lite JSON specification (see format below)\n2. Exactly one data reference:\n   - **Preferred: `tool_result_id`** — the `tool_use_id` of a previous system_execute_sql result whose data should be used. Refreshable.\n   - **Fallback: `query_id`** — a Snowflake `query_id` whose result should be charted when no usable `tool_result_id` is available. Refreshable when SQL provenance can be recovered.\n   - **Inline: `values`** — an array of row objects (e.g. `[{\&quot;month\&quot;: \&quot;2025-01\&quot;, \&quot;value\&quot;: 100}, ...]`) for small, LLM-computed or non-SQL data. Keep small (single-screen tables) so size validation passes. Not refreshable. Do NOT paste raw CSV — convert to structured row objects first.\n   - **File: `csv_path`** — a sandbox workspace path to a CSV file (e.g. `\&quot;/workspace/data.csv\&quot;`). Write the CSV under `/workspace` in the sandbox first; the orchestrator downloads it from the workspace stage and parses the CSV server-side, so the data does NOT pass through your context. Path must start with `/workspace/` and reference a `.csv` file. Do NOT pass `@`-stage paths or `snow://...` URLs. Not refreshable.\n\n## Step 2: Cite the chart\n\nUse the data_to_chart `tool_use_id` when citing the chart inline in your answer text:\n```\n&lt;chart&gt;tool_use_id&lt;/chart&gt;\n```\n\n## Sandbox / code-execution sessions\n\nIf you have access to a code-execution sandbox (e.g. `bash` with Python, pandas, plotly), you MUST still produce charts via data_to_chart. Do NOT generate Plotly / matplotlib / D3 HTML and embed it in the answer (e.g. via `iframe srcdoc`, `&lt;script&gt;` blocks, or raw HTML) — those bypass chart validation, customization, and the renderer pipeline, and will not be styled consistently with the rest of the surface.\n\nTwo patterns, picked by dataset size:\n\n### Small datasets (~tens of rows): inline `values`\n\n1. Use `bash` (Python/pandas/SQL CLI/etc.) to derive the data you want to plot.\n2. Print the result as a small JSON array of row objects (one row per record, scalar values only).\n3. Call data_to_chart with that array passed as inline `values`, plus a Vega-Lite spec.\n\n### Larger datasets: write a CSV to `/workspace/`, then pass it as `csv_path`\n\nFor anything bigger than a few dozen rows, write a CSV under `/workspace/` and pass that sandbox path directly as `csv_path`. The orchestrator downloads and parses the CSV server-side, so the data does NOT consume your context window.\n\n1. In `bash`, write the CSV under `/workspace/`, e.g.:\n\n   ```python\n   import pandas as pd\n   df = ... # your aggregated / filtered dataset\n   df.to_csv(\&quot;/workspace/sales_by_month.csv\&quot;, index=False)\n   ```\n\n   The first row MUST be a header (column names). Cells must be scalar (numbers, strings, empty) — no nested JSON, no Python repr, no commas inside unquoted values (pandas handles quoting correctly by default).\n\n2. Call data_to_chart with `csv_path` set to the same `/workspace/...` path you wrote (e.g. `\&quot;/workspace/sales_by_month.csv\&quot;`), plus your Vega-Lite spec. Do not pass `values`, `tool_result_id`, or `query_id` in the same call. Do NOT pass `@`-stage paths or `snow://...` URLs as `csv_path` — only sandbox `/workspace/...` paths are accepted.\n\nIf the dataset is huge, aggregate or top-N it in `bash` first; the chart pipeline still enforces a per-chart row cap, and tiny preprocessed CSVs render faster.\n\n# CHART SPEC FORMAT\n\nThe `chart` parameter must be a valid Vega-Lite JSON object.\n\n## Single-view constraint\nThe rendering backend only supports **single-view** specs. Do NOT use `vconcat`, `hconcat`, `facet`, or `repeat`.\n\nTo combine multiple chart types (e.g., bar + line), use `layer` within a single-view spec.\nIf the user asks for side-by-side panels, generate **separate charts** by calling data_to_chart multiple times.\n\n## Data handling\n- **Do NOT include a top-level `\&quot;data\&quot;` field.** The referenced SQL result is injected automatically and **overwrites** any `data` you provide. Because of this override, your `encoding.field` names MUST match the **SQL result column names exactly** — Snowflake returns them UPPERCASE by default (e.g. `INCIDENT_MONTH`, `INCIDENT_COUNT`) — NOT any friendlier alias you might invent.\n  - **This is the #1 cause of blank charts:** writing inline data like `{\&quot;month\&quot;: ..., \&quot;count\&quot;: ...}` and then encoding `\&quot;field\&quot;: \&quot;month\&quot;`. The pipeline replaces your data with columns `INCIDENT_MONTH`/`INCIDENT_COUNT`, so `month`/`count` no longer exist and no marks are drawn. Always take field names from the actual SQL result columns in the conversation, not from your prose or example data.\n- **Do NOT include `\&quot;width\&quot;` or `\&quot;height\&quot;`.** These are set in post-processing.\n- **The ONLY place a `\&quot;data\&quot;` field is allowed is inside an annotation layer** — a `rule`/`text` reference-line or label layer where you supply your own constant positions/labels (see Tip 8). That per-layer `data.values` is NOT overwritten. Never put `data` at the top level, and never put it on a primary data-bearing layer.\n- For `layer` specs, omit top-level `\&quot;data\&quot;`; the injected SQL result is shared across all data-bearing layers.\n\n## Single-layer example\n```json\n{\n  \&quot;title\&quot;: \&quot;Monthly Revenue\&quot;,\n  \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;area\&quot;, \&quot;opacity\&quot;: 0.7},\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;temporal\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REVENUE\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n## Multi-layer example (dual-axis)\n```json\n{\n  \&quot;title\&quot;: \&quot;Revenue vs Orders\&quot;,\n  \&quot;layer\&quot;: [\n    {\n      \&quot;mark\&quot;: \&quot;bar\&quot;,\n      \&quot;encoding\&quot;: {\n        \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;ordinal\&quot;},\n        \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REVENUE\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;, \&quot;axis\&quot;: {\&quot;title\&quot;: \&quot;Revenue ($)\&quot;}}\n      }\n    },\n    {\n      \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;line\&quot;, \&quot;color\&quot;: \&quot;red\&quot;, \&quot;strokeWidth\&quot;: 2},\n      \&quot;encoding\&quot;: {\n        \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;ordinal\&quot;},\n        \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;ORDERS\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;, \&quot;axis\&quot;: {\&quot;title\&quot;: \&quot;Orders\&quot;}}\n      }\n    }\n  ],\n  \&quot;resolve\&quot;: {\&quot;scale\&quot;: {\&quot;y\&quot;: \&quot;independent\&quot;}}\n}\n```\n\n# FIELD TYPES\n\n- `\&quot;quantitative\&quot;` — numeric values\n- `\&quot;nominal\&quot;` — categorical without order\n- `\&quot;ordinal\&quot;` — categorical with order\n- `\&quot;temporal\&quot;` — date/time values\n\n# TIPS\n\n\n1. **Dual-axis**: Use `layer` with `resolve: {scale: {y: \&quot;independent\&quot;}}`. **Use at most 2 layers.** More than 2 layers causes overlapping Y-axis labels. If you need to show 3+ metrics on different scales, generate **separate charts** by calling data_to_chart multiple times instead.\n2. **Heatmaps**: Use `mark: \&quot;rect\&quot;` with `color` on quantitative, `x`/`y` on nominal\n3. **Boxplots**: Use `mark: \&quot;boxplot\&quot;`\n4. **Waterfall**: Use `calculate` transforms for running totals, then `bar` with `y`/`y2`\n5. **Technical/helper columns**: If you create a transform output that is only used for styling, positioning, or other internal chart mechanics, its field name MUST start with `_`. Examples: `_color`, `_label_x`, `_x`, `_y`, `_label`. These internal helper fields are not user-facing and should not be intended for tooltips or legends unless you explicitly mean to expose them.\n6. **Custom colors**: When the user (or chart customization soft instructions) requests specific colors per series or wants to highlight specific marks, read [references/colors.md](references/colors.md) for the two `_color` patterns (multi-series via `scale.range.field` vs highlight via `scale: null`) and the rules that keep them mutually exclusive.\n7. **Global styling**: Use the `config` object for background, fonts, default mark color, etc. (e.g., `\&quot;config\&quot;: {\&quot;background\&quot;: \&quot;lightgray\&quot;}`)\n8. **Annotations, reference lines, and bar text labels**: Add annotation layers ONLY when the user (or chart customization soft instructions) explicitly asks for reference lines, event markers, value labels on bars, or text callouts.\n\n   Use `rule` or `text` layers with **per-layer `data`** and `field`-based encoding. Do **NOT** use `datum` — it is not supported by the renderer and will render at position 0. Give each annotation layer its own `\&quot;data\&quot;: {\&quot;values\&quot;: [...]}` with the position values, then reference them via `field`.\n\n   Example — vertical reference line + label on a temporal x-axis:\n   ```json\n   {\n     \&quot;layer\&quot;: [\n       {\n         \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;rule\&quot;, \&quot;color\&quot;: \&quot;#FF6B6B\&quot;, \&quot;strokeDash\&quot;: [4, 4]},\n         \&quot;data\&quot;: {\&quot;values\&quot;: [{\&quot;_X\&quot;: \&quot;2025-04-18\&quot;}]},\n         \&quot;encoding\&quot;: {\&quot;x\&quot;: {\&quot;field\&quot;: \&quot;_X\&quot;, \&quot;type\&quot;: \&quot;temporal\&quot;}}\n       },\n       {\n         \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;text\&quot;, \&quot;align\&quot;: \&quot;left\&quot;, \&quot;dx\&quot;: 5, \&quot;dy\&quot;: -5, \&quot;color\&quot;: \&quot;#FF6B6B\&quot;, \&quot;fontSize\&quot;: 11},\n         \&quot;data\&quot;: {\&quot;values\&quot;: [{\&quot;_X\&quot;: \&quot;2025-04-18\&quot;, \&quot;_Y\&quot;: 190, \&quot;_LABEL\&quot;: \&quot;Event date\&quot;}]},\n         \&quot;encoding\&quot;: {\n           \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;_X\&quot;, \&quot;type\&quot;: \&quot;temporal\&quot;},\n           \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;_Y\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n           \&quot;text\&quot;: {\&quot;field\&quot;: \&quot;_LABEL\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n         }\n       }\n     ]\n   }\n   ```\n   For horizontal reference lines use `\&quot;y\&quot;` instead of `\&quot;x\&quot;` with the same per-layer data pattern.\n\n   **CRITICAL — ordinal axis with explicit `sort` array**: When the main axis is `ordinal` with an explicit `sort` array (e.g. `[1,2,...,12]` or month names), the annotation layer&#x27;s `data.values` key AND `encoding.field` MUST match the main layer&#x27;s field name **exactly** (same casing). Renaming it (`MONTH` → `_MONTH`) silently breaks the shared scale&#x27;s sort and falls back to alphabetical order. Pick ONE field name and reuse it in every layer.\n\n   Example — annotation on an ordinal axis with `sort`:\n   ```json\n   {\n     \&quot;layer\&quot;: [\n       {\n         \&quot;mark\&quot;: \&quot;bar\&quot;,\n         \&quot;encoding\&quot;: {\n           \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;ordinal\&quot;, \&quot;sort\&quot;: [1,2,3,4,5,6,7,8,9,10,11,12]},\n           \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REVENUE\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;}\n         }\n       },\n       {\n         \&quot;data\&quot;: {\&quot;values\&quot;: [{\&quot;MONTH\&quot;: 12, \&quot;_LABEL\&quot;: \&quot;Year-end\&quot;}]},\n         \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;text\&quot;, \&quot;align\&quot;: \&quot;right\&quot;, \&quot;dx\&quot;: -4, \&quot;dy\&quot;: -10, \&quot;fontWeight\&quot;: \&quot;bold\&quot;},\n         \&quot;encoding\&quot;: {\n           \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;ordinal\&quot;, \&quot;sort\&quot;: [1,2,3,4,5,6,7,8,9,10,11,12]},\n           \&quot;y\&quot;: {\&quot;value\&quot;: 10},\n           \&quot;text\&quot;: {\&quot;field\&quot;: \&quot;_LABEL\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n         }\n       }\n     ]\n   }\n   ```\n\n   **Bar text labels**: Center labels at the midpoint of each bar via a `calculate` transform (e.g. `datum.SALES / 2`). Use a contrasting color (e.g. white text on dark bars).\n   ```json\n   {\n     \&quot;layer\&quot;: [\n       {\&quot;mark\&quot;: \&quot;bar\&quot;, \&quot;encoding\&quot;: {\&quot;x\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;}, \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}}},\n       {\n         \&quot;transform\&quot;: [{\&quot;calculate\&quot;: \&quot;datum.SALES / 2\&quot;, \&quot;as\&quot;: \&quot;_label_x\&quot;}],\n         \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;text\&quot;, \&quot;color\&quot;: \&quot;white\&quot;},\n         \&quot;encoding\&quot;: {\n           \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;_label_x\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n           \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n           \&quot;text\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;}\n         }\n       }\n     ]\n   }\n   ```\n9. **Multiple panels**: Call data_to_chart multiple times instead of using `hconcat`/`vconcat`\n\n# DATA QUALITY RULES\n\nFollow these rules to ensure charts render correctly. These prevent the most common failures.\n\n## 1. Bar charts: no duplicate categories\n\nFor bar charts without an aggregate, each (categorical_field, color_field) tuple must be unique. Duplicate categories cause stacked/overlapping bars that misrepresent the data. Avoid that, unless specifically requested by user.\n\n**Fix — aggregate transform** (preferred):\n```json\n{\n  \&quot;transform\&quot;: [\n    {\&quot;aggregate\&quot;: [{\&quot;op\&quot;: \&quot;sum\&quot;, \&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;as\&quot;: \&quot;SALES\&quot;}], \&quot;groupby\&quot;: [\&quot;REGION\&quot;, \&quot;CATEGORY\&quot;]}\n  ],\n  \&quot;mark\&quot;: \&quot;bar\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n**Fix — grouped bar chart** (when you want to show per-item bars side by side instead of stacking):\nUse `xOffset` (vertical bars) or `yOffset` (horizontal bars) to place bars next to each other. This is the **default** for multi-color bar charts.\n```json\n{\n  \&quot;title\&quot;: \&quot;Revenue by Region and Category\&quot;,\n  \&quot;mark\&quot;: \&quot;bar\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;yOffset\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;, \&quot;title\&quot;: \&quot;Category\&quot;}\n  }\n}\n```\n\n**Fix — stacked bar chart** (ONLY when the user explicitly asks for a \&quot;stacked bar chart\&quot;):\nAdd `\&quot;stack\&quot;: \&quot;zero\&quot;` to the **quantitative** axis encoding and do NOT include `xOffset`/`yOffset`. Use `\&quot;stack\&quot;: \&quot;normalize\&quot;` only when the user explicitly asks for normalized/percentage stacked bars.\nNEVER use `\&quot;stack\&quot;: false`, `\&quot;stack\&quot;: null`, or `\&quot;stack\&quot;: \&quot;center\&quot;` — these cause broken or overlapping bars.\n```json\n{\n  \&quot;title\&quot;: \&quot;Sales by Region and Category (Stacked)\&quot;,\n  \&quot;mark\&quot;: \&quot;bar\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;, \&quot;stack\&quot;: \&quot;zero\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;, \&quot;title\&quot;: \&quot;Category\&quot;}\n  }\n}\n```\nWhen combining with fold (wide-format data with multiple metric columns):\n```json\n{\n  \&quot;transform\&quot;: [\n    {\&quot;fold\&quot;: [\&quot;CAPACITY\&quot;, \&quot;UTILIZATION\&quot;]},\n    {\&quot;calculate\&quot;: \&quot;({&#x27;CAPACITY&#x27;: &#x27;Capacity&#x27;, &#x27;UTILIZATION&#x27;: &#x27;Utilization&#x27;})[datum.key]\&quot;, \&quot;as\&quot;: \&quot;key\&quot;}\n  ],\n  \&quot;mark\&quot;: \&quot;bar\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;value\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;ACCOUNT\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;yOffset\&quot;: {\&quot;field\&quot;: \&quot;key\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;key\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;, \&quot;title\&quot;: \&quot;Metric\&quot;}\n  }\n}\n```\n**Rule**: The `xOffset`/`yOffset` field MUST be different from `x` and `y` fields. Never use the same field in multiple encodings.\n\n## 2. Line charts: unique x-values per series\n\nEach color series in a line chart must have unique x-values. Duplicate x-values within the same series create ambiguous zigzag lines.\n\n**Fix — wide-format data** (multiple value columns → fold):\n```json\n{\n  \&quot;transform\&quot;: [{\&quot;fold\&quot;: [\&quot;REVENUE\&quot;, \&quot;ORDERS\&quot;]}],\n  \&quot;mark\&quot;: \&quot;line\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;temporal\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;value\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;key\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n**Fix — duplicate rows** (aggregate transform):\n```json\n{\n  \&quot;transform\&quot;: [\n    {\&quot;aggregate\&quot;: [{\&quot;op\&quot;: \&quot;sum\&quot;, \&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;as\&quot;: \&quot;SALES\&quot;}], \&quot;groupby\&quot;: [\&quot;DATE\&quot;, \&quot;REGION\&quot;]}\n  ],\n  \&quot;mark\&quot;: \&quot;line\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;DATE\&quot;, \&quot;type\&quot;: \&quot;temporal\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n**Fix — missing color encoding**: If data has a category column causing duplicates, add `color` encoding so each series gets its own line with unique x-values.\n\n## 3. Bar charts: custom x-axis domains cause bars extending off-screen\n\nBar marks always start from 0 on the quantitative axis. If you set a custom `scale.domain` that excludes 0 (e.g., `[0.95, 1.1]` for values near 1.0), bars will stretch from 0 (off-screen) to their value, appearing as extremely long bars extending to the left (horizontal) or bottom (vertical).\n\n**Fix — use `x2`/`y2` to anchor the bar baseline at the domain start:**\n```json\n{\n  \&quot;mark\&quot;: \&quot;bar\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;METRIC\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;, \&quot;scale\&quot;: {\&quot;domain\&quot;: [0.95, 1.1]}},\n    \&quot;x2\&quot;: {\&quot;datum\&quot;: 0.95},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n**Alternative — use tick or point marks** which don&#x27;t have a baseline:\n```json\n{\n  \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;tick\&quot;, \&quot;thickness\&quot;: 3},\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;METRIC\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;, \&quot;scale\&quot;: {\&quot;domain\&quot;: [0.95, 1.1]}},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n**Rule**: Whenever you use a bar chart with a custom `scale.domain` that does not include 0, you MUST either set `x2`/`y2` to the domain start value, or use a non-bar mark type (tick, point, circle).\n\n## 4. Temporal line charts: regular spacing\n\nFor temporal line charts, avoid data with very irregular time gaps (e.g., daily data with multi-month gaps). Vega-Lite draws straight lines between points, making large gaps misleading.\n\n**Fix options**:\n- If the user explicitly asks for a line chart with irregular data, use `\&quot;point\&quot;: true` to show where real observations exist: `\&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;line\&quot;, \&quot;point\&quot;: true}`\n- Otherwise, prefer a Vega-Lite `filter`/`aggregate` transform to produce data with regular time intervals (e.g., fill gaps with zeros or nulls, or aggregate to a coarser granularity like monthly/quarterly). Only run a new SQL query when absolutely necessary — i.e., the required transformation cannot be expressed as a vega-lite transform\n- Provide separate charts for each interval\n\n\n## 5. Field name casing must match SQL column names exactly — and must match across layers\n\nVega-Lite field matching is **case-sensitive**. Snowflake SQL returns column names in UPPERCASE by default. Always use the exact casing from the SQL result set.\n\n**Correct:** `{\&quot;field\&quot;: \&quot;REVENUE\&quot;, ...}` (matches Snowflake column `REVENUE`)\n**Wrong:** `{\&quot;field\&quot;: \&quot;revenue\&quot;, ...}` or `{\&quot;field\&quot;: \&quot;Revenue\&quot;, ...}`\n\nThis applies everywhere: encoding fields, `calculate` expressions (`datum.REVENUE`), `fold` field lists, `sort` field references, and `aggregate` groupby fields.\n\n**Cross-layer rule (layered specs):** Once a `field` name is used on a shared scale (e.g. `x` is `field: \&quot;MONTH\&quot;` in the bar layer), every other layer that draws on that same scale **and** every key in those layers&#x27; inline `data.values` must use the *exact* same string. Do NOT rename a column to make it look \&quot;internal\&quot; by adding/removing an underscore (`MONTH` → `_MONTH`) or changing case (`_month_name` → `_MONTH_NAME`) in an annotation layer — the rename silently breaks shared-scale features (sort fall-through, color-scale fall-through, axis-domain mismatch). When in doubt, reuse the *same* field name everywhere.\n\n# COMMON MISTAKES\n\n- Do NOT include a top-level `\&quot;data\&quot;`, `\&quot;width\&quot;`, `\&quot;height\&quot;`, or `\&quot;$schema\&quot;` — they are handled automatically (top-level `data` is overwritten by the injected SQL result). The only allowed `data` is per-layer `data.values` in a `rule`/`text` annotation layer (Tip 8)\n- Field names must match the injected SQL result column names EXACTLY (case-sensitive) — never the aliases you use in prose or inline example data\n- When using `layer`, all layers share compatible encodings unless using `resolve`\n- When using `fold` transform, the new fields default to `\&quot;key\&quot;` and `\&quot;value\&quot;`\n- **NEVER** use `vconcat`, `hconcat`, `facet`, or `repeat` — renderer only supports single-view\n- **DO NOT CREATE** `maps` - reading map json is blocked and will not render properly\n- **NEVER** use `datum` in `rule` or `text` annotation layers — always use per-layer `\&quot;data\&quot;: {\&quot;values\&quot;: [...]}` with `field`-based encoding (see Tip 8)\n\n\n\n## Skill Directory Contents\n\nThe following files are available in this skill. Use the `read` tool to explore them if needed.\n\n| File Path | Size |\n|-----------|------|\n| `/app/skills/chart_instructions/references/` | (dir) |\n| `/app/skills/chart_instructions/references/colors.md` | 2.3 KB |\n\n**To read a file**, use the `read` tool with `file_path` set to the full path shown above.\nExample: `{\&quot;file_path\&quot;: \&quot;/app/skills/chart_instructions/example.md\&quot;, \&quot;offset\&quot;: 0, \&quot;limit\&quot;: 100}`\n&quot;,
+              &quot;skill_name&quot;: &quot;chart_instructions&quot;
+            },
+            &quot;type&quot;: &quot;json&quot;
+          }
+        ],
+        &quot;name&quot;: &quot;server_skill&quot;,
+        &quot;status&quot;: &quot;success&quot;,
+        &quot;tool_use_id&quot;: &quot;toolu_bdrk_01EtbUJZ5hntXqcTJSJN7NyA&quot;,
+        &quot;type&quot;: &quot;server_skill&quot;
+      },
+      &quot;type&quot;: &quot;tool_result&quot;
+    },
+    {
+      &quot;tool_use&quot;: {
+        &quot;client_side_execute&quot;: false,
+        &quot;input&quot;: {
+          &quot;chart&quot;: &quot;{\&quot;title\&quot;:\&quot;Top 10 Frequency Rating Effects (|log-coefficient|)\&quot;,\&quot;transform\&quot;:[{\&quot;calculate\&quot;:\&quot;datum.RISK_FACTOR + &#x27; : &#x27; + datum.FACTOR_LEVEL\&quot;,\&quot;as\&quot;:\&quot;_LABEL\&quot;}],\&quot;mark\&quot;:\&quot;bar\&quot;,\&quot;encoding\&quot;:{\&quot;y\&quot;:{\&quot;field\&quot;:\&quot;_LABEL\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;,\&quot;sort\&quot;:\&quot;-x\&quot;,\&quot;title\&quot;:\&quot;Rating factor : level\&quot;},\&quot;x\&quot;:{\&quot;field\&quot;:\&quot;ABS_EFFECT\&quot;,\&quot;type\&quot;:\&quot;quantitative\&quot;,\&quot;title\&quot;:\&quot;Absolute effect on frequency (|coefficient|)\&quot;},\&quot;color\&quot;:{\&quot;field\&quot;:\&quot;RISK_FACTOR\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;,\&quot;title\&quot;:\&quot;Rating factor\&quot;}}}&quot;,
+          &quot;question&quot;: &quot;THIS FIELD WILL BE DEPRECATED SOON. Please stop using it and use the &#x27;chart&#x27; field instead.&quot;,
+          &quot;tool_result_id&quot;: &quot;toolu_bdrk_01VdAqGfsbwzfpgRp4dXAYUm&quot;
+        },
+        &quot;name&quot;: &quot;data_to_chart&quot;,
+        &quot;tool_use_id&quot;: &quot;toolu_bdrk_01AFUcHg411hbBF3obszKYMo&quot;,
+        &quot;type&quot;: &quot;data_to_chart&quot;
+      },
+      &quot;type&quot;: &quot;tool_use&quot;
+    },
+    {
+      &quot;tool_result&quot;: {
+        &quot;content&quot;: [
+          {
+            &quot;json&quot;: {
+              &quot;charts&quot;: [
+                &quot;{\&quot;$schema\&quot;:\&quot;https://vega.github.io/schema/vega-lite/v5.json\&quot;,\&quot;config\&quot;:{\&quot;bar\&quot;:{\&quot;minBandSize\&quot;:5}},\&quot;data\&quot;:{\&quot;values\&quot;:[{\&quot;ABS_EFFECT\&quot;:0.509777,\&quot;FACTOR_LEVEL\&quot;:\&quot;00-01\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;VEHAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.392159,\&quot;FACTOR_LEVEL\&quot;:\&quot;16+\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;VEHAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.308186,\&quot;FACTOR_LEVEL\&quot;:\&quot;71+\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;DRIVAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.287336,\&quot;FACTOR_LEVEL\&quot;:\&quot;41-50\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;DRIVAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.257622,\&quot;FACTOR_LEVEL\&quot;:\&quot;Auvergne\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;REGION\&quot;},{\&quot;ABS_EFFECT\&quot;:0.245565,\&quot;FACTOR_LEVEL\&quot;:\&quot;18-21\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;DRIVAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.218987,\&quot;FACTOR_LEVEL\&quot;:\&quot;51-60\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;DRIVAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.210909,\&quot;FACTOR_LEVEL\&quot;:\&quot;Champagne-Ardenne\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;REGION\&quot;},{\&quot;ABS_EFFECT\&quot;:0.193447,\&quot;FACTOR_LEVEL\&quot;:\&quot;61-70\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;DRIVAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.152278,\&quot;FACTOR_LEVEL\&quot;:\&quot;Limousin\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;REGION\&quot;}]},\&quot;encoding\&quot;:{\&quot;color\&quot;:{\&quot;field\&quot;:\&quot;RISK_FACTOR\&quot;,\&quot;title\&quot;:\&quot;Rating factor\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;},\&quot;tooltip\&quot;:[{\&quot;field\&quot;:\&quot;RISK_FACTOR\&quot;,\&quot;title\&quot;:\&quot;Rating factor\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;},{\&quot;field\&quot;:\&quot;ABS_EFFECT\&quot;,\&quot;format\&quot;:\&quot;,.6~f\&quot;,\&quot;title\&quot;:\&quot;Absolute effect on frequency (|coefficient|)\&quot;,\&quot;type\&quot;:\&quot;quantitative\&quot;},{\&quot;field\&quot;:\&quot;FACTOR_LEVEL\&quot;}],\&quot;x\&quot;:{\&quot;field\&quot;:\&quot;ABS_EFFECT\&quot;,\&quot;sort\&quot;:null,\&quot;title\&quot;:\&quot;Absolute effect on frequency (|coefficient|)\&quot;,\&quot;type\&quot;:\&quot;quantitative\&quot;},\&quot;y\&quot;:{\&quot;field\&quot;:\&quot;_LABEL\&quot;,\&quot;sort\&quot;:\&quot;-x\&quot;,\&quot;title\&quot;:\&quot;Rating factor : level\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;}},\&quot;mark\&quot;:\&quot;bar\&quot;,\&quot;title\&quot;:\&quot;Top 10 Frequency Rating Effects (|log-coefficient|)\&quot;,\&quot;transform\&quot;:[{\&quot;as\&quot;:\&quot;_LABEL\&quot;,\&quot;calculate\&quot;:\&quot;datum.RISK_FACTOR + &#x27; : &#x27; + datum.FACTOR_LEVEL\&quot;}],\&quot;usermeta\&quot;:{\&quot;snowflake\&quot;:{\&quot;color_mapping\&quot;:{\&quot;DRIVAGE_BAND\&quot;:{\&quot;hex\&quot;:\&quot;#4c78a8\&quot;,\&quot;name\&quot;:\&quot;blue\&quot;},\&quot;REGION\&quot;:{\&quot;hex\&quot;:\&quot;#f58518\&quot;,\&quot;name\&quot;:\&quot;orange\&quot;},\&quot;VEHAGE_BAND\&quot;:{\&quot;hex\&quot;:\&quot;#e45756\&quot;,\&quot;name\&quot;:\&quot;red\&quot;}},\&quot;columnRoles\&quot;:{\&quot;ABS_EFFECT\&quot;:\&quot;measure\&quot;,\&quot;FACTOR_LEVEL\&quot;:\&quot;dimension\&quot;,\&quot;RELATIVITY\&quot;:\&quot;measure\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;dimension\&quot;,\&quot;SIGNIFICANCE\&quot;:\&quot;dimension\&quot;}}}}&quot;
+              ]
+            },
+            &quot;type&quot;: &quot;json&quot;
+          }
+        ],
+        &quot;name&quot;: &quot;data_to_chart&quot;,
+        &quot;status&quot;: &quot;success&quot;,
+        &quot;tool_use_id&quot;: &quot;toolu_bdrk_01AFUcHg411hbBF3obszKYMo&quot;,
+        &quot;type&quot;: &quot;data_to_chart&quot;
+      },
+      &quot;type&quot;: &quot;tool_result&quot;
+    },
+    {
+      &quot;chart&quot;: {
+        &quot;chart_spec&quot;: &quot;{\&quot;$schema\&quot;:\&quot;https://vega.github.io/schema/vega-lite/v5.json\&quot;,\&quot;config\&quot;:{\&quot;bar\&quot;:{\&quot;minBandSize\&quot;:5}},\&quot;data\&quot;:{\&quot;values\&quot;:[{\&quot;ABS_EFFECT\&quot;:0.509777,\&quot;FACTOR_LEVEL\&quot;:\&quot;00-01\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;VEHAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.392159,\&quot;FACTOR_LEVEL\&quot;:\&quot;16+\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;VEHAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.308186,\&quot;FACTOR_LEVEL\&quot;:\&quot;71+\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;DRIVAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.287336,\&quot;FACTOR_LEVEL\&quot;:\&quot;41-50\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;DRIVAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.257622,\&quot;FACTOR_LEVEL\&quot;:\&quot;Auvergne\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;REGION\&quot;},{\&quot;ABS_EFFECT\&quot;:0.245565,\&quot;FACTOR_LEVEL\&quot;:\&quot;18-21\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;DRIVAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.218987,\&quot;FACTOR_LEVEL\&quot;:\&quot;51-60\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;DRIVAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.210909,\&quot;FACTOR_LEVEL\&quot;:\&quot;Champagne-Ardenne\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;REGION\&quot;},{\&quot;ABS_EFFECT\&quot;:0.193447,\&quot;FACTOR_LEVEL\&quot;:\&quot;61-70\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;DRIVAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.152278,\&quot;FACTOR_LEVEL\&quot;:\&quot;Limousin\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;REGION\&quot;}]},\&quot;encoding\&quot;:{\&quot;color\&quot;:{\&quot;field\&quot;:\&quot;RISK_FACTOR\&quot;,\&quot;title\&quot;:\&quot;Rating factor\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;},\&quot;tooltip\&quot;:[{\&quot;field\&quot;:\&quot;RISK_FACTOR\&quot;,\&quot;title\&quot;:\&quot;Rating factor\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;},{\&quot;field\&quot;:\&quot;ABS_EFFECT\&quot;,\&quot;format\&quot;:\&quot;,.6~f\&quot;,\&quot;title\&quot;:\&quot;Absolute effect on frequency (|coefficient|)\&quot;,\&quot;type\&quot;:\&quot;quantitative\&quot;},{\&quot;field\&quot;:\&quot;FACTOR_LEVEL\&quot;}],\&quot;x\&quot;:{\&quot;field\&quot;:\&quot;ABS_EFFECT\&quot;,\&quot;sort\&quot;:null,\&quot;title\&quot;:\&quot;Absolute effect on frequency (|coefficient|)\&quot;,\&quot;type\&quot;:\&quot;quantitative\&quot;},\&quot;y\&quot;:{\&quot;field\&quot;:\&quot;_LABEL\&quot;,\&quot;sort\&quot;:\&quot;-x\&quot;,\&quot;title\&quot;:\&quot;Rating factor : level\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;}},\&quot;mark\&quot;:\&quot;bar\&quot;,\&quot;title\&quot;:\&quot;Top 10 Frequency Rating Effects (|log-coefficient|)\&quot;,\&quot;transform\&quot;:[{\&quot;as\&quot;:\&quot;_LABEL\&quot;,\&quot;calculate\&quot;:\&quot;datum.RISK_FACTOR + &#x27; : &#x27; + datum.FACTOR_LEVEL\&quot;}],\&quot;usermeta\&quot;:{\&quot;snowflake\&quot;:{\&quot;color_mapping\&quot;:{\&quot;DRIVAGE_BAND\&quot;:{\&quot;hex\&quot;:\&quot;#4c78a8\&quot;,\&quot;name\&quot;:\&quot;blue\&quot;},\&quot;REGION\&quot;:{\&quot;hex\&quot;:\&quot;#f58518\&quot;,\&quot;name\&quot;:\&quot;orange\&quot;},\&quot;VEHAGE_BAND\&quot;:{\&quot;hex\&quot;:\&quot;#e45756\&quot;,\&quot;name\&quot;:\&quot;red\&quot;}},\&quot;columnRoles\&quot;:{\&quot;ABS_EFFECT\&quot;:\&quot;measure\&quot;,\&quot;FACTOR_LEVEL\&quot;:\&quot;dimension\&quot;,\&quot;RELATIVITY\&quot;:\&quot;measure\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;dimension\&quot;,\&quot;SIGNIFICANCE\&quot;:\&quot;dimension\&quot;}}}}&quot;,
+        &quot;tool_use_id&quot;: &quot;toolu_bdrk_01AFUcHg411hbBF3obszKYMo&quot;
+      },
+      &quot;type&quot;: &quot;chart&quot;
+    },
+    {
+      &quot;text&quot;: &quot;\n\nThe chart makes the pattern clear: vehicle age occupies the two largest effects, driver age dominates the middle of the ranking, and region contributes smaller (though still statistically significant) adjustments.&quot;,
+      &quot;type&quot;: &quot;text&quot;
+    },
+    {
+      &quot;suggested_queries&quot;: [
+        {
+          &quot;query&quot;: &quot;Which rating factor has the biggest effect on claim severity?&quot;
+        },
+        {
+          &quot;query&quot;: &quot;What are the combined frequency and severity relativities for each vehicle age band?&quot;
+        },
+        {
+          &quot;query&quot;: &quot;How do the frequency relativities compare across all driver age bands?&quot;
+        }
+      ],
+      &quot;type&quot;: &quot;suggested_queries&quot;
+    }
+  ],
+  &quot;metadata&quot;: {
+    &quot;assistant_message_id&quot;: 570741024307838,
+    &quot;run_id&quot;: &quot;8708817629-570741024304198&quot;,
+    &quot;thread_id&quot;: 8708817629,
+    &quot;usage&quot;: {
+      &quot;tokens_consumed&quot;: [
+        {
+          &quot;context_window&quot;: 1000000,
+          &quot;input_tokens&quot;: {
+            &quot;cache_read&quot;: 129315,
+            &quot;cache_write&quot;: 41973,
+            &quot;total&quot;: 171298,
+            &quot;uncached&quot;: 10
+          },
+          &quot;model_name&quot;: &quot;claude-opus-4-8&quot;,
+          &quot;model_role&quot;: &quot;orchestration&quot;,
+          &quot;output_tokens&quot;: {
+            &quot;total&quot;: 1318
+          }
+        }
+      ]
+    },
+    &quot;user_message_id&quot;: 570741024304198
+  },
+  &quot;role&quot;: &quot;assistant&quot;,
+  &quot;schema_version&quot;: &quot;v2&quot;,
+  &quot;sequence_number&quot;: 151,
+  &quot;status&quot;: &quot;completed&quot;
+}">{
+  &quot;content&quot;: [
+    {
+      &quot;thinking&quot;: {
+        &quot;text&quot;: &quot;This question looks like a verified query. Let me get a better understanding of the semantic context.&quot;
+      },
+      &quot;type&quot;: &quot;thinking&quot;
+    },
+    {
+      &quot;tool_use&quot;: {
+        &quot;client_side_execute&quot;: false,
+        &quot;input&quot;: {},
+        &quot;name&quot;: &quot;rating_analytics&quot;,
+        &quot;tool_use_id&quot;: &quot;tooluse_aa81b82da52740a693cf47&quot;,
+        &quot;type&quot;: &quot;system_agentic_semantic_context&quot;
+      },
+      &quot;type&quot;: &quot;tool_use&quot;
+    },
+    {
+      &quot;tool_result&quot;: {
+        &quot;content&quot;: [
+          {
+            &quot;json&quot;: {
+              &quot;pruned_note&quot;: &quot;**Note**: This semantic model fits within the agent&#x27;s token budget, so it is shown in full. You do not need to set pruning_question on future calls referencing this same semantic model.&quot;,
+              &quot;relationships&quot;: [
+                {
+                  &quot;join_type&quot;: &quot;inner&quot;,
+                  &quot;left_table&quot;: &quot;freq_model_features&quot;,
+                  &quot;name&quot;: &quot;FREQ_MODEL_FEATURES_TO_PURE_PREMIUM&quot;,
+                  &quot;relationship_columns&quot;: [
+                    {
+                      &quot;left_column&quot;: &quot;idpol&quot;,
+                      &quot;right_column&quot;: &quot;idpol&quot;
+                    }
+                  ],
+                  &quot;relationship_type&quot;: &quot;one_to_one&quot;,
+                  &quot;right_table&quot;: &quot;pure_premium&quot;
+                }
+              ],
+              &quot;semantic_model_description&quot;: &quot;Insurance pricing analytics for the French MTPL2 portfolio. Contains GLM rating relativities (exp(coefficient)) from Poisson frequency and Gamma severity models, policy-level pure premiums (frequency x severity), model validation decile analysis (actual vs expected), and policy risk factor features. Supports questions about rating factors, technical premiums, model performance, and risk segmentation.&quot;,
+              &quot;semantic_model_key&quot;: &quot;rating_analytics&quot;,
+              &quot;semantic_model_name&quot;: &quot;insurance_rating_analytics&quot;,
+              &quot;semantic_view_fqn&quot;: &quot;FREMTPL2.FREMTPL2_INVESTIGATION.INSURANCE_RATING_ANALYTICS&quot;,
+              &quot;sql_best_practices&quot;: &quot;## SQL Generation Rules and Best Practices\n\n**CRITICAL — Ambiguity Gate (check BEFORE writing SQL):**\nIf the user&#x27;s question contains a business term that could map to more than one metric or dimension in the semantic model, STOP and do the following:\n1. Check the [Additional Instructions] section of your system prompt for an ambiguous terms table or clarification rules.\n2. If those instructions say to ask for clarification, you MUST respond with a clarification question to the user. Do NOT generate SQL. Do NOT pick what seems \&quot;most likely.\&quot;\n3. Only generate SQL if the term unambiguously maps to exactly one metric, or if no clarification rules exist in the Additional Instructions.\nViolating this gate by guessing a metric when clarification is required will produce incorrect results for the user.\n\nYou can write SQL against the provided semantic model to retrieve data. When doing so, you are an expert data scientist well-versed in BI concepts and your goal is to write accurate, readable queries to fetch the relevant data. Use the following sections as guidelines for your task.\n\nThe semantic model is explained in section 1. Standard SQL (using logical names from the semantic model, which are postprocessed to physical SQL) is detailed in section 2. General SQL rules are in section 3.\n\n### 1. How to use the Semantic Model\n\nA semantic model is intended to provide additional information about the relevant entities that you may want to query for an analysis.\n\nA semantic model is comprised of a set of logical tables. A logical table maps onto an actual SQL table or view, called a base table. Each logical table is comprised of facts, dimensions, and metrics.\n\n- **Facts** are row-level quantitative values (e.g., sales amount, quantity, cost). They are unaggregated and exist at the granularity of the table.\n- **Dimensions** are categorical attributes used to group, filter, and slice data (e.g., region, product category, date). They provide context to metrics. They are commonly used to GROUP BY.\n- **Metrics** are aggregations over facts using functions like SUM, AVG, COUNT. They represent business KPIs. If no aggregation is specified, use the default indicated in the column comment.\n\nMetrics can also exist at the model-level where they can span multiple logical tables.\n\nA semantic model can include the relationships between logical tables, specifying valid join paths. Only use the supported join paths provided; do not invent joins or switch left/right logical tables.\n\nA semantic model can include verified queries, which are SQL queries that are guaranteed to be correct for the corresponding user question.\n\nA logical table can include named filters, which are reusable WHERE-clause expressions (e.g., `is_active = TRUE`). Use these filters in your SQL when they match the user&#x27;s intent rather than writing equivalent expressions from scratch.\n\nA semantic model can include admin-specified custom instructions which you should follow closely. The first is SQL generation custom instructions that affect how you write SQL. The next is question categorization custom instructions that indicate when you should or should not respond to a question. Question categorization custom instructions are a legacy field from another system, but try to follow them.\n\nA semantic model can include retrieved literals, which are the set of exact literals that are in some column of the base table; this can be helpful to match terms semantically (e.g. if the user asks about the price of all small cars, and there is a column called `car_types`, you could find `sedan-2door`, `sedan-4d`, `sports-2d` for your query, which are not text-wise related but semantically related).\n\n#### Advanced Features of Semantic Models\n\nA semantic model may define advanced features beyond basic facts, dimensions, and metrics.\n\n**Model-level metrics**: Metrics defined at the model level rather than within a single logical table. These metrics may span multiple tables. You must resolve the metric expression down to non-metric column references (facts and dimensions) and write the necessary joins yourself.\n\n**Asof joins**: A semantic model may contain **asof** relationship keys. Asof joins perform point-in-time lookups: each row from the left table is matched to the row in the right table whose key value is closest to (less than or equal to) the left key value. Use Snowflake&#x27;s `ASOF JOIN ... MATCH_CONDITION(left.col &gt;= right.col) ON equi_conditions` syntax as shown in the supported join paths.\n\n**Range joins**: A semantic model may contain **range** relationship keys. Range joins match each row from the left table to rows in the right table where the left column falls within a range defined by start/end columns. Use the non-equi join conditions as shown in the supported join paths (e.g., `(start_col IS NULL OR left_col &gt;= start_col) AND (end_col IS NULL OR left_col &lt; end_col)`).\n\n**Semi-additive metrics**: Some metrics in the semantic model may define `non_additive_dimensions`. These indicate the metric is **semi-additive** (e.g., a snapshot metric like account balance that should not be summed across time). Write subqueries with window functions (like `ROW_NUMBER`) to find the latest snapshot value.\n\n### 2. Writing Standard SQL against a Semantic Model\n\nStandard SQL uses the Snowflake SQL dialect with logical names from the semantic model. In this mode, you write queries using the logical table and column names (dimensions, facts, time_dimensions) defined in the semantic model. The SQL will be automatically postprocessed to resolve to physical table and column names before execution.\n\n- **Use Semantic Model Column Names**: ALWAYS use column names from the semantic model (dimensions and facts). The SQL will be automatically postprocessed to resolve to physical column names.\n- **Reference Logical Tables**: Use the logical table names from the semantic model with a `__` prefix. Do NOT use fully qualified physical table names (e.g., use `__orders` not `orders` or `DATABASE.SCHEMA.ORDERS`). This prefix is required for all table references, including in FROM, JOIN, and column qualifiers (e.g., `__orders.order_total`).\n- **Always query logical tables, not the underlying base tables**: The base tables can only be accessed through the logical tables using logical SQL. If you encounter errors running logical SQL, fix the query — do not fall back to querying base tables directly.\n- **Do not rewrite logical table CTEs**: The postprocessing step creates CTEs in the final SQL like `WITH __logical_table AS (SELECT ... FROM DB.SCH.BASE_TABLE)` to resolve the logical tables. You should NOT write these CTEs again on subsequent turns, as the SQL you write on logical tables in subsequent turns will be postprocessed to get the CTEs back. You can fully ignore those logical table CTEs.\n- **Identify metrics**: Metrics are typically calculations upon facts. If no specific aggregation mentioned, use the default aggregation indicated in the column comment.\n- **Identify dimensions for GROUP BY**: Dimensions provide context to data - they are descriptive attributes used to slice and dice data (e.g., geography, product categories, customer segments).\n- **Identify facts**: Facts are quantitative data that can be aggregated, summed, averaged, or counted. They are typically numeric fields.\n- **Count Correctly**: In single-table queries, use COUNT(DISTINCT column) for dimension columns that may have duplicate values. Use COUNT(column) without DISTINCT only if the column has unique values like a primary key.\n\nNote that you are not allowed to use all of the Snowflake SQL dialect, which is detailed in Section 3.\n\n### 3. Rules for SQL Generation\n\nAcross all queries you write, you should keep in mind these guidelines when they are relevant.\n\n**Current Date: 2026-09-24 (i.e., today is September 24, 2026)** - Use this as reference for relative time filters.\n\n#### Aggregation and Granularity\n- The primary key defines data granularity. When calculating metrics on different granularity, ALWAYS use GROUP BY to ensure correct aggregation.\n- Every column in SELECT must either have an aggregation function OR be included in GROUP BY.\n- Use PARTITION BY for window functions as needed.\n\n#### Time Series Analysis\n\n**IMPORTANT: ALWAYS use CURRENT_DATE (or CURRENT_TIMESTAMP) in SQL for any reference to \&quot;today\&quot;, \&quot;now\&quot;, or the current date. Do NOT hardcode specific date literals like &#x27;2026-03-22&#x27;. The current date provided above is for interpreting ambiguous time references only (e.g., inferring the year when not specified).**\n\n##### Current Date Reference\n- If a question asks about a specific month without a year (e.g., \&quot;sales for March\&quot;), assume the current year 2026.\n\n##### Time Frequency Conversion\n- For questions requiring time aggregation at different frequency than provided, use DATE_TRUNC() to convert and aggregate facts properly with GROUP BY.\n- To compare time to a NUMBER column, use DATE_PART() to extract year/month/day from a timestamp.\n- For day of week, use DAYOFWEEK() function.\n\n##### Calendar Time Units (week, month, year)\n- If the user asks about \&quot;last week\&quot;, \&quot;this month\&quot;, \&quot;last year\&quot;, ALWAYS assume they mean the CALENDAR unit:\n  - \&quot;last week\&quot;: DATE &gt;= DATE_TRUNC(&#x27;week&#x27;, CURRENT_DATE - INTERVAL &#x27;1 week&#x27;) AND DATE &lt; DATE_TRUNC(&#x27;week&#x27;, CURRENT_DATE)\n  - \&quot;this month\&quot;: DATE &gt;= DATE_TRUNC(&#x27;month&#x27;, CURRENT_DATE)\n  - \&quot;last year\&quot;: DATE &gt;= DATE_TRUNC(&#x27;year&#x27;, CURRENT_DATE - INTERVAL &#x27;1 year&#x27;) AND DATE &lt; DATE_TRUNC(&#x27;year&#x27;, CURRENT_DATE)\n\n##### Past N Days\n- If the user asks \&quot;past X days\&quot; or \&quot;last X days\&quot;, use: DATE &gt;= DATEADD(day, -X, CURRENT_DATE)\n\n##### References to \&quot;Today\&quot; or \&quot;Now\&quot;\n- If the user mentions \&quot;today\&quot;, \&quot;as of today\&quot;, \&quot;to today\&quot;, \&quot;up to now\&quot;, \&quot;until now\&quot;, or similar, ALWAYS use CURRENT_DATE in SQL.\n  - Example: \&quot;from June 2025 to today\&quot; → DATE &gt;= &#x27;2025-06-01&#x27; AND DATE &lt;= CURRENT_DATE\n  - Example: \&quot;sales up to today\&quot; → DATE &lt;= CURRENT_DATE\n- Do NOT resolve \&quot;today\&quot; to a hardcoded date literal.\n\n##### Period-over-Period (DoD, MoM, YoY)\n- ALWAYS include current period, previous period, current value, and previous value in output columns.\n- Calculate BOTH absolute change AND percentage change unless specified otherwise.\n- DO NOT use LEAD() or LAG() for previous period values - these assume consecutive time data which may not be true.\n- Use self-joins or CTEs instead:\n```sql\nSELECT\n    curr.date AS curr_date,\n    prev.date AS prev_date,\n    curr.value AS curr_value,\n    prev.value AS prev_value,\n    curr.value - prev.value AS change,\n    (curr.value - prev.value) / NULLIF(prev.value, 0) AS pct_change\nFROM daily_table AS curr\nLEFT JOIN daily_table AS prev ON curr.date = prev.date + INTERVAL &#x27;1 day&#x27;\nORDER BY curr_date DESC NULLS LAST;\n```\n\n##### Rolling Window Metrics\n- For rolling metrics, ALWAYS: (1) aggregate by day/time granularity first, (2) create CTE to compute rolling metrics, (3) filter to time period last.\n```sql\nWITH daily_sales AS (\n    SELECT date, SUM(sales) AS daily_sales FROM table GROUP BY date\n),\nrolling_avg AS (\n    SELECT date, AVG(daily_sales) OVER (ORDER BY date ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS rolling_avg_3d\n    FROM daily_sales\n)\nSELECT * FROM rolling_avg WHERE DATE_PART(&#x27;YEAR&#x27;, date) = 2026 ORDER BY date DESC NULLS LAST;\n```\n\n##### Missing Time Period\n- If no time range is specified, assume the ENTIRE available time period in the data.\n- Include MIN(date) as start_date and MAX(date) as end_date in output to show the time range used.\n\n#### Ranking, Sorting, and Top-K\n\n##### Sorting\n- When sorting by highest/lowest metric, ALWAYS include NULLS LAST: ORDER BY ratio DESC NULLS LAST\n- For time series without specific sorting, default to sorting time DESCENDING to show latest information first.\n\n##### Top K Queries\n- For simple top-K without partitions: use ORDER BY ... LIMIT K\n- For top-K within partitions (e.g., \&quot;top 5 per month\&quot;): use RANK() or ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)\n```sql\nWITH ranked AS (\n    SELECT *, RANK() OVER (PARTITION BY month ORDER BY sales DESC NULLS LAST) AS rnk\n    FROM monthly_sales\n)\nSELECT * FROM ranked WHERE rnk &lt;= 5 ORDER BY month DESC, rnk NULLS LAST;\n```\n\n#### Joins and Relationships\n\n##### Choosing the JOIN type (LEFT vs INNER)\nThe JOIN type must match the question&#x27;s granularity:\n\n- **Identify the driving table first** — the entity in phrases like \&quot;for each X\&quot;, \&quot;every X\&quot;, \&quot;per X\&quot;, or \&quot;show me each X&#x27;s ...\&quot;. Put it in `FROM`; join everything else to it. The driving table MUST be the table named in `FROM`, never one joined onto another via `JOIN` — the driving table on the wrong side of a `LEFT JOIN` still drops its rows.\n- **`LEFT JOIN`** related tables onto the driving table when the question asks about *every* / *all* / *for each* of the driving entity. This preserves driving-entity rows that have no matching related row. Handle the resulting NULLs explicitly in aggregates (`COALESCE`, or `CASE WHEN COUNT(...) = 0 THEN NULL ELSE ... END`).\n- **`INNER JOIN`** ONLY when the question explicitly restricts to rows *with* related data (\&quot;X **with** Y\&quot;, \&quot;X **that have** Y\&quot;), or when a metric formula requires the related row to exist (e.g., a ratio whose denominator comes from the joined table).\n- **Never** use `INNER JOIN` to \&quot;filter out NULLs\&quot; implicitly — that silently drops rows the user wanted to see. If you need to filter NULLs, do it explicitly with `WHERE x IS NOT NULL`.\n- When in doubt between LEFT and INNER, prefer LEFT — silently dropping rows is a worse failure mode than including a row with NULL aggregates.\n\n```sql\n-- For \&quot;show me the order count for each customer\&quot;:\n-- WRONG: __customers is on the right side of LEFT JOIN, so customers without orders are dropped\nSELECT c.id, COUNT(o.id) FROM __orders o LEFT JOIN __customers c ON o.cust_id = c.id GROUP BY c.id;\n\n-- CORRECT: __customers (the driving entity) is on the left\nSELECT c.id, COUNT(o.id) FROM __customers c LEFT JOIN __orders o ON o.cust_id = c.id GROUP BY c.id;\n```\n\n##### Other join rules\n- Use ONLY the supported join paths provided in the semantic model.\n- When joining multiple tables, assign aliases and ALWAYS qualify columns with table alias in ALL clauses.\n- Avoid joins in subqueries; use CTEs instead.\n- Be aware of data granularity: when joining one-to-many or many-to-many, consider data duplication during aggregations.\n- Extract unique records when necessary to avoid double-counting:\n```sql\n-- WRONG: AVG(income) on joined table counts each customer multiple times\n-- CORRECT: Extract unique customers first, then aggregate\nWITH unique_customers AS (\n    SELECT DISTINCT customer_id, income, region FROM orders o JOIN customers c ON ...\n)\nSELECT region, AVG(income) FROM unique_customers GROUP BY region;\n```\n\n#### Handling Text and Literal Values\n- **Use sample_values for exact matching**: Dimensions include sample_values showing actual data values. Use these to match user-mentioned entities:\n  - If user says \&quot;California\&quot;, check sample_values to see if values are \&quot;CA\&quot;, \&quot;California\&quot;, \&quot;CALIFORNIA\&quot;, etc.\n  - If user mentions a product name, find the closest match in sample_values\n- **Case-Insensitive Matching**: Use ILIKE instead of LIKE or = when exact case is uncertain\n- **Pattern Matching**: Use ILIKE &#x27;%pattern%&#x27; to find partial matches when sample_values don&#x27;t have an exact match\n- **Escape single quotes**: Use two single quotes (&#x27;&#x27;) to escape literal single quotes in strings\n\n#### Ratios and Percentages\n- DO NOT multiply by 100 for ratio/percentage calculations. Keep numbers as decimals.\n\n#### Error Prevention and Snowflake Syntax\n- When creating table or column aliases, avoid Snowflake SQL keywords (e.g., \&quot;to\&quot;, \&quot;date\&quot;, \&quot;order\&quot;)\n- Handle NULL values with COALESCE(column, default_value)\n- Use NULLIF to prevent division by zero: value / NULLIF(denominator, 0)\n- Use double quotes for case-sensitive identifiers: \&quot;ColumnName\&quot;\n- Use FLATTEN() for semi-structured/array data\n- Use QUALIFY for post-aggregation filtering with window functions\n- Use TRY_CAST or TRY_TO_NUMBER for safe type conversions\n&quot;,
+              &quot;tables&quot;: [
+                {
+                  &quot;dimensions&quot;: [
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;actual_claims&quot;,
+                      &quot;name&quot;: &quot;actual_claims&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;cum_actual&quot;,
+                      &quot;name&quot;: &quot;cum_actual&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(18,0)&quot;,
+                      &quot;expr&quot;: &quot;decile&quot;,
+                      &quot;name&quot;: &quot;decile&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(18,0)&quot;,
+                      &quot;expr&quot;: &quot;n_policies&quot;,
+                      &quot;name&quot;: &quot;n_policies&quot;
+                    }
+                  ],
+                  &quot;facts&quot;: [
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,6)&quot;,
+                      &quot;expr&quot;: &quot;actual_freq&quot;,
+                      &quot;name&quot;: &quot;actual_freq&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;ae_ratio&quot;,
+                      &quot;name&quot;: &quot;ae_ratio&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;avg_pure_premium&quot;,
+                      &quot;name&quot;: &quot;avg_pure_premium&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,2)&quot;,
+                      &quot;expr&quot;: &quot;cum_actual_pct&quot;,
+                      &quot;name&quot;: &quot;cum_actual_pct&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;cum_expected&quot;,
+                      &quot;name&quot;: &quot;cum_expected&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,2)&quot;,
+                      &quot;expr&quot;: &quot;cum_population_pct&quot;,
+                      &quot;name&quot;: &quot;cum_population_pct&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;expected_claims&quot;,
+                      &quot;name&quot;: &quot;expected_claims&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;expected_freq&quot;,
+                      &quot;name&quot;: &quot;expected_freq&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,2)&quot;,
+                      &quot;expr&quot;: &quot;total_exposure&quot;,
+                      &quot;name&quot;: &quot;total_exposure&quot;
+                    }
+                  ],
+                  &quot;name&quot;: &quot;ave_decile_test&quot;
+                },
+                {
+                  &quot;dimensions&quot;: [
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(16777216)&quot;,
+                      &quot;expr&quot;: &quot;area&quot;,
+                      &quot;name&quot;: &quot;area&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;bonusmalus&quot;,
+                      &quot;name&quot;: &quot;bonusmalus&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;bonusmalus_capped&quot;,
+                      &quot;name&quot;: &quot;bonusmalus_capped&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;claimnb&quot;,
+                      &quot;name&quot;: &quot;claimnb&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(5)&quot;,
+                      &quot;expr&quot;: &quot;dataset&quot;,
+                      &quot;name&quot;: &quot;dataset&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;density&quot;,
+                      &quot;name&quot;: &quot;density&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;drivage&quot;,
+                      &quot;name&quot;: &quot;drivage&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(5)&quot;,
+                      &quot;expr&quot;: &quot;drivage_band&quot;,
+                      &quot;name&quot;: &quot;drivage_band&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(1,0)&quot;,
+                      &quot;expr&quot;: &quot;has_claim&quot;,
+                      &quot;name&quot;: &quot;has_claim&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;idpol&quot;,
+                      &quot;name&quot;: &quot;idpol&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(16777216)&quot;,
+                      &quot;expr&quot;: &quot;region&quot;,
+                      &quot;name&quot;: &quot;region&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;vehage&quot;,
+                      &quot;name&quot;: &quot;vehage&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(5)&quot;,
+                      &quot;expr&quot;: &quot;vehage_band&quot;,
+                      &quot;name&quot;: &quot;vehage_band&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(16777216)&quot;,
+                      &quot;expr&quot;: &quot;vehbrand&quot;,
+                      &quot;name&quot;: &quot;vehbrand&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(16777216)&quot;,
+                      &quot;expr&quot;: &quot;vehgas&quot;,
+                      &quot;name&quot;: &quot;vehgas&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;vehpower&quot;,
+                      &quot;name&quot;: &quot;vehpower&quot;
+                    }
+                  ],
+                  &quot;facts&quot;: [
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,9)&quot;,
+                      &quot;expr&quot;: &quot;exposure&quot;,
+                      &quot;name&quot;: &quot;exposure&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;ln_density&quot;,
+                      &quot;name&quot;: &quot;ln_density&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;predicted_freq&quot;,
+                      &quot;name&quot;: &quot;predicted_freq&quot;
+                    }
+                  ],
+                  &quot;name&quot;: &quot;freq_model_features&quot;,
+                  &quot;primary_key&quot;: [
+                    &quot;idpol&quot;
+                  ]
+                },
+                {
+                  &quot;dimensions&quot;: [
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;claimnb&quot;,
+                      &quot;name&quot;: &quot;claimnb&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(5)&quot;,
+                      &quot;expr&quot;: &quot;dataset&quot;,
+                      &quot;name&quot;: &quot;dataset&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,0)&quot;,
+                      &quot;expr&quot;: &quot;idpol&quot;,
+                      &quot;name&quot;: &quot;idpol&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(18,0)&quot;,
+                      &quot;expr&quot;: &quot;n_claims_actual&quot;,
+                      &quot;name&quot;: &quot;n_claims_actual&quot;
+                    }
+                  ],
+                  &quot;facts&quot;: [
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;avg_actual_sev&quot;,
+                      &quot;name&quot;: &quot;avg_actual_sev&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;NUMBER(38,9)&quot;,
+                      &quot;expr&quot;: &quot;exposure&quot;,
+                      &quot;name&quot;: &quot;exposure&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;predicted_freq&quot;,
+                      &quot;name&quot;: &quot;predicted_freq&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;predicted_sev&quot;,
+                      &quot;name&quot;: &quot;predicted_sev&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;pure_premium&quot;,
+                      &quot;name&quot;: &quot;pure_premium&quot;
+                    }
+                  ],
+                  &quot;name&quot;: &quot;pure_premium&quot;,
+                  &quot;primary_key&quot;: [
+                    &quot;idpol&quot;
+                  ]
+                },
+                {
+                  &quot;dimensions&quot;: [
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(16777216)&quot;,
+                      &quot;expr&quot;: &quot;factor_level&quot;,
+                      &quot;name&quot;: &quot;factor_level&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(9)&quot;,
+                      &quot;expr&quot;: &quot;model&quot;,
+                      &quot;name&quot;: &quot;model&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(17)&quot;,
+                      &quot;expr&quot;: &quot;risk_factor&quot;,
+                      &quot;name&quot;: &quot;risk_factor&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;VARCHAR(3)&quot;,
+                      &quot;expr&quot;: &quot;significance&quot;,
+                      &quot;name&quot;: &quot;significance&quot;
+                    }
+                  ],
+                  &quot;facts&quot;: [
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;estimate&quot;,
+                      &quot;name&quot;: &quot;estimate&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;p_value&quot;,
+                      &quot;name&quot;: &quot;p_value&quot;
+                    },
+                    {
+                      &quot;data_type&quot;: &quot;FLOAT&quot;,
+                      &quot;expr&quot;: &quot;relativity&quot;,
+                      &quot;name&quot;: &quot;relativity&quot;
+                    }
+                  ],
+                  &quot;name&quot;: &quot;rating_table&quot;
+                }
+              ],
+              &quot;verified_queries&quot;: [
+                {
+                  &quot;question&quot;: &quot;What are the frequency rating relativities for each risk factor level?&quot;,
+                  &quot;sql&quot;: &quot;SELECT risk_factor, factor_level, relativity, significance FROM __rating_table WHERE model = &#x27;FREQUENCY&#x27; AND NOT risk_factor IN (&#x27;Intercept&#x27;, &#x27;VEHPOWER&#x27;, &#x27;BONUSMALUS_CAPPED&#x27;, &#x27;LN_DENSITY&#x27;) ORDER BY risk_factor, factor_level&quot;
+                },
+                {
+                  &quot;question&quot;: &quot;What are the severity rating relativities for each risk factor level?&quot;,
+                  &quot;sql&quot;: &quot;SELECT risk_factor, factor_level, relativity, significance FROM __rating_table WHERE model = &#x27;SEVERITY&#x27; AND NOT risk_factor IN (&#x27;Intercept&#x27;, &#x27;VEHPOWER&#x27;, &#x27;BONUSMALUS_CAPPED&#x27;, &#x27;LN_DENSITY&#x27;) ORDER BY risk_factor, factor_level&quot;
+                },
+                {
+                  &quot;question&quot;: &quot;What are the combined frequency and severity relativities for each rating factor level?&quot;,
+                  &quot;sql&quot;: &quot;SELECT r1.risk_factor, r1.factor_level, r1.relativity AS freq_relativity, r2.relativity AS sev_relativity, ROUND(r1.relativity * r2.relativity, 4) AS combined_relativity FROM __rating_table AS r1 JOIN __rating_table AS r2 ON r1.risk_factor = r2.risk_factor AND r1.factor_level = r2.factor_level WHERE r1.model = &#x27;FREQUENCY&#x27; AND r2.model = &#x27;SEVERITY&#x27; ORDER BY r1.risk_factor, r1.factor_level&quot;
+                },
+                {
+                  &quot;question&quot;: &quot;What is the relativity for each driver age band?&quot;,
+                  &quot;sql&quot;: &quot;SELECT risk_factor, factor_level, model, relativity FROM __rating_table WHERE risk_factor = &#x27;DRIVAGE_BAND&#x27; ORDER BY model, factor_level&quot;
+                },
+                {
+                  &quot;question&quot;: &quot;Which rating factors have the biggest impact on claim frequency?&quot;,
+                  &quot;sql&quot;: &quot;SELECT risk_factor, factor_level, model, ABS(estimate) AS abs_effect, relativity FROM __rating_table WHERE model = &#x27;FREQUENCY&#x27; ORDER BY ABS(estimate) DESC LIMIT 10&quot;
+                },
+                {
+                  &quot;question&quot;: &quot;How does model performance vary across risk deciles in terms of predicted versus actual claim frequency?&quot;,
+                  &quot;sql&quot;: &quot;SELECT decile, actual_freq, expected_freq, ae_ratio, avg_pure_premium FROM __ave_decile_test ORDER BY decile&quot;
+                },
+                {
+                  &quot;question&quot;: &quot;How do the average pure premiums and model predictions compare between the training and test datasets?&quot;,
+                  &quot;sql&quot;: &quot;SELECT dataset, COUNT(*) AS n_policies, ROUND(AVG(pure_premium), 2) AS avg_pure_premium, ROUND(AVG(predicted_freq), 6) AS avg_predicted_freq, ROUND(AVG(predicted_sev), 2) AS avg_predicted_sev FROM __pure_premium GROUP BY dataset ORDER BY dataset&quot;
+                },
+                {
+                  &quot;question&quot;: &quot;What is the average pure premium by driver age band and area?&quot;,
+                  &quot;sql&quot;: &quot;SELECT drivage_band, area, ROUND(AVG(pure_premium), 2) AS avg_pure_premium, COUNT(*) AS n_policies FROM __freq_model_features AS f JOIN __pure_premium AS p ON f.idpol = p.idpol GROUP BY drivage_band, area ORDER BY avg_pure_premium DESC&quot;
+                }
+              ]
+            },
+            &quot;type&quot;: &quot;json&quot;
+          }
+        ],
+        &quot;name&quot;: &quot;rating_analytics&quot;,
+        &quot;status&quot;: &quot;success&quot;,
+        &quot;tool_use_id&quot;: &quot;tooluse_aa81b82da52740a693cf47&quot;,
+        &quot;type&quot;: &quot;system_agentic_semantic_context&quot;
+      },
+      &quot;type&quot;: &quot;tool_result&quot;
+    },
+    {
+      &quot;thinking&quot;: {
+        &quot;text&quot;: &quot;There&#x27;s a verified query for this exact question. Let me use it.&quot;
+      },
+      &quot;type&quot;: &quot;thinking&quot;
+    },
+    {
+      &quot;tool_use&quot;: {
+        &quot;client_side_execute&quot;: false,
+        &quot;input&quot;: {
+          &quot;semantic_model&quot;: &quot;rating_analytics&quot;,
+          &quot;sql&quot;: &quot;SELECT risk_factor, factor_level, ABS(estimate) AS abs_effect, relativity, significance FROM __rating_table WHERE model = &#x27;FREQUENCY&#x27; AND risk_factor &lt;&gt; &#x27;Intercept&#x27; ORDER BY ABS(estimate) DESC LIMIT 10&quot;,
+          &quot;verified_query_used&quot;: true
+        },
+        &quot;name&quot;: &quot;system_execute_sql&quot;,
+        &quot;tool_use_id&quot;: &quot;toolu_bdrk_01VdAqGfsbwzfpgRp4dXAYUm&quot;,
+        &quot;type&quot;: &quot;system_execute_sql&quot;
+      },
+      &quot;type&quot;: &quot;tool_use&quot;
+    },
+    {
+      &quot;tool_result&quot;: {
+        &quot;content&quot;: [
+          {
+            &quot;json&quot;: {
+              &quot;query_id&quot;: &quot;01c74689-0107-27ce-0002-0716066c2aea&quot;,
+              &quot;result_set&quot;: {
+                &quot;data&quot;: [
+                  [
+                    &quot;VEHAGE_BAND&quot;,
+                    &quot;00-01&quot;,
+                    &quot;0.50977700000000004&quot;,
+                    &quot;1.6649&quot;,
+                    &quot;***&quot;
+                  ],
+                  [
+                    &quot;VEHAGE_BAND&quot;,
+                    &quot;16+&quot;,
+                    &quot;0.39215899999999998&quot;,
+                    &quot;0.67559999999999998&quot;,
+                    &quot;***&quot;
+                  ],
+                  [
+                    &quot;DRIVAGE_BAND&quot;,
+                    &quot;71+&quot;,
+                    &quot;0.30818600000000002&quot;,
+                    &quot;1.361&quot;,
+                    &quot;***&quot;
+                  ],
+                  [
+                    &quot;DRIVAGE_BAND&quot;,
+                    &quot;41-50&quot;,
+                    &quot;0.28733599999999998&quot;,
+                    &quot;1.3329&quot;,
+                    &quot;***&quot;
+                  ],
+                  [
+                    &quot;REGION&quot;,
+                    &quot;Auvergne&quot;,
+                    &quot;0.25762200000000002&quot;,
+                    &quot;0.77290000000000003&quot;,
+                    &quot;**&quot;
+                  ],
+                  [
+                    &quot;DRIVAGE_BAND&quot;,
+                    &quot;18-21&quot;,
+                    &quot;0.24556500000000001&quot;,
+                    &quot;1.2783&quot;,
+                    &quot;***&quot;
+                  ],
+                  [
+                    &quot;DRIVAGE_BAND&quot;,
+                    &quot;51-60&quot;,
+                    &quot;0.21898699999999999&quot;,
+                    &quot;1.2447999999999999&quot;,
+                    &quot;***&quot;
+                  ],
+                  [
+                    &quot;REGION&quot;,
+                    &quot;Champagne-Ardenne&quot;,
+                    &quot;0.21090900000000001&quot;,
+                    &quot;1.2347999999999999&quot;,
+                    &quot;*&quot;
+                  ],
+                  [
+                    &quot;DRIVAGE_BAND&quot;,
+                    &quot;61-70&quot;,
+                    &quot;0.19344700000000001&quot;,
+                    &quot;1.2134&quot;,
+                    &quot;***&quot;
+                  ],
+                  [
+                    &quot;REGION&quot;,
+                    &quot;Limousin&quot;,
+                    &quot;0.152278&quot;,
+                    &quot;1.1645000000000001&quot;,
+                    &quot;*&quot;
+                  ]
+                ],
+                &quot;resultSetMetaData&quot;: {
+                  &quot;format&quot;: &quot;jsonv2&quot;,
+                  &quot;numRows&quot;: 10,
+                  &quot;partition&quot;: 0,
+                  &quot;partitionInfo&quot;: [
+                    {
+                      &quot;rowCount&quot;: 10,
+                      &quot;uncompressedSize&quot;: 678
+                    }
+                  ],
+                  &quot;rowType&quot;: [
+                    {
+                      &quot;length&quot;: 17,
+                      &quot;name&quot;: &quot;RISK_FACTOR&quot;,
+                      &quot;nullable&quot;: true,
+                      &quot;precision&quot;: 0,
+                      &quot;scale&quot;: 0,
+                      &quot;type&quot;: &quot;text&quot;
+                    },
+                    {
+                      &quot;length&quot;: 16777216,
+                      &quot;name&quot;: &quot;FACTOR_LEVEL&quot;,
+                      &quot;nullable&quot;: true,
+                      &quot;precision&quot;: 0,
+                      &quot;scale&quot;: 0,
+                      &quot;type&quot;: &quot;text&quot;
+                    },
+                    {
+                      &quot;length&quot;: 0,
+                      &quot;name&quot;: &quot;ABS_EFFECT&quot;,
+                      &quot;nullable&quot;: true,
+                      &quot;precision&quot;: 0,
+                      &quot;scale&quot;: 0,
+                      &quot;type&quot;: &quot;real&quot;
+                    },
+                    {
+                      &quot;length&quot;: 0,
+                      &quot;name&quot;: &quot;RELATIVITY&quot;,
+                      &quot;nullable&quot;: true,
+                      &quot;precision&quot;: 0,
+                      &quot;scale&quot;: 0,
+                      &quot;type&quot;: &quot;real&quot;
+                    },
+                    {
+                      &quot;length&quot;: 3,
+                      &quot;name&quot;: &quot;SIGNIFICANCE&quot;,
+                      &quot;nullable&quot;: true,
+                      &quot;precision&quot;: 0,
+                      &quot;scale&quot;: 0,
+                      &quot;type&quot;: &quot;text&quot;
+                    }
+                  ]
+                },
+                &quot;statementHandle&quot;: &quot;01c74689-0107-27ce-0002-0716066c2aea&quot;
+              },
+              &quot;semantic_model_path&quot;: &quot;FREMTPL2.FREMTPL2_INVESTIGATION.INSURANCE_RATING_ANALYTICS&quot;,
+              &quot;sql&quot;: &quot;WITH __rating_table AS (\n  SELECT\n    factor_level,\n    model,\n    risk_factor,\n    significance,\n    estimate,\n    relativity\n  FROM FREMTPL2.FREMTPL2_INVESTIGATION.RATING_TABLE\n)\nSELECT\n  risk_factor,\n  factor_level,\n  ABS(estimate) AS abs_effect,\n  relativity,\n  significance\nFROM __rating_table\nWHERE\n  model = &#x27;FREQUENCY&#x27; AND risk_factor &lt;&gt; &#x27;Intercept&#x27;\nORDER BY\n  ABS(estimate) DESC\nLIMIT 10 /* Generated by Cortex */;&quot;,
+              &quot;verified_query_used&quot;: true
+            },
+            &quot;type&quot;: &quot;json&quot;
+          }
+        ],
+        &quot;name&quot;: &quot;system_execute_sql&quot;,
+        &quot;status&quot;: &quot;success&quot;,
+        &quot;tool_use_id&quot;: &quot;toolu_bdrk_01VdAqGfsbwzfpgRp4dXAYUm&quot;,
+        &quot;type&quot;: &quot;system_execute_sql&quot;
+      },
+      &quot;type&quot;: &quot;tool_result&quot;
+    },
+    {
+      &quot;thinking&quot;: {
+        &quot;text&quot;: &quot;The biggest effect on claim frequency is vehicle age band. The single largest coefficient (in absolute terms) is VEHAGE_BAND 00-01 with an effect of 0.510 and relativity 1.6649. Vehicle age appears twice at the top, so vehicle age band is the rating factor with the biggest effect.&quot;
+      },
+      &quot;type&quot;: &quot;thinking&quot;
+    },
+    {
+      &quot;text&quot;: &quot;The rating factor with the biggest effect on claim frequency is **vehicle age band (VEHAGE_BAND)**.\n\nThe single strongest coefficient belongs to the newest vehicles (age band **00-01**), with an absolute log-coefficient of **0.51** and a relativity of **1.66** — meaning brand-new vehicles have roughly **66% higher** expected claim frequency than the base level (vehicle age 02-05). Vehicle age also produces the second-largest effect at the opposite end: the oldest vehicles (**16+**) have a relativity of **0.68**, cutting frequency by about **32%**. Both are highly significant (***).\n\nAfter vehicle age, **driver age band** dominates the rest of the top effects, followed by a few regional adjustments.\n\n&quot;,
+      &quot;type&quot;: &quot;text&quot;
+    },
+    {
+      &quot;table&quot;: {
+        &quot;query_id&quot;: &quot;01c74689-0107-27ce-0002-0716066c2aea&quot;,
+        &quot;result_set&quot;: {
+          &quot;data&quot;: [
+            [
+              &quot;VEHAGE_BAND&quot;,
+              &quot;00-01&quot;,
+              &quot;0.50977700000000004&quot;,
+              &quot;1.6649&quot;,
+              &quot;***&quot;
+            ],
+            [
+              &quot;VEHAGE_BAND&quot;,
+              &quot;16+&quot;,
+              &quot;0.39215899999999998&quot;,
+              &quot;0.67559999999999998&quot;,
+              &quot;***&quot;
+            ],
+            [
+              &quot;DRIVAGE_BAND&quot;,
+              &quot;71+&quot;,
+              &quot;0.30818600000000002&quot;,
+              &quot;1.361&quot;,
+              &quot;***&quot;
+            ],
+            [
+              &quot;DRIVAGE_BAND&quot;,
+              &quot;41-50&quot;,
+              &quot;0.28733599999999998&quot;,
+              &quot;1.3329&quot;,
+              &quot;***&quot;
+            ],
+            [
+              &quot;REGION&quot;,
+              &quot;Auvergne&quot;,
+              &quot;0.25762200000000002&quot;,
+              &quot;0.77290000000000003&quot;,
+              &quot;**&quot;
+            ],
+            [
+              &quot;DRIVAGE_BAND&quot;,
+              &quot;18-21&quot;,
+              &quot;0.24556500000000001&quot;,
+              &quot;1.2783&quot;,
+              &quot;***&quot;
+            ],
+            [
+              &quot;DRIVAGE_BAND&quot;,
+              &quot;51-60&quot;,
+              &quot;0.21898699999999999&quot;,
+              &quot;1.2447999999999999&quot;,
+              &quot;***&quot;
+            ],
+            [
+              &quot;REGION&quot;,
+              &quot;Champagne-Ardenne&quot;,
+              &quot;0.21090900000000001&quot;,
+              &quot;1.2347999999999999&quot;,
+              &quot;*&quot;
+            ],
+            [
+              &quot;DRIVAGE_BAND&quot;,
+              &quot;61-70&quot;,
+              &quot;0.19344700000000001&quot;,
+              &quot;1.2134&quot;,
+              &quot;***&quot;
+            ],
+            [
+              &quot;REGION&quot;,
+              &quot;Limousin&quot;,
+              &quot;0.152278&quot;,
+              &quot;1.1645000000000001&quot;,
+              &quot;*&quot;
+            ]
+          ],
+          &quot;resultSetMetaData&quot;: {
+            &quot;format&quot;: &quot;jsonv2&quot;,
+            &quot;numRows&quot;: 10,
+            &quot;partition&quot;: 0,
+            &quot;rowType&quot;: [
+              {
+                &quot;length&quot;: 17,
+                &quot;name&quot;: &quot;RISK_FACTOR&quot;,
+                &quot;nullable&quot;: true,
+                &quot;precision&quot;: 0,
+                &quot;scale&quot;: 0,
+                &quot;type&quot;: &quot;text&quot;
+              },
+              {
+                &quot;length&quot;: 16777216,
+                &quot;name&quot;: &quot;FACTOR_LEVEL&quot;,
+                &quot;nullable&quot;: true,
+                &quot;precision&quot;: 0,
+                &quot;scale&quot;: 0,
+                &quot;type&quot;: &quot;text&quot;
+              },
+              {
+                &quot;length&quot;: 0,
+                &quot;name&quot;: &quot;ABS_EFFECT&quot;,
+                &quot;nullable&quot;: true,
+                &quot;precision&quot;: 0,
+                &quot;scale&quot;: 0,
+                &quot;type&quot;: &quot;real&quot;
+              },
+              {
+                &quot;length&quot;: 0,
+                &quot;name&quot;: &quot;RELATIVITY&quot;,
+                &quot;nullable&quot;: true,
+                &quot;precision&quot;: 0,
+                &quot;scale&quot;: 0,
+                &quot;type&quot;: &quot;real&quot;
+              },
+              {
+                &quot;length&quot;: 3,
+                &quot;name&quot;: &quot;SIGNIFICANCE&quot;,
+                &quot;nullable&quot;: true,
+                &quot;precision&quot;: 0,
+                &quot;scale&quot;: 0,
+                &quot;type&quot;: &quot;text&quot;
+              }
+            ]
+          },
+          &quot;statementHandle&quot;: &quot;01c74689-0107-27ce-0002-0716066c2aea&quot;
+        },
+        &quot;title&quot;: &quot;Top 10 Frequency Rating Effects (by absolute coefficient)&quot;,
+        &quot;tool_use_id&quot;: &quot;toolu_bdrk_01VdAqGfsbwzfpgRp4dXAYUm&quot;
+      },
+      &quot;type&quot;: &quot;table&quot;
+    },
+    {
+      &quot;text&quot;: &quot;\n\nHere&#x27;s the ranked view of the strongest effects:&quot;,
+      &quot;type&quot;: &quot;text&quot;
+    },
+    {
+      &quot;tool_use&quot;: {
+        &quot;client_side_execute&quot;: false,
+        &quot;input&quot;: {
+          &quot;skill_name&quot;: &quot;chart_instructions&quot;
+        },
+        &quot;name&quot;: &quot;server_skill&quot;,
+        &quot;tool_use_id&quot;: &quot;toolu_bdrk_01EtbUJZ5hntXqcTJSJN7NyA&quot;,
+        &quot;type&quot;: &quot;server_skill&quot;
+      },
+      &quot;type&quot;: &quot;tool_use&quot;
+    },
+    {
+      &quot;tool_result&quot;: {
+        &quot;content&quot;: [
+          {
+            &quot;json&quot;: {
+              &quot;content&quot;: &quot;# Skill: chart_instructions\n\n**Description**: Instructions for generating Vega-Lite chart specifications with unrestricted chart types\n\n## Instructions\n\n\n# WHEN TO GENERATE A CHART\n\n**PHASE 1: DECIDING TO GENERATE A CHART** (happens DURING your reasoning, BEFORE you have a chart tool result)\n\nInspecting results from system_execute_sql, you MUST evaluate in &lt;thinking&gt;:\n\n**Step 1: Should I generate a chart?**\n  - Prefer charts over tables for: comparisons, trends, rankings, distributions, time-series\n  - MUST generate charts when SQL results have 2+ rows with numerical metrics (revenue, sales, counts, growth rates, percentages)\n  - Example of MANDATORY chart scenarios:\n    - Comparisons: revenue by region, sales by product, performance by team\n    - Rankings: top 10 customers, bottom performers, leaderboards\n    - Time series: monthly trends, year-over-year growth, daily metrics\n    - Distributions: category breakdowns, segment analysis\n  - Do NOT chart: singular values (e.g., \&quot;What is total revenue?\&quot; → just answer \&quot;The total revenue is $X\&quot;)\n  - Prefer using the prior SQL result&#x27;s `tool_use_id` as `tool_result_id` when available\n  - If you do NOT have a usable `tool_use_id` but you do have a Snowflake `query_id`, you MAY call the chart tool with `query_id` instead\n  - If you do NOT have any SQL-backed source but you DO have small, well-formed records you computed yourself or that came from a non-SQL tool, you MAY pass them as inline `values`. Do NOT paste raw CSV — convert to structured row objects first.\n  - In a code-execution sandbox, prefer writing larger datasets to a CSV file on a Snowflake stage and passing its path as `csv_path` instead of inflating your context with inline `values`.\n\n**Step 2: Is the SQL result visualization-ready?**\n  - Check: row count, column names, aggregation level, data shape\n  - Check if the question mentions a specific chart type that should be generated. If it does, check if the SQL result is visualization-ready for the requested chart type.\n  - **IMPORTANT - Check custom instructions**: Review the system prompt for any custom response instructions or chart-related preferences. Custom instructions should take precedence over recommendations in this guide, unless they are breaking the system. For example, if custom instructions say \&quot;always use bar charts for time series\&quot;, you MUST use a bar chart even though this guide recommends line charts for time series. Double-check any instructions under \&quot;[Important Case-specific Instructions]\&quot; section in the system prompt, and apply any chart-relevant guidance.\n\n**Step 3: Prepare data and generate a chart**\n  - If data is NOT visualization-ready → Use a vega-lite transform to reshape the data before calling data_to_chart again. Reuse the prior SQL result&#x27;s tool_use_id; do NOT run a new SQL query for chart data reshaping unless absolutely necessary and you need different data.\n  - Always provide context text BEFORE the chart block, then show the chart (both inline in your answer text).\n\n**Step 4: Consider generating multiple charts**\n  - You CAN generate multiple charts when a single chart would be insufficient or misleading:\n    - **Different scales**: When metrics have vastly different magnitudes (e.g., revenue in millions vs. growth rate in percentages), a single chart may hide patterns in smaller values. Create separate charts for each scale.\n    - **Different perspectives**: When the user&#x27;s question benefits from multiple views (e.g., \&quot;analyze sales performance\&quot; could show both a trend over time AND a breakdown by category).\n    - **Comparison clarity**: When comparing items with very different value ranges, separate charts can make each comparison more straightforward.\n  - To generate multiple charts:\n    1. Call data_to_chart multiple times, once for each chart\n    2. Present each chart with a brief label explaining what it shows. Remember to cite each chart separately\n    3. Example: \&quot;Here&#x27;s the revenue trend:\&quot; followed by chart 1, then \&quot;And here&#x27;s the growth rate trend:\&quot; followed by chart 2\n  - Do NOT generate multiple charts just to show more visualizations - only when it genuinely improves understanding.\n\n**PHASE 2: PRESENTING THE CHART** (happens AFTER you have a chart tool result in conversation history)\n\nOnce you have called data_to_chart tool and received a tool result:\n  * Find the data_to_chart tool result with the chart in conversation history\n  * Provide the &lt;chart&gt;toolUseId&lt;/chart&gt; block inline in your answer text after the thinking block where toolUseId is from the data_to_chart tool result\n  * Valid chart block format: &lt;chart&gt;tooluse_8n3P5qRk7aWzJ1cYxTvEfg&lt;/chart&gt;\n  * If you cannot find ANY valid tool results from data_to_chart tool in conversation history, just say \&quot;I couldn&#x27;t generate a valid visualization.\&quot;\n  * **AVOID REPETITION**: When user did not ask for a chart explicitly, your chart response comes AFTER your initial response in the conversation. Do NOT repeat information already provided in your previous answer before generating the chart:\n    - Do NOT repeat the summary or analysis from your first response\n    - Introduce the chart and optionally add NEW observations visible only in the visualization (e.g., visual patterns, outliers that stand out graphically) or new findings that you were not aware of before.\n  * All chart blocks must be placed inline in your answer text, not before the thinking block.\n  * DO NOT use tool IDs from system_execute_sql tool results to generate a chart block. These will cause rendering errors. ONLY use data_to_chart tool use IDs in chart blocks.\n  * DO NOT reference or describe chart colors (e.g., \&quot;the blue line\&quot;, \&quot;red bars\&quot;) in your &lt;thinking&gt; sections, unless you explicitly specified them in chart specification.\n  * **Colors**: The chart&#x27;s Vega-Lite spec may include a `color_mapping` object at `usermeta.snowflake.color_mapping` (e.g. `{\&quot;Health\&quot;:{\&quot;hex\&quot;:\&quot;#1a6ce7\&quot;,\&quot;name\&quot;:\&quot;blue\&quot;}}`) where each entry maps a category to its rendered hex and color name. Whenever the user refers to a series by color or asks to recolor one, you MUST consult `color_mapping` to identify the category. Match the user&#x27;s color word to the closest `name` — do not require an exact match; map approximate or near human color words to the nearest name (e.g. \&quot;sky\&quot;/\&quot;sky blue\&quot;/\&quot;navy\&quot;/\&quot;azure\&quot;/\&quot;cobalt\&quot; → \&quot;blue\&quot;, \&quot;crimson\&quot;/\&quot;maroon\&quot;/\&quot;scarlet\&quot; → \&quot;red\&quot;, \&quot;lime\&quot;/\&quot;emerald\&quot;/\&quot;olive\&quot; → \&quot;green\&quot;, \&quot;gold\&quot;/\&quot;amber\&quot; → \&quot;orange\&quot;). Use the matched category whether they ask about a color (e.g. \&quot;what does the red line show?\&quot;) or ask to recolor it (e.g. \&quot;change the sky-blue bar to yellow\&quot;); for recolor, change only that category&#x27;s color and preserve all other encodings.\n\n# HOW TO USE\n\n## Step 1: Call data_to_chart\n\nProvide:\n\n1. **`chart`**: a complete Vega-Lite JSON specification (see format below)\n2. Exactly one data reference:\n   - **Preferred: `tool_result_id`** — the `tool_use_id` of a previous system_execute_sql result whose data should be used. Refreshable.\n   - **Fallback: `query_id`** — a Snowflake `query_id` whose result should be charted when no usable `tool_result_id` is available. Refreshable when SQL provenance can be recovered.\n   - **Inline: `values`** — an array of row objects (e.g. `[{\&quot;month\&quot;: \&quot;2025-01\&quot;, \&quot;value\&quot;: 100}, ...]`) for small, LLM-computed or non-SQL data. Keep small (single-screen tables) so size validation passes. Not refreshable. Do NOT paste raw CSV — convert to structured row objects first.\n   - **File: `csv_path`** — a sandbox workspace path to a CSV file (e.g. `\&quot;/workspace/data.csv\&quot;`). Write the CSV under `/workspace` in the sandbox first; the orchestrator downloads it from the workspace stage and parses the CSV server-side, so the data does NOT pass through your context. Path must start with `/workspace/` and reference a `.csv` file. Do NOT pass `@`-stage paths or `snow://...` URLs. Not refreshable.\n\n## Step 2: Cite the chart\n\nUse the data_to_chart `tool_use_id` when citing the chart inline in your answer text:\n```\n&lt;chart&gt;tool_use_id&lt;/chart&gt;\n```\n\n## Sandbox / code-execution sessions\n\nIf you have access to a code-execution sandbox (e.g. `bash` with Python, pandas, plotly), you MUST still produce charts via data_to_chart. Do NOT generate Plotly / matplotlib / D3 HTML and embed it in the answer (e.g. via `iframe srcdoc`, `&lt;script&gt;` blocks, or raw HTML) — those bypass chart validation, customization, and the renderer pipeline, and will not be styled consistently with the rest of the surface.\n\nTwo patterns, picked by dataset size:\n\n### Small datasets (~tens of rows): inline `values`\n\n1. Use `bash` (Python/pandas/SQL CLI/etc.) to derive the data you want to plot.\n2. Print the result as a small JSON array of row objects (one row per record, scalar values only).\n3. Call data_to_chart with that array passed as inline `values`, plus a Vega-Lite spec.\n\n### Larger datasets: write a CSV to `/workspace/`, then pass it as `csv_path`\n\nFor anything bigger than a few dozen rows, write a CSV under `/workspace/` and pass that sandbox path directly as `csv_path`. The orchestrator downloads and parses the CSV server-side, so the data does NOT consume your context window.\n\n1. In `bash`, write the CSV under `/workspace/`, e.g.:\n\n   ```python\n   import pandas as pd\n   df = ... # your aggregated / filtered dataset\n   df.to_csv(\&quot;/workspace/sales_by_month.csv\&quot;, index=False)\n   ```\n\n   The first row MUST be a header (column names). Cells must be scalar (numbers, strings, empty) — no nested JSON, no Python repr, no commas inside unquoted values (pandas handles quoting correctly by default).\n\n2. Call data_to_chart with `csv_path` set to the same `/workspace/...` path you wrote (e.g. `\&quot;/workspace/sales_by_month.csv\&quot;`), plus your Vega-Lite spec. Do not pass `values`, `tool_result_id`, or `query_id` in the same call. Do NOT pass `@`-stage paths or `snow://...` URLs as `csv_path` — only sandbox `/workspace/...` paths are accepted.\n\nIf the dataset is huge, aggregate or top-N it in `bash` first; the chart pipeline still enforces a per-chart row cap, and tiny preprocessed CSVs render faster.\n\n# CHART SPEC FORMAT\n\nThe `chart` parameter must be a valid Vega-Lite JSON object.\n\n## Single-view constraint\nThe rendering backend only supports **single-view** specs. Do NOT use `vconcat`, `hconcat`, `facet`, or `repeat`.\n\nTo combine multiple chart types (e.g., bar + line), use `layer` within a single-view spec.\nIf the user asks for side-by-side panels, generate **separate charts** by calling data_to_chart multiple times.\n\n## Data handling\n- **Do NOT include a top-level `\&quot;data\&quot;` field.** The referenced SQL result is injected automatically and **overwrites** any `data` you provide. Because of this override, your `encoding.field` names MUST match the **SQL result column names exactly** — Snowflake returns them UPPERCASE by default (e.g. `INCIDENT_MONTH`, `INCIDENT_COUNT`) — NOT any friendlier alias you might invent.\n  - **This is the #1 cause of blank charts:** writing inline data like `{\&quot;month\&quot;: ..., \&quot;count\&quot;: ...}` and then encoding `\&quot;field\&quot;: \&quot;month\&quot;`. The pipeline replaces your data with columns `INCIDENT_MONTH`/`INCIDENT_COUNT`, so `month`/`count` no longer exist and no marks are drawn. Always take field names from the actual SQL result columns in the conversation, not from your prose or example data.\n- **Do NOT include `\&quot;width\&quot;` or `\&quot;height\&quot;`.** These are set in post-processing.\n- **The ONLY place a `\&quot;data\&quot;` field is allowed is inside an annotation layer** — a `rule`/`text` reference-line or label layer where you supply your own constant positions/labels (see Tip 8). That per-layer `data.values` is NOT overwritten. Never put `data` at the top level, and never put it on a primary data-bearing layer.\n- For `layer` specs, omit top-level `\&quot;data\&quot;`; the injected SQL result is shared across all data-bearing layers.\n\n## Single-layer example\n```json\n{\n  \&quot;title\&quot;: \&quot;Monthly Revenue\&quot;,\n  \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;area\&quot;, \&quot;opacity\&quot;: 0.7},\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;temporal\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REVENUE\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n## Multi-layer example (dual-axis)\n```json\n{\n  \&quot;title\&quot;: \&quot;Revenue vs Orders\&quot;,\n  \&quot;layer\&quot;: [\n    {\n      \&quot;mark\&quot;: \&quot;bar\&quot;,\n      \&quot;encoding\&quot;: {\n        \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;ordinal\&quot;},\n        \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REVENUE\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;, \&quot;axis\&quot;: {\&quot;title\&quot;: \&quot;Revenue ($)\&quot;}}\n      }\n    },\n    {\n      \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;line\&quot;, \&quot;color\&quot;: \&quot;red\&quot;, \&quot;strokeWidth\&quot;: 2},\n      \&quot;encoding\&quot;: {\n        \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;ordinal\&quot;},\n        \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;ORDERS\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;, \&quot;axis\&quot;: {\&quot;title\&quot;: \&quot;Orders\&quot;}}\n      }\n    }\n  ],\n  \&quot;resolve\&quot;: {\&quot;scale\&quot;: {\&quot;y\&quot;: \&quot;independent\&quot;}}\n}\n```\n\n# FIELD TYPES\n\n- `\&quot;quantitative\&quot;` — numeric values\n- `\&quot;nominal\&quot;` — categorical without order\n- `\&quot;ordinal\&quot;` — categorical with order\n- `\&quot;temporal\&quot;` — date/time values\n\n# TIPS\n\n\n1. **Dual-axis**: Use `layer` with `resolve: {scale: {y: \&quot;independent\&quot;}}`. **Use at most 2 layers.** More than 2 layers causes overlapping Y-axis labels. If you need to show 3+ metrics on different scales, generate **separate charts** by calling data_to_chart multiple times instead.\n2. **Heatmaps**: Use `mark: \&quot;rect\&quot;` with `color` on quantitative, `x`/`y` on nominal\n3. **Boxplots**: Use `mark: \&quot;boxplot\&quot;`\n4. **Waterfall**: Use `calculate` transforms for running totals, then `bar` with `y`/`y2`\n5. **Technical/helper columns**: If you create a transform output that is only used for styling, positioning, or other internal chart mechanics, its field name MUST start with `_`. Examples: `_color`, `_label_x`, `_x`, `_y`, `_label`. These internal helper fields are not user-facing and should not be intended for tooltips or legends unless you explicitly mean to expose them.\n6. **Custom colors**: When the user (or chart customization soft instructions) requests specific colors per series or wants to highlight specific marks, read [references/colors.md](references/colors.md) for the two `_color` patterns (multi-series via `scale.range.field` vs highlight via `scale: null`) and the rules that keep them mutually exclusive.\n7. **Global styling**: Use the `config` object for background, fonts, default mark color, etc. (e.g., `\&quot;config\&quot;: {\&quot;background\&quot;: \&quot;lightgray\&quot;}`)\n8. **Annotations, reference lines, and bar text labels**: Add annotation layers ONLY when the user (or chart customization soft instructions) explicitly asks for reference lines, event markers, value labels on bars, or text callouts.\n\n   Use `rule` or `text` layers with **per-layer `data`** and `field`-based encoding. Do **NOT** use `datum` — it is not supported by the renderer and will render at position 0. Give each annotation layer its own `\&quot;data\&quot;: {\&quot;values\&quot;: [...]}` with the position values, then reference them via `field`.\n\n   Example — vertical reference line + label on a temporal x-axis:\n   ```json\n   {\n     \&quot;layer\&quot;: [\n       {\n         \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;rule\&quot;, \&quot;color\&quot;: \&quot;#FF6B6B\&quot;, \&quot;strokeDash\&quot;: [4, 4]},\n         \&quot;data\&quot;: {\&quot;values\&quot;: [{\&quot;_X\&quot;: \&quot;2025-04-18\&quot;}]},\n         \&quot;encoding\&quot;: {\&quot;x\&quot;: {\&quot;field\&quot;: \&quot;_X\&quot;, \&quot;type\&quot;: \&quot;temporal\&quot;}}\n       },\n       {\n         \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;text\&quot;, \&quot;align\&quot;: \&quot;left\&quot;, \&quot;dx\&quot;: 5, \&quot;dy\&quot;: -5, \&quot;color\&quot;: \&quot;#FF6B6B\&quot;, \&quot;fontSize\&quot;: 11},\n         \&quot;data\&quot;: {\&quot;values\&quot;: [{\&quot;_X\&quot;: \&quot;2025-04-18\&quot;, \&quot;_Y\&quot;: 190, \&quot;_LABEL\&quot;: \&quot;Event date\&quot;}]},\n         \&quot;encoding\&quot;: {\n           \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;_X\&quot;, \&quot;type\&quot;: \&quot;temporal\&quot;},\n           \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;_Y\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n           \&quot;text\&quot;: {\&quot;field\&quot;: \&quot;_LABEL\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n         }\n       }\n     ]\n   }\n   ```\n   For horizontal reference lines use `\&quot;y\&quot;` instead of `\&quot;x\&quot;` with the same per-layer data pattern.\n\n   **CRITICAL — ordinal axis with explicit `sort` array**: When the main axis is `ordinal` with an explicit `sort` array (e.g. `[1,2,...,12]` or month names), the annotation layer&#x27;s `data.values` key AND `encoding.field` MUST match the main layer&#x27;s field name **exactly** (same casing). Renaming it (`MONTH` → `_MONTH`) silently breaks the shared scale&#x27;s sort and falls back to alphabetical order. Pick ONE field name and reuse it in every layer.\n\n   Example — annotation on an ordinal axis with `sort`:\n   ```json\n   {\n     \&quot;layer\&quot;: [\n       {\n         \&quot;mark\&quot;: \&quot;bar\&quot;,\n         \&quot;encoding\&quot;: {\n           \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;ordinal\&quot;, \&quot;sort\&quot;: [1,2,3,4,5,6,7,8,9,10,11,12]},\n           \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REVENUE\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;}\n         }\n       },\n       {\n         \&quot;data\&quot;: {\&quot;values\&quot;: [{\&quot;MONTH\&quot;: 12, \&quot;_LABEL\&quot;: \&quot;Year-end\&quot;}]},\n         \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;text\&quot;, \&quot;align\&quot;: \&quot;right\&quot;, \&quot;dx\&quot;: -4, \&quot;dy\&quot;: -10, \&quot;fontWeight\&quot;: \&quot;bold\&quot;},\n         \&quot;encoding\&quot;: {\n           \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;ordinal\&quot;, \&quot;sort\&quot;: [1,2,3,4,5,6,7,8,9,10,11,12]},\n           \&quot;y\&quot;: {\&quot;value\&quot;: 10},\n           \&quot;text\&quot;: {\&quot;field\&quot;: \&quot;_LABEL\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n         }\n       }\n     ]\n   }\n   ```\n\n   **Bar text labels**: Center labels at the midpoint of each bar via a `calculate` transform (e.g. `datum.SALES / 2`). Use a contrasting color (e.g. white text on dark bars).\n   ```json\n   {\n     \&quot;layer\&quot;: [\n       {\&quot;mark\&quot;: \&quot;bar\&quot;, \&quot;encoding\&quot;: {\&quot;x\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;}, \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}}},\n       {\n         \&quot;transform\&quot;: [{\&quot;calculate\&quot;: \&quot;datum.SALES / 2\&quot;, \&quot;as\&quot;: \&quot;_label_x\&quot;}],\n         \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;text\&quot;, \&quot;color\&quot;: \&quot;white\&quot;},\n         \&quot;encoding\&quot;: {\n           \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;_label_x\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n           \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n           \&quot;text\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;}\n         }\n       }\n     ]\n   }\n   ```\n9. **Multiple panels**: Call data_to_chart multiple times instead of using `hconcat`/`vconcat`\n\n# DATA QUALITY RULES\n\nFollow these rules to ensure charts render correctly. These prevent the most common failures.\n\n## 1. Bar charts: no duplicate categories\n\nFor bar charts without an aggregate, each (categorical_field, color_field) tuple must be unique. Duplicate categories cause stacked/overlapping bars that misrepresent the data. Avoid that, unless specifically requested by user.\n\n**Fix — aggregate transform** (preferred):\n```json\n{\n  \&quot;transform\&quot;: [\n    {\&quot;aggregate\&quot;: [{\&quot;op\&quot;: \&quot;sum\&quot;, \&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;as\&quot;: \&quot;SALES\&quot;}], \&quot;groupby\&quot;: [\&quot;REGION\&quot;, \&quot;CATEGORY\&quot;]}\n  ],\n  \&quot;mark\&quot;: \&quot;bar\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n**Fix — grouped bar chart** (when you want to show per-item bars side by side instead of stacking):\nUse `xOffset` (vertical bars) or `yOffset` (horizontal bars) to place bars next to each other. This is the **default** for multi-color bar charts.\n```json\n{\n  \&quot;title\&quot;: \&quot;Revenue by Region and Category\&quot;,\n  \&quot;mark\&quot;: \&quot;bar\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;yOffset\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;, \&quot;title\&quot;: \&quot;Category\&quot;}\n  }\n}\n```\n\n**Fix — stacked bar chart** (ONLY when the user explicitly asks for a \&quot;stacked bar chart\&quot;):\nAdd `\&quot;stack\&quot;: \&quot;zero\&quot;` to the **quantitative** axis encoding and do NOT include `xOffset`/`yOffset`. Use `\&quot;stack\&quot;: \&quot;normalize\&quot;` only when the user explicitly asks for normalized/percentage stacked bars.\nNEVER use `\&quot;stack\&quot;: false`, `\&quot;stack\&quot;: null`, or `\&quot;stack\&quot;: \&quot;center\&quot;` — these cause broken or overlapping bars.\n```json\n{\n  \&quot;title\&quot;: \&quot;Sales by Region and Category (Stacked)\&quot;,\n  \&quot;mark\&quot;: \&quot;bar\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;, \&quot;stack\&quot;: \&quot;zero\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;, \&quot;title\&quot;: \&quot;Category\&quot;}\n  }\n}\n```\nWhen combining with fold (wide-format data with multiple metric columns):\n```json\n{\n  \&quot;transform\&quot;: [\n    {\&quot;fold\&quot;: [\&quot;CAPACITY\&quot;, \&quot;UTILIZATION\&quot;]},\n    {\&quot;calculate\&quot;: \&quot;({&#x27;CAPACITY&#x27;: &#x27;Capacity&#x27;, &#x27;UTILIZATION&#x27;: &#x27;Utilization&#x27;})[datum.key]\&quot;, \&quot;as\&quot;: \&quot;key\&quot;}\n  ],\n  \&quot;mark\&quot;: \&quot;bar\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;value\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;ACCOUNT\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;yOffset\&quot;: {\&quot;field\&quot;: \&quot;key\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;key\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;, \&quot;title\&quot;: \&quot;Metric\&quot;}\n  }\n}\n```\n**Rule**: The `xOffset`/`yOffset` field MUST be different from `x` and `y` fields. Never use the same field in multiple encodings.\n\n## 2. Line charts: unique x-values per series\n\nEach color series in a line chart must have unique x-values. Duplicate x-values within the same series create ambiguous zigzag lines.\n\n**Fix — wide-format data** (multiple value columns → fold):\n```json\n{\n  \&quot;transform\&quot;: [{\&quot;fold\&quot;: [\&quot;REVENUE\&quot;, \&quot;ORDERS\&quot;]}],\n  \&quot;mark\&quot;: \&quot;line\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;temporal\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;value\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;key\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n**Fix — duplicate rows** (aggregate transform):\n```json\n{\n  \&quot;transform\&quot;: [\n    {\&quot;aggregate\&quot;: [{\&quot;op\&quot;: \&quot;sum\&quot;, \&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;as\&quot;: \&quot;SALES\&quot;}], \&quot;groupby\&quot;: [\&quot;DATE\&quot;, \&quot;REGION\&quot;]}\n  ],\n  \&quot;mark\&quot;: \&quot;line\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;DATE\&quot;, \&quot;type\&quot;: \&quot;temporal\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n**Fix — missing color encoding**: If data has a category column causing duplicates, add `color` encoding so each series gets its own line with unique x-values.\n\n## 3. Bar charts: custom x-axis domains cause bars extending off-screen\n\nBar marks always start from 0 on the quantitative axis. If you set a custom `scale.domain` that excludes 0 (e.g., `[0.95, 1.1]` for values near 1.0), bars will stretch from 0 (off-screen) to their value, appearing as extremely long bars extending to the left (horizontal) or bottom (vertical).\n\n**Fix — use `x2`/`y2` to anchor the bar baseline at the domain start:**\n```json\n{\n  \&quot;mark\&quot;: \&quot;bar\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;METRIC\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;, \&quot;scale\&quot;: {\&quot;domain\&quot;: [0.95, 1.1]}},\n    \&quot;x2\&quot;: {\&quot;datum\&quot;: 0.95},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n**Alternative — use tick or point marks** which don&#x27;t have a baseline:\n```json\n{\n  \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;tick\&quot;, \&quot;thickness\&quot;: 3},\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;METRIC\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;, \&quot;scale\&quot;: {\&quot;domain\&quot;: [0.95, 1.1]}},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n**Rule**: Whenever you use a bar chart with a custom `scale.domain` that does not include 0, you MUST either set `x2`/`y2` to the domain start value, or use a non-bar mark type (tick, point, circle).\n\n## 4. Temporal line charts: regular spacing\n\nFor temporal line charts, avoid data with very irregular time gaps (e.g., daily data with multi-month gaps). Vega-Lite draws straight lines between points, making large gaps misleading.\n\n**Fix options**:\n- If the user explicitly asks for a line chart with irregular data, use `\&quot;point\&quot;: true` to show where real observations exist: `\&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;line\&quot;, \&quot;point\&quot;: true}`\n- Otherwise, prefer a Vega-Lite `filter`/`aggregate` transform to produce data with regular time intervals (e.g., fill gaps with zeros or nulls, or aggregate to a coarser granularity like monthly/quarterly). Only run a new SQL query when absolutely necessary — i.e., the required transformation cannot be expressed as a vega-lite transform\n- Provide separate charts for each interval\n\n\n## 5. Field name casing must match SQL column names exactly — and must match across layers\n\nVega-Lite field matching is **case-sensitive**. Snowflake SQL returns column names in UPPERCASE by default. Always use the exact casing from the SQL result set.\n\n**Correct:** `{\&quot;field\&quot;: \&quot;REVENUE\&quot;, ...}` (matches Snowflake column `REVENUE`)\n**Wrong:** `{\&quot;field\&quot;: \&quot;revenue\&quot;, ...}` or `{\&quot;field\&quot;: \&quot;Revenue\&quot;, ...}`\n\nThis applies everywhere: encoding fields, `calculate` expressions (`datum.REVENUE`), `fold` field lists, `sort` field references, and `aggregate` groupby fields.\n\n**Cross-layer rule (layered specs):** Once a `field` name is used on a shared scale (e.g. `x` is `field: \&quot;MONTH\&quot;` in the bar layer), every other layer that draws on that same scale **and** every key in those layers&#x27; inline `data.values` must use the *exact* same string. Do NOT rename a column to make it look \&quot;internal\&quot; by adding/removing an underscore (`MONTH` → `_MONTH`) or changing case (`_month_name` → `_MONTH_NAME`) in an annotation layer — the rename silently breaks shared-scale features (sort fall-through, color-scale fall-through, axis-domain mismatch). When in doubt, reuse the *same* field name everywhere.\n\n# COMMON MISTAKES\n\n- Do NOT include a top-level `\&quot;data\&quot;`, `\&quot;width\&quot;`, `\&quot;height\&quot;`, or `\&quot;$schema\&quot;` — they are handled automatically (top-level `data` is overwritten by the injected SQL result). The only allowed `data` is per-layer `data.values` in a `rule`/`text` annotation layer (Tip 8)\n- Field names must match the injected SQL result column names EXACTLY (case-sensitive) — never the aliases you use in prose or inline example data\n- When using `layer`, all layers share compatible encodings unless using `resolve`\n- When using `fold` transform, the new fields default to `\&quot;key\&quot;` and `\&quot;value\&quot;`\n- **NEVER** use `vconcat`, `hconcat`, `facet`, or `repeat` — renderer only supports single-view\n- **DO NOT CREATE** `maps` - reading map json is blocked and will not render properly\n- **NEVER** use `datum` in `rule` or `text` annotation layers — always use per-layer `\&quot;data\&quot;: {\&quot;values\&quot;: [...]}` with `field`-based encoding (see Tip 8)\n\n\n\n## Skill Directory Contents\n\nThe following files are available in this skill. Use the `read` tool to explore them if needed.\n\n| File Path | Size |\n|-----------|------|\n| `/app/skills/chart_instructions/references/` | (dir) |\n| `/app/skills/chart_instructions/references/colors.md` | 2.3 KB |\n\n**To read a file**, use the `read` tool with `file_path` set to the full path shown above.\nExample: `{\&quot;file_path\&quot;: \&quot;/app/skills/chart_instructions/example.md\&quot;, \&quot;offset\&quot;: 0, \&quot;limit\&quot;: 100}`\n&quot;,
+              &quot;skill_name&quot;: &quot;chart_instructions&quot;
+            },
+            &quot;type&quot;: &quot;json&quot;
+          }
+        ],
+        &quot;name&quot;: &quot;server_skill&quot;,
+        &quot;status&quot;: &quot;success&quot;,
+        &quot;tool_use_id&quot;: &quot;toolu_bdrk_01EtbUJZ5hntXqcTJSJN7NyA&quot;,
+        &quot;type&quot;: &quot;server_skill&quot;
+      },
+      &quot;type&quot;: &quot;tool_result&quot;
+    },
+    {
+      &quot;tool_use&quot;: {
+        &quot;client_side_execute&quot;: false,
+        &quot;input&quot;: {
+          &quot;chart&quot;: &quot;{\&quot;title\&quot;:\&quot;Top 10 Frequency Rating Effects (|log-coefficient|)\&quot;,\&quot;transform\&quot;:[{\&quot;calculate\&quot;:\&quot;datum.RISK_FACTOR + &#x27; : &#x27; + datum.FACTOR_LEVEL\&quot;,\&quot;as\&quot;:\&quot;_LABEL\&quot;}],\&quot;mark\&quot;:\&quot;bar\&quot;,\&quot;encoding\&quot;:{\&quot;y\&quot;:{\&quot;field\&quot;:\&quot;_LABEL\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;,\&quot;sort\&quot;:\&quot;-x\&quot;,\&quot;title\&quot;:\&quot;Rating factor : level\&quot;},\&quot;x\&quot;:{\&quot;field\&quot;:\&quot;ABS_EFFECT\&quot;,\&quot;type\&quot;:\&quot;quantitative\&quot;,\&quot;title\&quot;:\&quot;Absolute effect on frequency (|coefficient|)\&quot;},\&quot;color\&quot;:{\&quot;field\&quot;:\&quot;RISK_FACTOR\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;,\&quot;title\&quot;:\&quot;Rating factor\&quot;}}}&quot;,
+          &quot;question&quot;: &quot;THIS FIELD WILL BE DEPRECATED SOON. Please stop using it and use the &#x27;chart&#x27; field instead.&quot;,
+          &quot;tool_result_id&quot;: &quot;toolu_bdrk_01VdAqGfsbwzfpgRp4dXAYUm&quot;
+        },
+        &quot;name&quot;: &quot;data_to_chart&quot;,
+        &quot;tool_use_id&quot;: &quot;toolu_bdrk_01AFUcHg411hbBF3obszKYMo&quot;,
+        &quot;type&quot;: &quot;data_to_chart&quot;
+      },
+      &quot;type&quot;: &quot;tool_use&quot;
+    },
+    {
+      &quot;tool_result&quot;: {
+        &quot;content&quot;: [
+          {
+            &quot;json&quot;: {
+              &quot;charts&quot;: [
+                &quot;{\&quot;$schema\&quot;:\&quot;https://vega.github.io/schema/vega-lite/v5.json\&quot;,\&quot;config\&quot;:{\&quot;bar\&quot;:{\&quot;minBandSize\&quot;:5}},\&quot;data\&quot;:{\&quot;values\&quot;:[{\&quot;ABS_EFFECT\&quot;:0.509777,\&quot;FACTOR_LEVEL\&quot;:\&quot;00-01\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;VEHAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.392159,\&quot;FACTOR_LEVEL\&quot;:\&quot;16+\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;VEHAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.308186,\&quot;FACTOR_LEVEL\&quot;:\&quot;71+\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;DRIVAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.287336,\&quot;FACTOR_LEVEL\&quot;:\&quot;41-50\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;DRIVAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.257622,\&quot;FACTOR_LEVEL\&quot;:\&quot;Auvergne\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;REGION\&quot;},{\&quot;ABS_EFFECT\&quot;:0.245565,\&quot;FACTOR_LEVEL\&quot;:\&quot;18-21\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;DRIVAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.218987,\&quot;FACTOR_LEVEL\&quot;:\&quot;51-60\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;DRIVAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.210909,\&quot;FACTOR_LEVEL\&quot;:\&quot;Champagne-Ardenne\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;REGION\&quot;},{\&quot;ABS_EFFECT\&quot;:0.193447,\&quot;FACTOR_LEVEL\&quot;:\&quot;61-70\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;DRIVAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.152278,\&quot;FACTOR_LEVEL\&quot;:\&quot;Limousin\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;REGION\&quot;}]},\&quot;encoding\&quot;:{\&quot;color\&quot;:{\&quot;field\&quot;:\&quot;RISK_FACTOR\&quot;,\&quot;title\&quot;:\&quot;Rating factor\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;},\&quot;tooltip\&quot;:[{\&quot;field\&quot;:\&quot;RISK_FACTOR\&quot;,\&quot;title\&quot;:\&quot;Rating factor\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;},{\&quot;field\&quot;:\&quot;ABS_EFFECT\&quot;,\&quot;format\&quot;:\&quot;,.6~f\&quot;,\&quot;title\&quot;:\&quot;Absolute effect on frequency (|coefficient|)\&quot;,\&quot;type\&quot;:\&quot;quantitative\&quot;},{\&quot;field\&quot;:\&quot;FACTOR_LEVEL\&quot;}],\&quot;x\&quot;:{\&quot;field\&quot;:\&quot;ABS_EFFECT\&quot;,\&quot;sort\&quot;:null,\&quot;title\&quot;:\&quot;Absolute effect on frequency (|coefficient|)\&quot;,\&quot;type\&quot;:\&quot;quantitative\&quot;},\&quot;y\&quot;:{\&quot;field\&quot;:\&quot;_LABEL\&quot;,\&quot;sort\&quot;:\&quot;-x\&quot;,\&quot;title\&quot;:\&quot;Rating factor : level\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;}},\&quot;mark\&quot;:\&quot;bar\&quot;,\&quot;title\&quot;:\&quot;Top 10 Frequency Rating Effects (|log-coefficient|)\&quot;,\&quot;transform\&quot;:[{\&quot;as\&quot;:\&quot;_LABEL\&quot;,\&quot;calculate\&quot;:\&quot;datum.RISK_FACTOR + &#x27; : &#x27; + datum.FACTOR_LEVEL\&quot;}],\&quot;usermeta\&quot;:{\&quot;snowflake\&quot;:{\&quot;color_mapping\&quot;:{\&quot;DRIVAGE_BAND\&quot;:{\&quot;hex\&quot;:\&quot;#4c78a8\&quot;,\&quot;name\&quot;:\&quot;blue\&quot;},\&quot;REGION\&quot;:{\&quot;hex\&quot;:\&quot;#f58518\&quot;,\&quot;name\&quot;:\&quot;orange\&quot;},\&quot;VEHAGE_BAND\&quot;:{\&quot;hex\&quot;:\&quot;#e45756\&quot;,\&quot;name\&quot;:\&quot;red\&quot;}},\&quot;columnRoles\&quot;:{\&quot;ABS_EFFECT\&quot;:\&quot;measure\&quot;,\&quot;FACTOR_LEVEL\&quot;:\&quot;dimension\&quot;,\&quot;RELATIVITY\&quot;:\&quot;measure\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;dimension\&quot;,\&quot;SIGNIFICANCE\&quot;:\&quot;dimension\&quot;}}}}&quot;
+              ]
+            },
+            &quot;type&quot;: &quot;json&quot;
+          }
+        ],
+        &quot;name&quot;: &quot;data_to_chart&quot;,
+        &quot;status&quot;: &quot;success&quot;,
+        &quot;tool_use_id&quot;: &quot;toolu_bdrk_01AFUcHg411hbBF3obszKYMo&quot;,
+        &quot;type&quot;: &quot;data_to_chart&quot;
+      },
+      &quot;type&quot;: &quot;tool_result&quot;
+    },
+    {
+      &quot;chart&quot;: {
+        &quot;chart_spec&quot;: &quot;{\&quot;$schema\&quot;:\&quot;https://vega.github.io/schema/vega-lite/v5.json\&quot;,\&quot;config\&quot;:{\&quot;bar\&quot;:{\&quot;minBandSize\&quot;:5}},\&quot;data\&quot;:{\&quot;values\&quot;:[{\&quot;ABS_EFFECT\&quot;:0.509777,\&quot;FACTOR_LEVEL\&quot;:\&quot;00-01\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;VEHAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.392159,\&quot;FACTOR_LEVEL\&quot;:\&quot;16+\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;VEHAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.308186,\&quot;FACTOR_LEVEL\&quot;:\&quot;71+\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;DRIVAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.287336,\&quot;FACTOR_LEVEL\&quot;:\&quot;41-50\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;DRIVAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.257622,\&quot;FACTOR_LEVEL\&quot;:\&quot;Auvergne\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;REGION\&quot;},{\&quot;ABS_EFFECT\&quot;:0.245565,\&quot;FACTOR_LEVEL\&quot;:\&quot;18-21\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;DRIVAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.218987,\&quot;FACTOR_LEVEL\&quot;:\&quot;51-60\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;DRIVAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.210909,\&quot;FACTOR_LEVEL\&quot;:\&quot;Champagne-Ardenne\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;REGION\&quot;},{\&quot;ABS_EFFECT\&quot;:0.193447,\&quot;FACTOR_LEVEL\&quot;:\&quot;61-70\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;DRIVAGE_BAND\&quot;},{\&quot;ABS_EFFECT\&quot;:0.152278,\&quot;FACTOR_LEVEL\&quot;:\&quot;Limousin\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;REGION\&quot;}]},\&quot;encoding\&quot;:{\&quot;color\&quot;:{\&quot;field\&quot;:\&quot;RISK_FACTOR\&quot;,\&quot;title\&quot;:\&quot;Rating factor\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;},\&quot;tooltip\&quot;:[{\&quot;field\&quot;:\&quot;RISK_FACTOR\&quot;,\&quot;title\&quot;:\&quot;Rating factor\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;},{\&quot;field\&quot;:\&quot;ABS_EFFECT\&quot;,\&quot;format\&quot;:\&quot;,.6~f\&quot;,\&quot;title\&quot;:\&quot;Absolute effect on frequency (|coefficient|)\&quot;,\&quot;type\&quot;:\&quot;quantitative\&quot;},{\&quot;field\&quot;:\&quot;FACTOR_LEVEL\&quot;}],\&quot;x\&quot;:{\&quot;field\&quot;:\&quot;ABS_EFFECT\&quot;,\&quot;sort\&quot;:null,\&quot;title\&quot;:\&quot;Absolute effect on frequency (|coefficient|)\&quot;,\&quot;type\&quot;:\&quot;quantitative\&quot;},\&quot;y\&quot;:{\&quot;field\&quot;:\&quot;_LABEL\&quot;,\&quot;sort\&quot;:\&quot;-x\&quot;,\&quot;title\&quot;:\&quot;Rating factor : level\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;}},\&quot;mark\&quot;:\&quot;bar\&quot;,\&quot;title\&quot;:\&quot;Top 10 Frequency Rating Effects (|log-coefficient|)\&quot;,\&quot;transform\&quot;:[{\&quot;as\&quot;:\&quot;_LABEL\&quot;,\&quot;calculate\&quot;:\&quot;datum.RISK_FACTOR + &#x27; : &#x27; + datum.FACTOR_LEVEL\&quot;}],\&quot;usermeta\&quot;:{\&quot;snowflake\&quot;:{\&quot;color_mapping\&quot;:{\&quot;DRIVAGE_BAND\&quot;:{\&quot;hex\&quot;:\&quot;#4c78a8\&quot;,\&quot;name\&quot;:\&quot;blue\&quot;},\&quot;REGION\&quot;:{\&quot;hex\&quot;:\&quot;#f58518\&quot;,\&quot;name\&quot;:\&quot;orange\&quot;},\&quot;VEHAGE_BAND\&quot;:{\&quot;hex\&quot;:\&quot;#e45756\&quot;,\&quot;name\&quot;:\&quot;red\&quot;}},\&quot;columnRoles\&quot;:{\&quot;ABS_EFFECT\&quot;:\&quot;measure\&quot;,\&quot;FACTOR_LEVEL\&quot;:\&quot;dimension\&quot;,\&quot;RELATIVITY\&quot;:\&quot;measure\&quot;,\&quot;RISK_FACTOR\&quot;:\&quot;dimension\&quot;,\&quot;SIGNIFICANCE\&quot;:\&quot;dimension\&quot;}}}}&quot;,
+        &quot;tool_use_id&quot;: &quot;toolu_bdrk_01AFUcHg411hbBF3obszKYMo&quot;
+      },
+      &quot;type&quot;: &quot;chart&quot;
+    },
+    {
+      &quot;text&quot;: &quot;\n\nThe chart makes the pattern clear: vehicle age occupies the two largest effects, driver age dominates the middle of the ranking, and region contributes smaller (though still statistically significant) adjustments.&quot;,
+      &quot;type&quot;: &quot;text&quot;
+    },
+    {
+      &quot;suggested_queries&quot;: [
+        {
+          &quot;query&quot;: &quot;Which rating factor has the biggest effect on claim severity?&quot;
+        },
+        {
+          &quot;query&quot;: &quot;What are the combined frequency and severity relativities for each vehicle age band?&quot;
+        },
+        {
+          &quot;query&quot;: &quot;How do the frequency relativities compare across all driver age bands?&quot;
+        }
+      ],
+      &quot;type&quot;: &quot;suggested_queries&quot;
+    }
+  ],
+  &quot;metadata&quot;: {
+    &quot;assistant_message_id&quot;: 570741024307838,
+    &quot;run_id&quot;: &quot;8708817629-570741024304198&quot;,
+    &quot;thread_id&quot;: 8708817629,
+    &quot;usage&quot;: {
+      &quot;tokens_consumed&quot;: [
+        {
+          &quot;context_window&quot;: 1000000,
+          &quot;input_tokens&quot;: {
+            &quot;cache_read&quot;: 129315,
+            &quot;cache_write&quot;: 41973,
+            &quot;total&quot;: 171298,
+            &quot;uncached&quot;: 10
+          },
+          &quot;model_name&quot;: &quot;claude-opus-4-8&quot;,
+          &quot;model_role&quot;: &quot;orchestration&quot;,
+          &quot;output_tokens&quot;: {
+            &quot;total&quot;: 1318
+          }
+        }
+      ]
+    },
+    &quot;user_message_id&quot;: 570741024304198
+  },
+  &quot;role&quot;: &quot;assistant&quot;,
+  &quot;schema_version&quot;: &quot;v2&quot;,
+  &quot;sequence_number&quot;: 151,
+  &quot;status&quot;: &quot;completed&quot;
+}</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+</div>
+<div class="cell cell-python" data-index="40" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-python"/></svg>Python</span><span class="cell-counter">[33]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-python"><span class="tok-keyword">import</span> <span class="tok-variableName">json</span>
+<span class="tok-keyword tok-definitionKeyword">from</span> <span class="tok-variableName">IPython</span><span class="tok-operator">.</span><span class="tok-variableName">display</span> <span class="tok-keyword">import</span> <span class="tok-variableName">Markdown</span><span class="tok-punctuation">,</span> <span class="tok-variableName">display</span>
+
+<span class="tok-variableName">raw</span> <span class="tok-operator">=</span> <span class="tok-variableName">test_biggest_factor</span><span class="tok-operator">.</span><span class="tok-propertyName">collect</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span><span class="tok-punctuation">[</span><span class="tok-number">0</span><span class="tok-punctuation">]</span><span class="tok-punctuation">[</span><span class="tok-string">&quot;AGENT_RESPONSE&quot;</span><span class="tok-punctuation">]</span>
+<span class="tok-variableName">obj</span> <span class="tok-operator">=</span> <span class="tok-variableName">json</span><span class="tok-operator">.</span><span class="tok-propertyName">loads</span><span class="tok-punctuation">(</span><span class="tok-variableName">raw</span><span class="tok-punctuation">)</span> <span class="tok-keyword">if</span> <span class="tok-variableName tok-functionName">isinstance</span><span class="tok-punctuation">(</span><span class="tok-variableName">raw</span><span class="tok-punctuation">,</span> <span class="tok-variableName">str</span><span class="tok-punctuation">)</span> <span class="tok-keyword">else</span> <span class="tok-variableName">raw</span>
+<span class="tok-variableName">text_parts</span> <span class="tok-operator">=</span> <span class="tok-punctuation">[</span><span class="tok-variableName">item</span><span class="tok-punctuation">[</span><span class="tok-string">&quot;text&quot;</span><span class="tok-punctuation">]</span> <span class="tok-keyword">for</span> <span class="tok-variableName">item</span> <span class="tok-keyword">in</span> <span class="tok-variableName">obj</span><span class="tok-operator">.</span><span class="tok-propertyName">get</span><span class="tok-punctuation">(</span><span class="tok-string">&quot;content&quot;</span><span class="tok-punctuation">,</span> <span class="tok-punctuation">[</span><span class="tok-punctuation">]</span><span class="tok-punctuation">)</span> <span class="tok-keyword">if</span> <span class="tok-variableName">item</span><span class="tok-operator">.</span><span class="tok-propertyName">get</span><span class="tok-punctuation">(</span><span class="tok-string">&quot;type&quot;</span><span class="tok-punctuation">)</span> <span class="tok-operator">==</span> <span class="tok-string">&quot;text&quot;</span><span class="tok-punctuation">]</span>
+<span class="tok-variableName tok-functionName">display</span><span class="tok-punctuation">(</span><span class="tok-variableName tok-functionName">Markdown</span><span class="tok-punctuation">(</span><span class="tok-string">&quot;\n\n&quot;</span><span class="tok-operator">.</span><span class="tok-propertyName">join</span><span class="tok-punctuation">(</span><span class="tok-variableName">text_parts</span><span class="tok-punctuation">)</span><span class="tok-punctuation">)</span><span class="tok-punctuation">)</span></code></pre></div></div>
+  <div class="cell-outputs"><div class="output-markdown"><p>The rating factor with the biggest effect on claim frequency is <strong>vehicle age band (VEHAGE_BAND)</strong>.</p>
+<p>The single strongest coefficient belongs to the newest vehicles (age band <strong>00-01</strong>), with an absolute log-coefficient of <strong>0.51</strong> and a relativity of <strong>1.66</strong> — meaning brand-new vehicles have roughly <strong>66% higher</strong> expected claim frequency than the base level (vehicle age 02-05). Vehicle age also produces the second-largest effect at the opposite end: the oldest vehicles (<strong>16+</strong>) have a relativity of <strong>0.68</strong>, cutting frequency by about <strong>32%</strong>. Both are highly significant (***).</p>
+<p>After vehicle age, <strong>driver age band</strong> dominates the rest of the top effects, followed by a few regional adjustments.</p>
+<p>Here's the ranked view of the strongest effects:</p>
+<p>The chart makes the pattern clear: vehicle age occupies the two largest effects, driver age dominates the middle of the ranking, and region contributes smaller (though still statistically significant) adjustments.</p>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="41" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-counter">[34]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-comment">-- Test the agent: premium for a specific risk profile</span>
+<span class="tok-keyword">SELECT</span> SNOWFLAKE.CORTEX.DATA_AGENT_RUN<span class="tok-punctuation">(</span>
+    <span class="tok-string">&#x27;FREMTPL2.FREMTPL2_INVESTIGATION.MTPL_RATING_AGENT&#x27;</span><span class="tok-punctuation">,</span>
+    <span class="tok-string">&#x27;{&quot;messages&quot;: [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: [{&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: &quot;What is the average pure premium for a 30-year-old driver with a 5-year-old car in area D?&quot;}]}]}&#x27;</span><span class="tok-punctuation">,</span>
+    <span class="tok-bool">TRUE</span>
+<span class="tok-punctuation">)</span> <span class="tok-keyword">AS</span> AGENT_RESPONSE</code></pre></div></div>
+  <div class="cell-outputs"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="1 row">1 row</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">AGENT_RESPONSE</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:64px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">AGENT_RESPONSE</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="{&quot;content&quot;:[{&quot;thinking&quot;:{&quot;text&quot;:&quot;This question looks like a verified query. Let me get a better understanding of the semantic context.&quot;},&quot;type&quot;:&quot;thinking&quot;},{&quot;tool_use&quot;:{&quot;client_side_execute&quot;:false,&quot;input&quot;:{},&quot;name&quot;:&quot;rating_analytics&quot;,&quot;tool_use_id&quot;:&quot;tooluse_b651d0b0906745df9c98f6&quot;,&quot;type&quot;:&quot;system_agentic_semantic_context&quot;},&quot;type&quot;:&quot;tool_use&quot;},{&quot;tool_result&quot;:{&quot;content&quot;:[{&quot;json&quot;:{&quot;pruned_note&quot;:&quot;**Note**: This semantic model fits within the agent&#x27;s token budget, so it is shown in full. You do not need to set pruning_question on future calls referencing this same semantic model.&quot;,&quot;relationships&quot;:[{&quot;join_type&quot;:&quot;inner&quot;,&quot;left_table&quot;:&quot;freq_model_features&quot;,&quot;name&quot;:&quot;FREQ_MODEL_FEATURES_TO_PURE_PREMIUM&quot;,&quot;relationship_columns&quot;:[{&quot;left_column&quot;:&quot;idpol&quot;,&quot;right_column&quot;:&quot;idpol&quot;}],&quot;relationship_type&quot;:&quot;one_to_one&quot;,&quot;right_table&quot;:&quot;pure_premium&quot;}],&quot;semantic_model_description&quot;:&quot;Insurance pricing analytics for the French MTPL2 portfolio. Contains GLM rating relativities (exp(coefficient)) from Poisson frequency and Gamma severity models, policy-level pure premiums (frequency x severity), model validation decile analysis (actual vs expected), and policy risk factor features. Supports questions about rating factors, technical premiums, model performance, and risk segmentation.&quot;,&quot;semantic_model_key&quot;:&quot;rating_analytics&quot;,&quot;semantic_model_name&quot;:&quot;insurance_rating_analytics&quot;,&quot;semantic_view_fqn&quot;:&quot;FREMTPL2.FREMTPL2_INVESTIGATION.INSURANCE_RATING_ANALYTICS&quot;,&quot;sql_best_practices&quot;:&quot;## SQL Generation Rules and Best Practices\n\n**CRITICAL — Ambiguity Gate (check BEFORE writing SQL):**\nIf the user&#x27;s question contains a business term that could map to more than one metric or dimension in the semantic model, STOP and do the following:\n1. Check the [Additional Instructions] section of your system prompt for an ambiguous terms table or clarification rules.\n2. If those instructions say to ask for clarification, you MUST respond with a clarification question to the user. Do NOT generate SQL. Do NOT pick what seems \&quot;most likely.\&quot;\n3. Only generate SQL if the term unambiguously maps to exactly one metric, or if no clarification rules exist in the Additional Instructions.\nViolating this gate by guessing a metric when clarification is required will produce incorrect results for the user.\n\nYou can write SQL against the provided semantic model to retrieve data. When doing so, you are an expert data scientist well-versed in BI concepts and your goal is to write accurate, readable queries to fetch the relevant data. Use the following sections as guidelines for your task.\n\nThe semantic model is explained in section 1. Standard SQL (using logical names from the semantic model, which are postprocessed to physical SQL) is detailed in section 2. General SQL rules are in section 3.\n\n### 1. How to use the Semantic Model\n\nA semantic model is intended to provide additional information about the relevant entities that you may want to query for an analysis.\n\nA semantic model is comprised of a set of logical tables. A logical table maps onto an actual SQL table or view, called a base table. Each logical table is comprised of facts, dimensions, and metrics.\n\n- **Facts** are row-level quantitative values (e.g., sales amount, quantity, cost). They are unaggregated and exist at the granularity of the table.\n- **Dimensions** are categorical attributes used to group, filter, and slice data (e.g., region, product category, date). They provide context to metrics. They are commonly used to GROUP BY.\n- **Metrics** are aggregations over facts using functions like SUM, AVG, COUNT. They represent business KPIs. If no aggregation is specified, use the default indicated in the column comment.\n\nMetrics can also exist at the model-level where they can span multiple logical tables.\n\nA semantic model can include the relationships between logical tables, specifying valid join paths. Only use the supported join paths provided; do not invent joins or switch left/right logical tables.\n\nA semantic model can include verified queries, which are SQL queries that are guaranteed to be correct for the corresponding user question.\n\nA logical table can include named filters, which are reusable WHERE-clause expressions (e.g., `is_active = TRUE`). Use these filters in your SQL when they match the user&#x27;s intent rather than writing equivalent expressions from scratch.\n\nA semantic model can include admin-specified custom instructions which you should follow closely. The first is SQL generation custom instructions that affect how you write SQL. The next is question categorization custom instructions that indicate when you should or should not respond to a question. Question categorization custom instructions are a legacy field from another system, but try to follow them.\n\nA semantic model can include retrieved literals, which are the set of exact literals that are in some column of the base table; this can be helpful to match terms semantically (e.g. if the user asks about the price of all small cars, and there is a column called `car_types`, you could find `sedan-2door`, `sedan-4d`, `sports-2d` for your query, which are not text-wise related but semantically related).\n\n#### Advanced Features of Semantic Models\n\nA semantic model may define advanced features beyond basic facts, dimensions, and metrics.\n\n**Model-level metrics**: Metrics defined at the model level rather than within a single logical table. These metrics may span multiple tables. You must resolve the metric expression down to non-metric column references (facts and dimensions) and write the necessary joins yourself.\n\n**Asof joins**: A semantic model may contain **asof** relationship keys. Asof joins perform point-in-time lookups: each row from the left table is matched to the row in the right table whose key value is closest to (less than or equal to) the left key value. Use Snowflake&#x27;s `ASOF JOIN ... MATCH_CONDITION(left.col &gt;= right.col) ON equi_conditions` syntax as shown in the supported join paths.\n\n**Range joins**: A semantic model may contain **range** relationship keys. Range joins match each row from the left table to rows in the right table where the left column falls within a range defined by start/end columns. Use the non-equi join conditions as shown in the supported join paths (e.g., `(start_col IS NULL OR left_col &gt;= start_col) AND (end_col IS NULL OR left_col &lt; end_col)`).\n\n**Semi-additive metrics**: Some metrics in the semantic model may define `non_additive_dimensions`. These indicate the metric is **semi-additive** (e.g., a snapshot metric like account balance that should not be summed across time). Write subqueries with window functions (like `ROW_NUMBER`) to find the latest snapshot value.\n\n### 2. Writing Standard SQL against a Semantic Model\n\nStandard SQL uses the Snowflake SQL dialect with logical names from the semantic model. In this mode, you write queries using the logical table and column names (dimensions, facts, time_dimensions) defined in the semantic model. The SQL will be automatically postprocessed to resolve to physical table and column names before execution.\n\n- **Use Semantic Model Column Names**: ALWAYS use column names from the semantic model (dimensions and facts). The SQL will be automatically postprocessed to resolve to physical column names.\n- **Reference Logical Tables**: Use the logical table names from the semantic model with a `__` prefix. Do NOT use fully qualified physical table names (e.g., use `__orders` not `orders` or `DATABASE.SCHEMA.ORDERS`). This prefix is required for all table references, including in FROM, JOIN, and column qualifiers (e.g., `__orders.order_total`).\n- **Always query logical tables, not the underlying base tables**: The base tables can only be accessed through the logical tables using logical SQL. If you encounter errors running logical SQL, fix the query — do not fall back to querying base tables directly.\n- **Do not rewrite logical table CTEs**: The postprocessing step creates CTEs in the final SQL like `WITH __logical_table AS (SELECT ... FROM DB.SCH.BASE_TABLE)` to resolve the logical tables. You should NOT write these CTEs again on subsequent turns, as the SQL you write on logical tables in subsequent turns will be postprocessed to get the CTEs back. You can fully ignore those logical table CTEs.\n- **Identify metrics**: Metrics are typically calculations upon facts. If no specific aggregation mentioned, use the default aggregation indicated in the column comment.\n- **Identify dimensions for GROUP BY**: Dimensions provide context to data - they are descriptive attributes used to slice and dice data (e.g., geography, product categories, customer segments).\n- **Identify facts**: Facts are quantitative data that can be aggregated, summed, averaged, or counted. They are typically numeric fields.\n- **Count Correctly**: In single-table queries, use COUNT(DISTINCT column) for dimension columns that may have duplicate values. Use COUNT(column) without DISTINCT only if the column has unique values like a primary key.\n\nNote that you are not allowed to use all of the Snowflake SQL dialect, which is detailed in Section 3.\n\n### 3. Rules for SQL Generation\n\nAcross all queries you write, you should keep in mind these guidelines when they are relevant.\n\n**Current Date: 2026-09-24 (i.e., today is September 24, 2026)** - Use this as reference for relative time filters.\n\n#### Aggregation and Granularity\n- The primary key defines data granularity. When calculating metrics on different granularity, ALWAYS use GROUP BY to ensure correct aggregation.\n- Every column in SELECT must either have an aggregation function OR be included in GROUP BY.\n- Use PARTITION BY for window functions as needed.\n\n#### Time Series Analysis\n\n**IMPORTANT: ALWAYS use CURRENT_DATE (or CURRENT_TIMESTAMP) in SQL for any reference to \&quot;today\&quot;, \&quot;now\&quot;, or the current date. Do NOT hardcode specific date literals like &#x27;2026-03-22&#x27;. The current date provided above is for interpreting ambiguous time references only (e.g., inferring the year when not specified).**\n\n##### Current Date Reference\n- If a question asks about a specific month without a year (e.g., \&quot;sales for March\&quot;), assume the current year 2026.\n\n##### Time Frequency Conversion\n- For questions requiring time aggregation at different frequency than provided, use DATE_TRUNC() to convert and aggregate facts properly with GROUP BY.\n- To compare time to a NUMBER column, use DATE_PART() to extract year/month/day from a timestamp.\n- For day of week, use DAYOFWEEK() function.\n\n##### Calendar Time Units (week, month, year)\n- If the user asks about \&quot;last week\&quot;, \&quot;this month\&quot;, \&quot;last year\&quot;, ALWAYS assume they mean the CALENDAR unit:\n  - \&quot;last week\&quot;: DATE &gt;= DATE_TRUNC(&#x27;week&#x27;, CURRENT_DATE - INTERVAL &#x27;1 week&#x27;) AND DATE &lt; DATE_TRUNC(&#x27;week&#x27;, CURRENT_DATE)\n  - \&quot;this month\&quot;: DATE &gt;= DATE_TRUNC(&#x27;month&#x27;, CURRENT_DATE)\n  - \&quot;last year\&quot;: DATE &gt;= DATE_TRUNC(&#x27;year&#x27;, CURRENT_DATE - INTERVAL &#x27;1 year&#x27;) AND DATE &lt; DATE_TRUNC(&#x27;year&#x27;, CURRENT_DATE)\n\n##### Past N Days\n- If the user asks \&quot;past X days\&quot; or \&quot;last X days\&quot;, use: DATE &gt;= DATEADD(day, -X, CURRENT_DATE)\n\n##### References to \&quot;Today\&quot; or \&quot;Now\&quot;\n- If the user mentions \&quot;today\&quot;, \&quot;as of today\&quot;, \&quot;to today\&quot;, \&quot;up to now\&quot;, \&quot;until now\&quot;, or similar, ALWAYS use CURRENT_DATE in SQL.\n  - Example: \&quot;from June 2025 to today\&quot; → DATE &gt;= &#x27;2025-06-01&#x27; AND DATE &lt;= CURRENT_DATE\n  - Example: \&quot;sales up to today\&quot; → DATE &lt;= CURRENT_DATE\n- Do NOT resolve \&quot;today\&quot; to a hardcoded date literal.\n\n##### Period-over-Period (DoD, MoM, YoY)\n- ALWAYS include current period, previous period, current value, and previous value in output columns.\n- Calculate BOTH absolute change AND percentage change unless specified otherwise.\n- DO NOT use LEAD() or LAG() for previous period values - these assume consecutive time data which may not be true.\n- Use self-joins or CTEs instead:\n```sql\nSELECT\n    curr.date AS curr_date,\n    prev.date AS prev_date,\n    curr.value AS curr_value,\n    prev.value AS prev_value,\n    curr.value - prev.value AS change,\n    (curr.value - prev.value) / NULLIF(prev.value, 0) AS pct_change\nFROM daily_table AS curr\nLEFT JOIN daily_table AS prev ON curr.date = prev.date + INTERVAL &#x27;1 day&#x27;\nORDER BY curr_date DESC NULLS LAST;\n```\n\n##### Rolling Window Metrics\n- For rolling metrics, ALWAYS: (1) aggregate by day/time granularity first, (2) create CTE to compute rolling metrics, (3) filter to time period last.\n```sql\nWITH daily_sales AS (\n    SELECT date, SUM(sales) AS daily_sales FROM table GROUP BY date\n),\nrolling_avg AS (\n    SELECT date, AVG(daily_sales) OVER (ORDER BY date ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS rolling_avg_3d\n    FROM daily_sales\n)\nSELECT * FROM rolling_avg WHERE DATE_PART(&#x27;YEAR&#x27;, date) = 2026 ORDER BY date DESC NULLS LAST;\n```\n\n##### Missing Time Period\n- If no time range is specified, assume the ENTIRE available time period in the data.\n- Include MIN(date) as start_date and MAX(date) as end_date in output to show the time range used.\n\n#### Ranking, Sorting, and Top-K\n\n##### Sorting\n- When sorting by highest/lowest metric, ALWAYS include NULLS LAST: ORDER BY ratio DESC NULLS LAST\n- For time series without specific sorting, default to sorting time DESCENDING to show latest information first.\n\n##### Top K Queries\n- For simple top-K without partitions: use ORDER BY ... LIMIT K\n- For top-K within partitions (e.g., \&quot;top 5 per month\&quot;): use RANK() or ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)\n```sql\nWITH ranked AS (\n    SELECT *, RANK() OVER (PARTITION BY month ORDER BY sales DESC NULLS LAST) AS rnk\n    FROM monthly_sales\n)\nSELECT * FROM ranked WHERE rnk &lt;= 5 ORDER BY month DESC, rnk NULLS LAST;\n```\n\n#### Joins and Relationships\n\n##### Choosing the JOIN type (LEFT vs INNER)\nThe JOIN type must match the question&#x27;s granularity:\n\n- **Identify the driving table first** — the entity in phrases like \&quot;for each X\&quot;, \&quot;every X\&quot;, \&quot;per X\&quot;, or \&quot;show me each X&#x27;s ...\&quot;. Put it in `FROM`; join everything else to it. The driving table MUST be the table named in `FROM`, never one joined onto another via `JOIN` — the driving table on the wrong side of a `LEFT JOIN` still drops its rows.\n- **`LEFT JOIN`** related tables onto the driving table when the question asks about *every* / *all* / *for each* of the driving entity. This preserves driving-entity rows that have no matching related row. Handle the resulting NULLs explicitly in aggregates (`COALESCE`, or `CASE WHEN COUNT(...) = 0 THEN NULL ELSE ... END`).\n- **`INNER JOIN`** ONLY when the question explicitly restricts to rows *with* related data (\&quot;X **with** Y\&quot;, \&quot;X **that have** Y\&quot;), or when a metric formula requires the related row to exist (e.g., a ratio whose denominator comes from the joined table).\n- **Never** use `INNER JOIN` to \&quot;filter out NULLs\&quot; implicitly — that silently drops rows the user wanted to see. If you need to filter NULLs, do it explicitly with `WHERE x IS NOT NULL`.\n- When in doubt between LEFT and INNER, prefer LEFT — silently dropping rows is a worse failure mode than including a row with NULL aggregates.\n\n```sql\n-- For \&quot;show me the order count for each customer\&quot;:\n-- WRONG: __customers is on the right side of LEFT JOIN, so customers without orders are dropped\nSELECT c.id, COUNT(o.id) FROM __orders o LEFT JOIN __customers c ON o.cust_id = c.id GROUP BY c.id;\n\n-- CORRECT: __customers (the driving entity) is on the left\nSELECT c.id, COUNT(o.id) FROM __customers c LEFT JOIN __orders o ON o.cust_id = c.id GROUP BY c.id;\n```\n\n##### Other join rules\n- Use ONLY the supported join paths provided in the semantic model.\n- When joining multiple tables, assign aliases and ALWAYS qualify columns with table alias in ALL clauses.\n- Avoid joins in subqueries; use CTEs instead.\n- Be aware of data granularity: when joining one-to-many or many-to-many, consider data duplication during aggregations.\n- Extract unique records when necessary to avoid double-counting:\n```sql\n-- WRONG: AVG(income) on joined table counts each customer multiple times\n-- CORRECT: Extract unique customers first, then aggregate\nWITH unique_customers AS (\n    SELECT DISTINCT customer_id, income, region FROM orders o JOIN customers c ON ...\n)\nSELECT region, AVG(income) FROM unique_customers GROUP BY region;\n```\n\n#### Handling Text and Literal Values\n- **Use sample_values for exact matching**: Dimensions include sample_values showing actual data values. Use these to match user-mentioned entities:\n  - If user says \&quot;California\&quot;, check sample_values to see if values are \&quot;CA\&quot;, \&quot;California\&quot;, \&quot;CALIFORNIA\&quot;, etc.\n  - If user mentions a product name, find the closest match in sample_values\n- **Case-Insensitive Matching**: Use ILIKE instead of LIKE or = when exact case is uncertain\n- **Pattern Matching**: Use ILIKE &#x27;%pattern%&#x27; to find partial matches when sample_values don&#x27;t have an exact match\n- **Escape single quotes**: Use two single quotes (&#x27;&#x27;) to escape literal single quotes in strings\n\n#### Ratios and Percentages\n- DO NOT multiply by 100 for ratio/percentage calculations. Keep numbers as decimals.\n\n#### Error Prevention and Snowflake Syntax\n- When creating table or column aliases, avoid Snowflake SQL keywords (e.g., \&quot;to\&quot;, \&quot;date\&quot;, \&quot;order\&quot;)\n- Handle NULL values with COALESCE(column, default_value)\n- Use NULLIF to prevent division by zero: value / NULLIF(denominator, 0)\n- Use double quotes for case-sensitive identifiers: \&quot;ColumnName\&quot;\n- Use FLATTEN() for semi-structured/array data\n- Use QUALIFY for post-aggregation filtering with window functions\n- Use TRY_CAST or TRY_TO_NUMBER for safe type conversions\n&quot;,&quot;tables&quot;:[{&quot;dimensions&quot;:[{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;actual_claims&quot;,&quot;name&quot;:&quot;actual_claims&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;cum_actual&quot;,&quot;name&quot;:&quot;cum_actual&quot;},{&quot;data_type&quot;:&quot;NUMBER(18,0)&quot;,&quot;expr&quot;:&quot;decile&quot;,&quot;name&quot;:&quot;decile&quot;},{&quot;data_type&quot;:&quot;NUMBER(18,0)&quot;,&quot;expr&quot;:&quot;n_policies&quot;,&quot;name&quot;:&quot;n_policies&quot;}],&quot;facts&quot;:[{&quot;data_type&quot;:&quot;NUMBER(38,6)&quot;,&quot;expr&quot;:&quot;actual_freq&quot;,&quot;name&quot;:&quot;actual_freq&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;ae_ratio&quot;,&quot;name&quot;:&quot;ae_ratio&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;avg_pure_premium&quot;,&quot;name&quot;:&quot;avg_pure_premium&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,2)&quot;,&quot;expr&quot;:&quot;cum_actual_pct&quot;,&quot;name&quot;:&quot;cum_actual_pct&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;cum_expected&quot;,&quot;name&quot;:&quot;cum_expected&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,2)&quot;,&quot;expr&quot;:&quot;cum_population_pct&quot;,&quot;name&quot;:&quot;cum_population_pct&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;expected_claims&quot;,&quot;name&quot;:&quot;expected_claims&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;expected_freq&quot;,&quot;name&quot;:&quot;expected_freq&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,2)&quot;,&quot;expr&quot;:&quot;total_exposure&quot;,&quot;name&quot;:&quot;total_exposure&quot;}],&quot;name&quot;:&quot;ave_decile_test&quot;},{&quot;dimensions&quot;:[{&quot;data_type&quot;:&quot;VARCHAR(16777216)&quot;,&quot;expr&quot;:&quot;area&quot;,&quot;name&quot;:&quot;area&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;bonusmalus&quot;,&quot;name&quot;:&quot;bonusmalus&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;bonusmalus_capped&quot;,&quot;name&quot;:&quot;bonusmalus_capped&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;claimnb&quot;,&quot;name&quot;:&quot;claimnb&quot;},{&quot;data_type&quot;:&quot;VARCHAR(5)&quot;,&quot;expr&quot;:&quot;dataset&quot;,&quot;name&quot;:&quot;dataset&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;density&quot;,&quot;name&quot;:&quot;density&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;drivage&quot;,&quot;name&quot;:&quot;drivage&quot;},{&quot;data_type&quot;:&quot;VARCHAR(5)&quot;,&quot;expr&quot;:&quot;drivage_band&quot;,&quot;name&quot;:&quot;drivage_band&quot;},{&quot;data_type&quot;:&quot;NUMBER(1,0)&quot;,&quot;expr&quot;:&quot;has_claim&quot;,&quot;name&quot;:&quot;has_claim&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;idpol&quot;,&quot;name&quot;:&quot;idpol&quot;},{&quot;data_type&quot;:&quot;VARCHAR(16777216)&quot;,&quot;expr&quot;:&quot;region&quot;,&quot;name&quot;:&quot;region&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;vehage&quot;,&quot;name&quot;:&quot;vehage&quot;},{&quot;data_type&quot;:&quot;VARCHAR(5)&quot;,&quot;expr&quot;:&quot;vehage_band&quot;,&quot;name&quot;:&quot;vehage_band&quot;},{&quot;data_type&quot;:&quot;VARCHAR(16777216)&quot;,&quot;expr&quot;:&quot;vehbrand&quot;,&quot;name&quot;:&quot;vehbrand&quot;},{&quot;data_type&quot;:&quot;VARCHAR(16777216)&quot;,&quot;expr&quot;:&quot;vehgas&quot;,&quot;name&quot;:&quot;vehgas&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;vehpower&quot;,&quot;name&quot;:&quot;vehpower&quot;}],&quot;facts&quot;:[{&quot;data_type&quot;:&quot;NUMBER(38,9)&quot;,&quot;expr&quot;:&quot;exposure&quot;,&quot;name&quot;:&quot;exposure&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;ln_density&quot;,&quot;name&quot;:&quot;ln_density&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;predicted_freq&quot;,&quot;name&quot;:&quot;predicted_freq&quot;}],&quot;name&quot;:&quot;freq_model_features&quot;,&quot;primary_key&quot;:[&quot;idpol&quot;]},{&quot;dimensions&quot;:[{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;claimnb&quot;,&quot;name&quot;:&quot;claimnb&quot;},{&quot;data_type&quot;:&quot;VARCHAR(5)&quot;,&quot;expr&quot;:&quot;dataset&quot;,&quot;name&quot;:&quot;dataset&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;idpol&quot;,&quot;name&quot;:&quot;idpol&quot;},{&quot;data_type&quot;:&quot;NUMBER(18,0)&quot;,&quot;expr&quot;:&quot;n_claims_actual&quot;,&quot;name&quot;:&quot;n_claims_actual&quot;}],&quot;facts&quot;:[{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;avg_actual_sev&quot;,&quot;name&quot;:&quot;avg_actual_sev&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,9)&quot;,&quot;expr&quot;:&quot;exposure&quot;,&quot;name&quot;:&quot;exposure&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;predicted_freq&quot;,&quot;name&quot;:&quot;predicted_freq&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;predicted_sev&quot;,&quot;name&quot;:&quot;predicted_sev&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;pure_premium&quot;,&quot;name&quot;:&quot;pure_premium&quot;}],&quot;name&quot;:&quot;pure_premium&quot;,&quot;primary_key&quot;:[&quot;idpol&quot;]},{&quot;dimensions&quot;:[{&quot;data_type&quot;:&quot;VARCHAR(16777216)&quot;,&quot;expr&quot;:&quot;factor_level&quot;,&quot;name&quot;:&quot;factor_level&quot;},{&quot;data_type&quot;:&quot;VARCHAR(9)&quot;,&quot;expr&quot;:&quot;model&quot;,&quot;name&quot;:&quot;model&quot;},{&quot;data_type&quot;:&quot;VARCHAR(17)&quot;,&quot;expr&quot;:&quot;risk_factor&quot;,&quot;name&quot;:&quot;risk_factor&quot;},{&quot;data_type&quot;:&quot;VARCHAR(3)&quot;,&quot;expr&quot;:&quot;significance&quot;,&quot;name&quot;:&quot;significance&quot;}],&quot;facts&quot;:[{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;estimate&quot;,&quot;name&quot;:&quot;estimate&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;p_value&quot;,&quot;name&quot;:&quot;p_value&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;relativity&quot;,&quot;name&quot;:&quot;relativity&quot;}],&quot;name&quot;:&quot;rating_table&quot;}],&quot;verified_queries&quot;:[{&quot;question&quot;:&quot;What are the frequency rating relativities for each risk factor level?&quot;,&quot;sql&quot;:&quot;SELECT risk_factor, factor_level, relativity, significance FROM __rating_table WHERE model = &#x27;FREQUENCY&#x27; AND NOT risk_factor IN (&#x27;Intercept&#x27;, &#x27;VEHPOWER&#x27;, &#x27;BONUSMALUS_CAPPED&#x27;, &#x27;LN_DENSITY&#x27;) ORDER BY risk_factor, factor_level&quot;},{&quot;question&quot;:&quot;What are the severity rating relativities for each risk factor level?&quot;,&quot;sql&quot;:&quot;SELECT risk_factor, factor_level, relativity, significance FROM __rating_table WHERE model = &#x27;SEVERITY&#x27; AND NOT risk_factor IN (&#x27;Intercept&#x27;, &#x27;VEHPOWER&#x27;, &#x27;BONUSMALUS_CAPPED&#x27;, &#x27;LN_DENSITY&#x27;) ORDER BY risk_factor, factor_level&quot;},{&quot;question&quot;:&quot;What are the combined frequency and severity relativities for each rating factor level?&quot;,&quot;sql&quot;:&quot;SELECT r1.risk_factor, r1.factor_level, r1.relativity AS freq_relativity, r2.relativity AS sev_relativity, ROUND(r1.relativity * r2.relativity, 4) AS combined_relativity FROM __rating_table AS r1 JOIN __rating_table AS r2 ON r1.risk_factor = r2.risk_factor AND r1.factor_level = r2.factor_level WHERE r1.model = &#x27;FREQUENCY&#x27; AND r2.model = &#x27;SEVERITY&#x27; ORDER BY r1.risk_factor, r1.factor_level&quot;},{&quot;question&quot;:&quot;What is the relativity for each driver age band?&quot;,&quot;sql&quot;:&quot;SELECT risk_factor, factor_level, model, relativity FROM __rating_table WHERE risk_factor = &#x27;DRIVAGE_BAND&#x27; ORDER BY model, factor_level&quot;},{&quot;question&quot;:&quot;Which rating factors have the biggest impact on claim frequency?&quot;,&quot;sql&quot;:&quot;SELECT risk_factor, factor_level, model, ABS(estimate) AS abs_effect, relativity FROM __rating_table WHERE model = &#x27;FREQUENCY&#x27; ORDER BY ABS(estimate) DESC LIMIT 10&quot;},{&quot;question&quot;:&quot;How does model performance vary across risk deciles in terms of predicted versus actual claim frequency?&quot;,&quot;sql&quot;:&quot;SELECT decile, actual_freq, expected_freq, ae_ratio, avg_pure_premium FROM __ave_decile_test ORDER BY decile&quot;},{&quot;question&quot;:&quot;How do the average pure premiums and model predictions compare between the training and test datasets?&quot;,&quot;sql&quot;:&quot;SELECT dataset, COUNT(*) AS n_policies, ROUND(AVG(pure_premium), 2) AS avg_pure_premium, ROUND(AVG(predicted_freq), 6) AS avg_predicted_freq, ROUND(AVG(predicted_sev), 2) AS avg_predicted_sev FROM __pure_premium GROUP BY dataset ORDER BY dataset&quot;},{&quot;question&quot;:&quot;What is the average pure premium by driver age band and area?&quot;,&quot;sql&quot;:&quot;SELECT drivage_band, area, ROUND(AVG(pure_premium), 2) AS avg_pure_premium, COUNT(*) AS n_policies FROM __freq_model_features AS f JOIN __pure_premium AS p ON f.idpol = p.idpol GROUP BY drivage_band, area ORDER BY avg_pure_premium DESC&quot;}]},&quot;type&quot;:&quot;json&quot;}],&quot;name&quot;:&quot;rating_analytics&quot;,&quot;status&quot;:&quot;success&quot;,&quot;tool_use_id&quot;:&quot;tooluse_b651d0b0906745df9c98f6&quot;,&quot;type&quot;:&quot;system_agentic_semantic_context&quot;},&quot;type&quot;:&quot;tool_result&quot;},{&quot;thinking&quot;:{&quot;text&quot;:&quot;Driver age 30 → drivage_band. Vehicle age 5 → vehage_band. Area D. Let me query using drivage=30, vehage=5, area=&#x27;D&#x27;. But the bands: 30 falls in a band. Let me query by exact drivage and vehage.&quot;},&quot;type&quot;:&quot;thinking&quot;},{&quot;tool_use&quot;:{&quot;client_side_execute&quot;:false,&quot;input&quot;:{&quot;semantic_model&quot;:&quot;rating_analytics&quot;,&quot;sql&quot;:&quot;SELECT ROUND(AVG(p.pure_premium), 2) AS avg_pure_premium, COUNT(*) AS n_policies\nFROM __freq_model_features AS f\nJOIN __pure_premium AS p ON f.idpol = p.idpol\nWHERE f.drivage = 30 AND f.vehage = 5 AND f.area = &#x27;D&#x27;&quot;},&quot;name&quot;:&quot;system_execute_sql&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_0188JJNySnYe5ChnLisuc2gs&quot;,&quot;type&quot;:&quot;system_execute_sql&quot;},&quot;type&quot;:&quot;tool_use&quot;},{&quot;tool_result&quot;:{&quot;content&quot;:[{&quot;json&quot;:{&quot;query_id&quot;:&quot;01c7468a-0107-2694-0002-0716066c0f36&quot;,&quot;result_set&quot;:{&quot;data&quot;:[[&quot;89.859999999999999&quot;,&quot;207&quot;]],&quot;resultSetMetaData&quot;:{&quot;format&quot;:&quot;jsonv2&quot;,&quot;numRows&quot;:1,&quot;partition&quot;:0,&quot;partitionInfo&quot;:[{&quot;rowCount&quot;:1,&quot;uncompressedSize&quot;:39}],&quot;rowType&quot;:[{&quot;length&quot;:0,&quot;name&quot;:&quot;AVG_PURE_PREMIUM&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:0,&quot;scale&quot;:0,&quot;type&quot;:&quot;real&quot;},{&quot;length&quot;:0,&quot;name&quot;:&quot;N_POLICIES&quot;,&quot;nullable&quot;:false,&quot;precision&quot;:18,&quot;scale&quot;:0,&quot;type&quot;:&quot;fixed&quot;}]},&quot;statementHandle&quot;:&quot;01c7468a-0107-2694-0002-0716066c0f36&quot;},&quot;semantic_model_path&quot;:&quot;FREMTPL2.FREMTPL2_INVESTIGATION.INSURANCE_RATING_ANALYTICS&quot;,&quot;sql&quot;:&quot;WITH __freq_model_features AS (\n  SELECT\n    area,\n    drivage,\n    idpol,\n    vehage\n  FROM FREMTPL2.FREMTPL2_INVESTIGATION.FREQ_MODEL_FEATURES\n), __pure_premium AS (\n  SELECT\n    idpol,\n    pure_premium\n  FROM FREMTPL2.FREMTPL2_INVESTIGATION.PURE_PREMIUM\n)\nSELECT\n  ROUND(AVG(p.pure_premium), 2) AS avg_pure_premium,\n  COUNT(*) AS n_policies\nFROM __freq_model_features AS f\nJOIN __pure_premium AS p\n  ON f.idpol = p.idpol\nWHERE\n  f.drivage = 30 AND f.vehage = 5 AND f.area = &#x27;D&#x27; /* Generated by Cortex */;&quot;},&quot;type&quot;:&quot;json&quot;}],&quot;name&quot;:&quot;system_execute_sql&quot;,&quot;status&quot;:&quot;success&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_0188JJNySnYe5ChnLisuc2gs&quot;,&quot;type&quot;:&quot;system_execute_sql&quot;},&quot;type&quot;:&quot;tool_result&quot;},{&quot;thinking&quot;:{&quot;text&quot;:&quot;Result: avg pure premium = 89.86 across 207 policies.&quot;},&quot;type&quot;:&quot;thinking&quot;},{&quot;text&quot;:&quot;The average pure premium for a 30-year-old driver with a 5-year-old car in area D is **€89.86**, based on 207 matching policies in the portfolio.\n\nThis figure represents the annual expected claim cost per policy (predicted frequency × predicted severity) averaged across all policies fitting that exact risk profile.&quot;,&quot;type&quot;:&quot;text&quot;},{&quot;suggested_queries&quot;:[{&quot;query&quot;:&quot;How does the average pure premium for this profile compare across all areas (A through F)?&quot;},{&quot;query&quot;:&quot;What are the individual frequency and severity relativities for a 30-year-old driver, a 5-year-old car, and area D?&quot;},{&quot;query&quot;:&quot;How does the average pure premium for this profile break down by fuel type and vehicle brand?&quot;}],&quot;type&quot;:&quot;suggested_queries&quot;}],&quot;metadata&quot;:{&quot;assistant_message_id&quot;:570741024307842,&quot;run_id&quot;:&quot;8708817633-570741024305186&quot;,&quot;thread_id&quot;:8708817633,&quot;usage&quot;:{&quot;tokens_consumed&quot;:[{&quot;context_window&quot;:1000000,&quot;input_tokens&quot;:{&quot;cache_read&quot;:50850,&quot;cache_write&quot;:28258,&quot;total&quot;:79114,&quot;uncached&quot;:6},&quot;model_name&quot;:&quot;claude-opus-4-8&quot;,&quot;model_role&quot;:&quot;orchestration&quot;,&quot;output_tokens&quot;:{&quot;total&quot;:588}}]},&quot;user_message_id&quot;:570741024305186},&quot;role&quot;:&quot;assistant&quot;,&quot;schema_version&quot;:&quot;v2&quot;,&quot;sequence_number&quot;:72,&quot;status&quot;:&quot;completed&quot;}">{&quot;content&quot;:[{&quot;thinking&quot;:{&quot;text&quot;:&quot;This question looks like a verified query. Let me get a better understanding of the semantic context.&quot;},&quot;type&quot;:&quot;thinking&quot;},{&quot;tool_use&quot;:{&quot;client_side_execute&quot;:false,&quot;input&quot;:{},&quot;name&quot;:&quot;rating_analytics&quot;,&quot;tool_use_id&quot;:&quot;tooluse_b651d0b0906745df9c98f6&quot;,&quot;type&quot;:&quot;system_agentic_semantic_context&quot;},&quot;type&quot;:&quot;tool_use&quot;},{&quot;tool_result&quot;:{&quot;content&quot;:[{&quot;json&quot;:{&quot;pruned_note&quot;:&quot;**Note**: This semantic model fits within the agent&#x27;s token budget, so it is shown in full. You do not need to set pruning_question on future calls referencing this same semantic model.&quot;,&quot;relationships&quot;:[{&quot;join_type&quot;:&quot;inner&quot;,&quot;left_table&quot;:&quot;freq_model_features&quot;,&quot;name&quot;:&quot;FREQ_MODEL_FEATURES_TO_PURE_PREMIUM&quot;,&quot;relationship_columns&quot;:[{&quot;left_column&quot;:&quot;idpol&quot;,&quot;right_column&quot;:&quot;idpol&quot;}],&quot;relationship_type&quot;:&quot;one_to_one&quot;,&quot;right_table&quot;:&quot;pure_premium&quot;}],&quot;semantic_model_description&quot;:&quot;Insurance pricing analytics for the French MTPL2 portfolio. Contains GLM rating relativities (exp(coefficient)) from Poisson frequency and Gamma severity models, policy-level pure premiums (frequency x severity), model validation decile analysis (actual vs expected), and policy risk factor features. Supports questions about rating factors, technical premiums, model performance, and risk segmentation.&quot;,&quot;semantic_model_key&quot;:&quot;rating_analytics&quot;,&quot;semantic_model_name&quot;:&quot;insurance_rating_analytics&quot;,&quot;semantic_view_fqn&quot;:&quot;FREMTPL2.FREMTPL2_INVESTIGATION.INSURANCE_RATING_ANALYTICS&quot;,&quot;sql_best_practices&quot;:&quot;## SQL Generation Rules and Best Practices\n\n**CRITICAL — Ambiguity Gate (check BEFORE writing SQL):**\nIf the user&#x27;s question contains a business term that could map to more than one metric or dimension in the semantic model, STOP and do the following:\n1. Check the [Additional Instructions] section of your system prompt for an ambiguous terms table or clarification rules.\n2. If those instructions say to ask for clarification, you MUST respond with a clarification question to the user. Do NOT generate SQL. Do NOT pick what seems \&quot;most likely.\&quot;\n3. Only generate SQL if the term unambiguously maps to exactly one metric, or if no clarification rules exist in the Additional Instructions.\nViolating this gate by guessing a metric when clarification is required will produce incorrect results for the user.\n\nYou can write SQL against the provided semantic model to retrieve data. When doing so, you are an expert data scientist well-versed in BI concepts and your goal is to write accurate, readable queries to fetch the relevant data. Use the following sections as guidelines for your task.\n\nThe semantic model is explained in section 1. Standard SQL (using logical names from the semantic model, which are postprocessed to physical SQL) is detailed in section 2. General SQL rules are in section 3.\n\n### 1. How to use the Semantic Model\n\nA semantic model is intended to provide additional information about the relevant entities that you may want to query for an analysis.\n\nA semantic model is comprised of a set of logical tables. A logical table maps onto an actual SQL table or view, called a base table. Each logical table is comprised of facts, dimensions, and metrics.\n\n- **Facts** are row-level quantitative values (e.g., sales amount, quantity, cost). They are unaggregated and exist at the granularity of the table.\n- **Dimensions** are categorical attributes used to group, filter, and slice data (e.g., region, product category, date). They provide context to metrics. They are commonly used to GROUP BY.\n- **Metrics** are aggregations over facts using functions like SUM, AVG, COUNT. They represent business KPIs. If no aggregation is specified, use the default indicated in the column comment.\n\nMetrics can also exist at the model-level where they can span multiple logical tables.\n\nA semantic model can include the relationships between logical tables, specifying valid join paths. Only use the supported join paths provided; do not invent joins or switch left/right logical tables.\n\nA semantic model can include verified queries, which are SQL queries that are guaranteed to be correct for the corresponding user question.\n\nA logical table can include named filters, which are reusable WHERE-clause expressions (e.g., `is_active = TRUE`). Use these filters in your SQL when they match the user&#x27;s intent rather than writing equivalent expressions from scratch.\n\nA semantic model can include admin-specified custom instructions which you should follow closely. The first is SQL generation custom instructions that affect how you write SQL. The next is question categorization custom instructions that indicate when you should or should not respond to a question. Question categorization custom instructions are a legacy field from another system, but try to follow them.\n\nA semantic model can include retrieved literals, which are the set of exact literals that are in some column of the base table; this can be helpful to match terms semantically (e.g. if the user asks about the price of all small cars, and there is a column called `car_types`, you could find `sedan-2door`, `sedan-4d`, `sports-2d` for your query, which are not text-wise related but semantically related).\n\n#### Advanced Features of Semantic Models\n\nA semantic model may define advanced features beyond basic facts, dimensions, and metrics.\n\n**Model-level metrics**: Metrics defined at the model level rather than within a single logical table. These metrics may span multiple tables. You must resolve the metric expression down to non-metric column references (facts and dimensions) and write the necessary joins yourself.\n\n**Asof joins**: A semantic model may contain **asof** relationship keys. Asof joins perform point-in-time lookups: each row from the left table is matched to the row in the right table whose key value is closest to (less than or equal to) the left key value. Use Snowflake&#x27;s `ASOF JOIN ... MATCH_CONDITION(left.col &gt;= right.col) ON equi_conditions` syntax as shown in the supported join paths.\n\n**Range joins**: A semantic model may contain **range** relationship keys. Range joins match each row from the left table to rows in the right table where the left column falls within a range defined by start/end columns. Use the non-equi join conditions as shown in the supported join paths (e.g., `(start_col IS NULL OR left_col &gt;= start_col) AND (end_col IS NULL OR left_col &lt; end_col)`).\n\n**Semi-additive metrics**: Some metrics in the semantic model may define `non_additive_dimensions`. These indicate the metric is **semi-additive** (e.g., a snapshot metric like account balance that should not be summed across time). Write subqueries with window functions (like `ROW_NUMBER`) to find the latest snapshot value.\n\n### 2. Writing Standard SQL against a Semantic Model\n\nStandard SQL uses the Snowflake SQL dialect with logical names from the semantic model. In this mode, you write queries using the logical table and column names (dimensions, facts, time_dimensions) defined in the semantic model. The SQL will be automatically postprocessed to resolve to physical table and column names before execution.\n\n- **Use Semantic Model Column Names**: ALWAYS use column names from the semantic model (dimensions and facts). The SQL will be automatically postprocessed to resolve to physical column names.\n- **Reference Logical Tables**: Use the logical table names from the semantic model with a `__` prefix. Do NOT use fully qualified physical table names (e.g., use `__orders` not `orders` or `DATABASE.SCHEMA.ORDERS`). This prefix is required for all table references, including in FROM, JOIN, and column qualifiers (e.g., `__orders.order_total`).\n- **Always query logical tables, not the underlying base tables**: The base tables can only be accessed through the logical tables using logical SQL. If you encounter errors running logical SQL, fix the query — do not fall back to querying base tables directly.\n- **Do not rewrite logical table CTEs**: The postprocessing step creates CTEs in the final SQL like `WITH __logical_table AS (SELECT ... FROM DB.SCH.BASE_TABLE)` to resolve the logical tables. You should NOT write these CTEs again on subsequent turns, as the SQL you write on logical tables in subsequent turns will be postprocessed to get the CTEs back. You can fully ignore those logical table CTEs.\n- **Identify metrics**: Metrics are typically calculations upon facts. If no specific aggregation mentioned, use the default aggregation indicated in the column comment.\n- **Identify dimensions for GROUP BY**: Dimensions provide context to data - they are descriptive attributes used to slice and dice data (e.g., geography, product categories, customer segments).\n- **Identify facts**: Facts are quantitative data that can be aggregated, summed, averaged, or counted. They are typically numeric fields.\n- **Count Correctly**: In single-table queries, use COUNT(DISTINCT column) for dimension columns that may have duplicate values. Use COUNT(column) without DISTINCT only if the column has unique values like a primary key.\n\nNote that you are not allowed to use all of the Snowflake SQL dialect, which is detailed in Section 3.\n\n### 3. Rules for SQL Generation\n\nAcross all queries you write, you should keep in mind these guidelines when they are relevant.\n\n**Current Date: 2026-09-24 (i.e., today is September 24, 2026)** - Use this as reference for relative time filters.\n\n#### Aggregation and Granularity\n- The primary key defines data granularity. When calculating metrics on different granularity, ALWAYS use GROUP BY to ensure correct aggregation.\n- Every column in SELECT must either have an aggregation function OR be included in GROUP BY.\n- Use PARTITION BY for window functions as needed.\n\n#### Time Series Analysis\n\n**IMPORTANT: ALWAYS use CURRENT_DATE (or CURRENT_TIMESTAMP) in SQL for any reference to \&quot;today\&quot;, \&quot;now\&quot;, or the current date. Do NOT hardcode specific date literals like &#x27;2026-03-22&#x27;. The current date provided above is for interpreting ambiguous time references only (e.g., inferring the year when not specified).**\n\n##### Current Date Reference\n- If a question asks about a specific month without a year (e.g., \&quot;sales for March\&quot;), assume the current year 2026.\n\n##### Time Frequency Conversion\n- For questions requiring time aggregation at different frequency than provided, use DATE_TRUNC() to convert and aggregate facts properly with GROUP BY.\n- To compare time to a NUMBER column, use DATE_PART() to extract year/month/day from a timestamp.\n- For day of week, use DAYOFWEEK() function.\n\n##### Calendar Time Units (week, month, year)\n- If the user asks about \&quot;last week\&quot;, \&quot;this month\&quot;, \&quot;last year\&quot;, ALWAYS assume they mean the CALENDAR unit:\n  - \&quot;last week\&quot;: DATE &gt;= DATE_TRUNC(&#x27;week&#x27;, CURRENT_DATE - INTERVAL &#x27;1 week&#x27;) AND DATE &lt; DATE_TRUNC(&#x27;week&#x27;, CURRENT_DATE)\n  - \&quot;this month\&quot;: DATE &gt;= DATE_TRUNC(&#x27;month&#x27;, CURRENT_DATE)\n  - \&quot;last year\&quot;: DATE &gt;= DATE_TRUNC(&#x27;year&#x27;, CURRENT_DATE - INTERVAL &#x27;1 year&#x27;) AND DATE &lt; DATE_TRUNC(&#x27;year&#x27;, CURRENT_DATE)\n\n##### Past N Days\n- If the user asks \&quot;past X days\&quot; or \&quot;last X days\&quot;, use: DATE &gt;= DATEADD(day, -X, CURRENT_DATE)\n\n##### References to \&quot;Today\&quot; or \&quot;Now\&quot;\n- If the user mentions \&quot;today\&quot;, \&quot;as of today\&quot;, \&quot;to today\&quot;, \&quot;up to now\&quot;, \&quot;until now\&quot;, or similar, ALWAYS use CURRENT_DATE in SQL.\n  - Example: \&quot;from June 2025 to today\&quot; → DATE &gt;= &#x27;2025-06-01&#x27; AND DATE &lt;= CURRENT_DATE\n  - Example: \&quot;sales up to today\&quot; → DATE &lt;= CURRENT_DATE\n- Do NOT resolve \&quot;today\&quot; to a hardcoded date literal.\n\n##### Period-over-Period (DoD, MoM, YoY)\n- ALWAYS include current period, previous period, current value, and previous value in output columns.\n- Calculate BOTH absolute change AND percentage change unless specified otherwise.\n- DO NOT use LEAD() or LAG() for previous period values - these assume consecutive time data which may not be true.\n- Use self-joins or CTEs instead:\n```sql\nSELECT\n    curr.date AS curr_date,\n    prev.date AS prev_date,\n    curr.value AS curr_value,\n    prev.value AS prev_value,\n    curr.value - prev.value AS change,\n    (curr.value - prev.value) / NULLIF(prev.value, 0) AS pct_change\nFROM daily_table AS curr\nLEFT JOIN daily_table AS prev ON curr.date = prev.date + INTERVAL &#x27;1 day&#x27;\nORDER BY curr_date DESC NULLS LAST;\n```\n\n##### Rolling Window Metrics\n- For rolling metrics, ALWAYS: (1) aggregate by day/time granularity first, (2) create CTE to compute rolling metrics, (3) filter to time period last.\n```sql\nWITH daily_sales AS (\n    SELECT date, SUM(sales) AS daily_sales FROM table GROUP BY date\n),\nrolling_avg AS (\n    SELECT date, AVG(daily_sales) OVER (ORDER BY date ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS rolling_avg_3d\n    FROM daily_sales\n)\nSELECT * FROM rolling_avg WHERE DATE_PART(&#x27;YEAR&#x27;, date) = 2026 ORDER BY date DESC NULLS LAST;\n```\n\n##### Missing Time Period\n- If no time range is specified, assume the ENTIRE available time period in the data.\n- Include MIN(date) as start_date and MAX(date) as end_date in output to show the time range used.\n\n#### Ranking, Sorting, and Top-K\n\n##### Sorting\n- When sorting by highest/lowest metric, ALWAYS include NULLS LAST: ORDER BY ratio DESC NULLS LAST\n- For time series without specific sorting, default to sorting time DESCENDING to show latest information first.\n\n##### Top K Queries\n- For simple top-K without partitions: use ORDER BY ... LIMIT K\n- For top-K within partitions (e.g., \&quot;top 5 per month\&quot;): use RANK() or ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)\n```sql\nWITH ranked AS (\n    SELECT *, RANK() OVER (PARTITION BY month ORDER BY sales DESC NULLS LAST) AS rnk\n    FROM monthly_sales\n)\nSELECT * FROM ranked WHERE rnk &lt;= 5 ORDER BY month DESC, rnk NULLS LAST;\n```\n\n#### Joins and Relationships\n\n##### Choosing the JOIN type (LEFT vs INNER)\nThe JOIN type must match the question&#x27;s granularity:\n\n- **Identify the driving table first** — the entity in phrases like \&quot;for each X\&quot;, \&quot;every X\&quot;, \&quot;per X\&quot;, or \&quot;show me each X&#x27;s ...\&quot;. Put it in `FROM`; join everything else to it. The driving table MUST be the table named in `FROM`, never one joined onto another via `JOIN` — the driving table on the wrong side of a `LEFT JOIN` still drops its rows.\n- **`LEFT JOIN`** related tables onto the driving table when the question asks about *every* / *all* / *for each* of the driving entity. This preserves driving-entity rows that have no matching related row. Handle the resulting NULLs explicitly in aggregates (`COALESCE`, or `CASE WHEN COUNT(...) = 0 THEN NULL ELSE ... END`).\n- **`INNER JOIN`** ONLY when the question explicitly restricts to rows *with* related data (\&quot;X **with** Y\&quot;, \&quot;X **that have** Y\&quot;), or when a metric formula requires the related row to exist (e.g., a ratio whose denominator comes from the joined table).\n- **Never** use `INNER JOIN` to \&quot;filter out NULLs\&quot; implicitly — that silently drops rows the user wanted to see. If you need to filter NULLs, do it explicitly with `WHERE x IS NOT NULL`.\n- When in doubt between LEFT and INNER, prefer LEFT — silently dropping rows is a worse failure mode than including a row with NULL aggregates.\n\n```sql\n-- For \&quot;show me the order count for each customer\&quot;:\n-- WRONG: __customers is on the right side of LEFT JOIN, so customers without orders are dropped\nSELECT c.id, COUNT(o.id) FROM __orders o LEFT JOIN __customers c ON o.cust_id = c.id GROUP BY c.id;\n\n-- CORRECT: __customers (the driving entity) is on the left\nSELECT c.id, COUNT(o.id) FROM __customers c LEFT JOIN __orders o ON o.cust_id = c.id GROUP BY c.id;\n```\n\n##### Other join rules\n- Use ONLY the supported join paths provided in the semantic model.\n- When joining multiple tables, assign aliases and ALWAYS qualify columns with table alias in ALL clauses.\n- Avoid joins in subqueries; use CTEs instead.\n- Be aware of data granularity: when joining one-to-many or many-to-many, consider data duplication during aggregations.\n- Extract unique records when necessary to avoid double-counting:\n```sql\n-- WRONG: AVG(income) on joined table counts each customer multiple times\n-- CORRECT: Extract unique customers first, then aggregate\nWITH unique_customers AS (\n    SELECT DISTINCT customer_id, income, region FROM orders o JOIN customers c ON ...\n)\nSELECT region, AVG(income) FROM unique_customers GROUP BY region;\n```\n\n#### Handling Text and Literal Values\n- **Use sample_values for exact matching**: Dimensions include sample_values showing actual data values. Use these to match user-mentioned entities:\n  - If user says \&quot;California\&quot;, check sample_values to see if values are \&quot;CA\&quot;, \&quot;California\&quot;, \&quot;CALIFORNIA\&quot;, etc.\n  - If user mentions a product name, find the closest match in sample_values\n- **Case-Insensitive Matching**: Use ILIKE instead of LIKE or = when exact case is uncertain\n- **Pattern Matching**: Use ILIKE &#x27;%pattern%&#x27; to find partial matches when sample_values don&#x27;t have an exact match\n- **Escape single quotes**: Use two single quotes (&#x27;&#x27;) to escape literal single quotes in strings\n\n#### Ratios and Percentages\n- DO NOT multiply by 100 for ratio/percentage calculations. Keep numbers as decimals.\n\n#### Error Prevention and Snowflake Syntax\n- When creating table or column aliases, avoid Snowflake SQL keywords (e.g., \&quot;to\&quot;, \&quot;date\&quot;, \&quot;order\&quot;)\n- Handle NULL values with COALESCE(column, default_value)\n- Use NULLIF to prevent division by zero: value / NULLIF(denominator, 0)\n- Use double quotes for case-sensitive identifiers: \&quot;ColumnName\&quot;\n- Use FLATTEN() for semi-structured/array data\n- Use QUALIFY for post-aggregation filtering with window functions\n- Use TRY_CAST or TRY_TO_NUMBER for safe type conversions\n&quot;,&quot;tables&quot;:[{&quot;dimensions&quot;:[{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;actual_claims&quot;,&quot;name&quot;:&quot;actual_claims&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;cum_actual&quot;,&quot;name&quot;:&quot;cum_actual&quot;},{&quot;data_type&quot;:&quot;NUMBER(18,0)&quot;,&quot;expr&quot;:&quot;decile&quot;,&quot;name&quot;:&quot;decile&quot;},{&quot;data_type&quot;:&quot;NUMBER(18,0)&quot;,&quot;expr&quot;:&quot;n_policies&quot;,&quot;name&quot;:&quot;n_policies&quot;}],&quot;facts&quot;:[{&quot;data_type&quot;:&quot;NUMBER(38,6)&quot;,&quot;expr&quot;:&quot;actual_freq&quot;,&quot;name&quot;:&quot;actual_freq&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;ae_ratio&quot;,&quot;name&quot;:&quot;ae_ratio&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;avg_pure_premium&quot;,&quot;name&quot;:&quot;avg_pure_premium&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,2)&quot;,&quot;expr&quot;:&quot;cum_actual_pct&quot;,&quot;name&quot;:&quot;cum_actual_pct&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;cum_expected&quot;,&quot;name&quot;:&quot;cum_expected&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,2)&quot;,&quot;expr&quot;:&quot;cum_population_pct&quot;,&quot;name&quot;:&quot;cum_population_pct&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;expected_claims&quot;,&quot;name&quot;:&quot;expected_claims&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;expected_freq&quot;,&quot;name&quot;:&quot;expected_freq&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,2)&quot;,&quot;expr&quot;:&quot;total_exposure&quot;,&quot;name&quot;:&quot;total_exposure&quot;}],&quot;name&quot;:&quot;ave_decile_test&quot;},{&quot;dimensions&quot;:[{&quot;data_type&quot;:&quot;VARCHAR(16777216)&quot;,&quot;expr&quot;:&quot;area&quot;,&quot;name&quot;:&quot;area&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;bonusmalus&quot;,&quot;name&quot;:&quot;bonusmalus&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;bonusmalus_capped&quot;,&quot;name&quot;:&quot;bonusmalus_capped&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;claimnb&quot;,&quot;name&quot;:&quot;claimnb&quot;},{&quot;data_type&quot;:&quot;VARCHAR(5)&quot;,&quot;expr&quot;:&quot;dataset&quot;,&quot;name&quot;:&quot;dataset&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;density&quot;,&quot;name&quot;:&quot;density&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;drivage&quot;,&quot;name&quot;:&quot;drivage&quot;},{&quot;data_type&quot;:&quot;VARCHAR(5)&quot;,&quot;expr&quot;:&quot;drivage_band&quot;,&quot;name&quot;:&quot;drivage_band&quot;},{&quot;data_type&quot;:&quot;NUMBER(1,0)&quot;,&quot;expr&quot;:&quot;has_claim&quot;,&quot;name&quot;:&quot;has_claim&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;idpol&quot;,&quot;name&quot;:&quot;idpol&quot;},{&quot;data_type&quot;:&quot;VARCHAR(16777216)&quot;,&quot;expr&quot;:&quot;region&quot;,&quot;name&quot;:&quot;region&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;vehage&quot;,&quot;name&quot;:&quot;vehage&quot;},{&quot;data_type&quot;:&quot;VARCHAR(5)&quot;,&quot;expr&quot;:&quot;vehage_band&quot;,&quot;name&quot;:&quot;vehage_band&quot;},{&quot;data_type&quot;:&quot;VARCHAR(16777216)&quot;,&quot;expr&quot;:&quot;vehbrand&quot;,&quot;name&quot;:&quot;vehbrand&quot;},{&quot;data_type&quot;:&quot;VARCHAR(16777216)&quot;,&quot;expr&quot;:&quot;vehgas&quot;,&quot;name&quot;:&quot;vehgas&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;vehpower&quot;,&quot;name&quot;:&quot;vehpower&quot;}],&quot;facts&quot;:[{&quot;data_type&quot;:&quot;NUMBER(38,9)&quot;,&quot;expr&quot;:&quot;exposure&quot;,&quot;name&quot;:&quot;exposure&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;ln_density&quot;,&quot;name&quot;:&quot;ln_density&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;predicted_freq&quot;,&quot;name&quot;:&quot;predicted_freq&quot;}],&quot;name&quot;:&quot;freq_model_features&quot;,&quot;primary_key&quot;:[&quot;idpol&quot;]},{&quot;dimensions&quot;:[{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;claimnb&quot;,&quot;name&quot;:&quot;claimnb&quot;},{&quot;data_type&quot;:&quot;VARCHAR(5)&quot;,&quot;expr&quot;:&quot;dataset&quot;,&quot;name&quot;:&quot;dataset&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;idpol&quot;,&quot;name&quot;:&quot;idpol&quot;},{&quot;data_type&quot;:&quot;NUMBER(18,0)&quot;,&quot;expr&quot;:&quot;n_claims_actual&quot;,&quot;name&quot;:&quot;n_claims_actual&quot;}],&quot;facts&quot;:[{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;avg_actual_sev&quot;,&quot;name&quot;:&quot;avg_actual_sev&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,9)&quot;,&quot;expr&quot;:&quot;exposure&quot;,&quot;name&quot;:&quot;exposure&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;predicted_freq&quot;,&quot;name&quot;:&quot;predicted_freq&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;predicted_sev&quot;,&quot;name&quot;:&quot;predicted_sev&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;pure_premium&quot;,&quot;name&quot;:&quot;pure_premium&quot;}],&quot;name&quot;:&quot;pure_premium&quot;,&quot;primary_key&quot;:[&quot;idpol&quot;]},{&quot;dimensions&quot;:[{&quot;data_type&quot;:&quot;VARCHAR(16777216)&quot;,&quot;expr&quot;:&quot;factor_level&quot;,&quot;name&quot;:&quot;factor_level&quot;},{&quot;data_type&quot;:&quot;VARCHAR(9)&quot;,&quot;expr&quot;:&quot;model&quot;,&quot;name&quot;:&quot;model&quot;},{&quot;data_type&quot;:&quot;VARCHAR(17)&quot;,&quot;expr&quot;:&quot;risk_factor&quot;,&quot;name&quot;:&quot;risk_factor&quot;},{&quot;data_type&quot;:&quot;VARCHAR(3)&quot;,&quot;expr&quot;:&quot;significance&quot;,&quot;name&quot;:&quot;significance&quot;}],&quot;facts&quot;:[{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;estimate&quot;,&quot;name&quot;:&quot;estimate&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;p_value&quot;,&quot;name&quot;:&quot;p_value&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;relativity&quot;,&quot;name&quot;:&quot;relativity&quot;}],&quot;name&quot;:&quot;rating_table&quot;}],&quot;verified_queries&quot;:[{&quot;question&quot;:&quot;What are the frequency rating relativities for each risk factor level?&quot;,&quot;sql&quot;:&quot;SELECT risk_factor, factor_level, relativity, significance FROM __rating_table WHERE model = &#x27;FREQUENCY&#x27; AND NOT risk_factor IN (&#x27;Intercept&#x27;, &#x27;VEHPOWER&#x27;, &#x27;BONUSMALUS_CAPPED&#x27;, &#x27;LN_DENSITY&#x27;) ORDER BY risk_factor, factor_level&quot;},{&quot;question&quot;:&quot;What are the severity rating relativities for each risk factor level?&quot;,&quot;sql&quot;:&quot;SELECT risk_factor, factor_level, relativity, significance FROM __rating_table WHERE model = &#x27;SEVERITY&#x27; AND NOT risk_factor IN (&#x27;Intercept&#x27;, &#x27;VEHPOWER&#x27;, &#x27;BONUSMALUS_CAPPED&#x27;, &#x27;LN_DENSITY&#x27;) ORDER BY risk_factor, factor_level&quot;},{&quot;question&quot;:&quot;What are the combined frequency and severity relativities for each rating factor level?&quot;,&quot;sql&quot;:&quot;SELECT r1.risk_factor, r1.factor_level, r1.relativity AS freq_relativity, r2.relativity AS sev_relativity, ROUND(r1.relativity * r2.relativity, 4) AS combined_relativity FROM __rating_table AS r1 JOIN __rating_table AS r2 ON r1.risk_factor = r2.risk_factor AND r1.factor_level = r2.factor_level WHERE r1.model = &#x27;FREQUENCY&#x27; AND r2.model = &#x27;SEVERITY&#x27; ORDER BY r1.risk_factor, r1.factor_level&quot;},{&quot;question&quot;:&quot;What is the relativity for each driver age band?&quot;,&quot;sql&quot;:&quot;SELECT risk_factor, factor_level, model, relativity FROM __rating_table WHERE risk_factor = &#x27;DRIVAGE_BAND&#x27; ORDER BY model, factor_level&quot;},{&quot;question&quot;:&quot;Which rating factors have the biggest impact on claim frequency?&quot;,&quot;sql&quot;:&quot;SELECT risk_factor, factor_level, model, ABS(estimate) AS abs_effect, relativity FROM __rating_table WHERE model = &#x27;FREQUENCY&#x27; ORDER BY ABS(estimate) DESC LIMIT 10&quot;},{&quot;question&quot;:&quot;How does model performance vary across risk deciles in terms of predicted versus actual claim frequency?&quot;,&quot;sql&quot;:&quot;SELECT decile, actual_freq, expected_freq, ae_ratio, avg_pure_premium FROM __ave_decile_test ORDER BY decile&quot;},{&quot;question&quot;:&quot;How do the average pure premiums and model predictions compare between the training and test datasets?&quot;,&quot;sql&quot;:&quot;SELECT dataset, COUNT(*) AS n_policies, ROUND(AVG(pure_premium), 2) AS avg_pure_premium, ROUND(AVG(predicted_freq), 6) AS avg_predicted_freq, ROUND(AVG(predicted_sev), 2) AS avg_predicted_sev FROM __pure_premium GROUP BY dataset ORDER BY dataset&quot;},{&quot;question&quot;:&quot;What is the average pure premium by driver age band and area?&quot;,&quot;sql&quot;:&quot;SELECT drivage_band, area, ROUND(AVG(pure_premium), 2) AS avg_pure_premium, COUNT(*) AS n_policies FROM __freq_model_features AS f JOIN __pure_premium AS p ON f.idpol = p.idpol GROUP BY drivage_band, area ORDER BY avg_pure_premium DESC&quot;}]},&quot;type&quot;:&quot;json&quot;}],&quot;name&quot;:&quot;rating_analytics&quot;,&quot;status&quot;:&quot;success&quot;,&quot;tool_use_id&quot;:&quot;tooluse_b651d0b0906745df9c98f6&quot;,&quot;type&quot;:&quot;system_agentic_semantic_context&quot;},&quot;type&quot;:&quot;tool_result&quot;},{&quot;thinking&quot;:{&quot;text&quot;:&quot;Driver age 30 → drivage_band. Vehicle age 5 → vehage_band. Area D. Let me query using drivage=30, vehage=5, area=&#x27;D&#x27;. But the bands: 30 falls in a band. Let me query by exact drivage and vehage.&quot;},&quot;type&quot;:&quot;thinking&quot;},{&quot;tool_use&quot;:{&quot;client_side_execute&quot;:false,&quot;input&quot;:{&quot;semantic_model&quot;:&quot;rating_analytics&quot;,&quot;sql&quot;:&quot;SELECT ROUND(AVG(p.pure_premium), 2) AS avg_pure_premium, COUNT(*) AS n_policies\nFROM __freq_model_features AS f\nJOIN __pure_premium AS p ON f.idpol = p.idpol\nWHERE f.drivage = 30 AND f.vehage = 5 AND f.area = &#x27;D&#x27;&quot;},&quot;name&quot;:&quot;system_execute_sql&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_0188JJNySnYe5ChnLisuc2gs&quot;,&quot;type&quot;:&quot;system_execute_sql&quot;},&quot;type&quot;:&quot;tool_use&quot;},{&quot;tool_result&quot;:{&quot;content&quot;:[{&quot;json&quot;:{&quot;query_id&quot;:&quot;01c7468a-0107-2694-0002-0716066c0f36&quot;,&quot;result_set&quot;:{&quot;data&quot;:[[&quot;89.859999999999999&quot;,&quot;207&quot;]],&quot;resultSetMetaData&quot;:{&quot;format&quot;:&quot;jsonv2&quot;,&quot;numRows&quot;:1,&quot;partition&quot;:0,&quot;partitionInfo&quot;:[{&quot;rowCount&quot;:1,&quot;uncompressedSize&quot;:39}],&quot;rowType&quot;:[{&quot;length&quot;:0,&quot;name&quot;:&quot;AVG_PURE_PREMIUM&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:0,&quot;scale&quot;:0,&quot;type&quot;:&quot;real&quot;},{&quot;length&quot;:0,&quot;name&quot;:&quot;N_POLICIES&quot;,&quot;nullable&quot;:false,&quot;precision&quot;:18,&quot;scale&quot;:0,&quot;type&quot;:&quot;fixed&quot;}]},&quot;statementHandle&quot;:&quot;01c7468a-0107-2694-0002-0716066c0f36&quot;},&quot;semantic_model_path&quot;:&quot;FREMTPL2.FREMTPL2_INVESTIGATION.INSURANCE_RATING_ANALYTICS&quot;,&quot;sql&quot;:&quot;WITH __freq_model_features AS (\n  SELECT\n    area,\n    drivage,\n    idpol,\n    vehage\n  FROM FREMTPL2.FREMTPL2_INVESTIGATION.FREQ_MODEL_FEATURES\n), __pure_premium AS (\n  SELECT\n    idpol,\n    pure_premium\n  FROM FREMTPL2.FREMTPL2_INVESTIGATION.PURE_PREMIUM\n)\nSELECT\n  ROUND(AVG(p.pure_premium), 2) AS avg_pure_premium,\n  COUNT(*) AS n_policies\nFROM __freq_model_features AS f\nJOIN __pure_premium AS p\n  ON f.idpol = p.idpol\nWHERE\n  f.drivage = 30 AND f.vehage = 5 AND f.area = &#x27;D&#x27; /* Generated by Cortex */;&quot;},&quot;type&quot;:&quot;json&quot;}],&quot;name&quot;:&quot;system_execute_sql&quot;,&quot;status&quot;:&quot;success&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_0188JJNySnYe5ChnLisuc2gs&quot;,&quot;type&quot;:&quot;system_execute_sql&quot;},&quot;type&quot;:&quot;tool_result&quot;},{&quot;thinking&quot;:{&quot;text&quot;:&quot;Result: avg pure premium = 89.86 across 207 policies.&quot;},&quot;type&quot;:&quot;thinking&quot;},{&quot;text&quot;:&quot;The average pure premium for a 30-year-old driver with a 5-year-old car in area D is **€89.86**, based on 207 matching policies in the portfolio.\n\nThis figure represents the annual expected claim cost per policy (predicted frequency × predicted severity) averaged across all policies fitting that exact risk profile.&quot;,&quot;type&quot;:&quot;text&quot;},{&quot;suggested_queries&quot;:[{&quot;query&quot;:&quot;How does the average pure premium for this profile compare across all areas (A through F)?&quot;},{&quot;query&quot;:&quot;What are the individual frequency and severity relativities for a 30-year-old driver, a 5-year-old car, and area D?&quot;},{&quot;query&quot;:&quot;How does the average pure premium for this profile break down by fuel type and vehicle brand?&quot;}],&quot;type&quot;:&quot;suggested_queries&quot;}],&quot;metadata&quot;:{&quot;assistant_message_id&quot;:570741024307842,&quot;run_id&quot;:&quot;8708817633-570741024305186&quot;,&quot;thread_id&quot;:8708817633,&quot;usage&quot;:{&quot;tokens_consumed&quot;:[{&quot;context_window&quot;:1000000,&quot;input_tokens&quot;:{&quot;cache_read&quot;:50850,&quot;cache_write&quot;:28258,&quot;total&quot;:79114,&quot;uncached&quot;:6},&quot;model_name&quot;:&quot;claude-opus-4-8&quot;,&quot;model_role&quot;:&quot;orchestration&quot;,&quot;output_tokens&quot;:{&quot;total&quot;:588}}]},&quot;user_message_id&quot;:570741024305186},&quot;role&quot;:&quot;assistant&quot;,&quot;schema_version&quot;:&quot;v2&quot;,&quot;sequence_number&quot;:72,&quot;status&quot;:&quot;completed&quot;}</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+</div>
+<div class="cell cell-python" data-index="42" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-python"/></svg>Python</span><span class="cell-counter">[35]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-python"><span class="tok-keyword">import</span> <span class="tok-variableName">json</span>
+<span class="tok-keyword tok-definitionKeyword">from</span> <span class="tok-variableName">IPython</span><span class="tok-operator">.</span><span class="tok-variableName">display</span> <span class="tok-keyword">import</span> <span class="tok-variableName">Markdown</span><span class="tok-punctuation">,</span> <span class="tok-variableName">display</span>
+
+<span class="tok-variableName">raw</span> <span class="tok-operator">=</span> <span class="tok-variableName">test_premium_profile</span><span class="tok-operator">.</span><span class="tok-propertyName">collect</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span><span class="tok-punctuation">[</span><span class="tok-number">0</span><span class="tok-punctuation">]</span><span class="tok-punctuation">[</span><span class="tok-string">&quot;AGENT_RESPONSE&quot;</span><span class="tok-punctuation">]</span>
+<span class="tok-variableName">obj</span> <span class="tok-operator">=</span> <span class="tok-variableName">json</span><span class="tok-operator">.</span><span class="tok-propertyName">loads</span><span class="tok-punctuation">(</span><span class="tok-variableName">raw</span><span class="tok-punctuation">)</span> <span class="tok-keyword">if</span> <span class="tok-variableName tok-functionName">isinstance</span><span class="tok-punctuation">(</span><span class="tok-variableName">raw</span><span class="tok-punctuation">,</span> <span class="tok-variableName">str</span><span class="tok-punctuation">)</span> <span class="tok-keyword">else</span> <span class="tok-variableName">raw</span>
+<span class="tok-variableName">text_parts</span> <span class="tok-operator">=</span> <span class="tok-punctuation">[</span><span class="tok-variableName">item</span><span class="tok-punctuation">[</span><span class="tok-string">&quot;text&quot;</span><span class="tok-punctuation">]</span> <span class="tok-keyword">for</span> <span class="tok-variableName">item</span> <span class="tok-keyword">in</span> <span class="tok-variableName">obj</span><span class="tok-operator">.</span><span class="tok-propertyName">get</span><span class="tok-punctuation">(</span><span class="tok-string">&quot;content&quot;</span><span class="tok-punctuation">,</span> <span class="tok-punctuation">[</span><span class="tok-punctuation">]</span><span class="tok-punctuation">)</span> <span class="tok-keyword">if</span> <span class="tok-variableName">item</span><span class="tok-operator">.</span><span class="tok-propertyName">get</span><span class="tok-punctuation">(</span><span class="tok-string">&quot;type&quot;</span><span class="tok-punctuation">)</span> <span class="tok-operator">==</span> <span class="tok-string">&quot;text&quot;</span><span class="tok-punctuation">]</span>
+<span class="tok-variableName tok-functionName">display</span><span class="tok-punctuation">(</span><span class="tok-variableName tok-functionName">Markdown</span><span class="tok-punctuation">(</span><span class="tok-string">&quot;\n\n&quot;</span><span class="tok-operator">.</span><span class="tok-propertyName">join</span><span class="tok-punctuation">(</span><span class="tok-variableName">text_parts</span><span class="tok-punctuation">)</span><span class="tok-punctuation">)</span><span class="tok-punctuation">)</span></code></pre></div></div>
+  <div class="cell-outputs"><div class="output-markdown"><p>The average pure premium for a 30-year-old driver with a 5-year-old car in area D is <strong>€89.86</strong>, based on 207 matching policies in the portfolio.</p>
+<p>This figure represents the annual expected claim cost per policy (predicted frequency × predicted severity) averaged across all policies fitting that exact risk profile.</p>
+</div></div>
+</div>
+<div class="cell cell-sql" data-index="43" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-sql"/></svg>SQL</span><span class="cell-counter">[36]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-sql"><span class="tok-comment">-- Test the agent: actual vs expected by decile</span>
+<span class="tok-keyword">SELECT</span> SNOWFLAKE.CORTEX.DATA_AGENT_RUN<span class="tok-punctuation">(</span>
+    <span class="tok-string">&#x27;FREMTPL2.FREMTPL2_INVESTIGATION.MTPL_RATING_AGENT&#x27;</span><span class="tok-punctuation">,</span>
+    <span class="tok-string">&#x27;{&quot;messages&quot;: [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: [{&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: &quot;Show the actual vs expected frequency by decile on the test set.&quot;}]}]}&#x27;</span><span class="tok-punctuation">,</span>
+    <span class="tok-bool">TRUE</span>
+<span class="tok-punctuation">)</span> <span class="tok-keyword">AS</span> AGENT_RESPONSE</code></pre></div></div>
+  <div class="cell-outputs"><div class="dg-container">
+  <div class="dg-toolbar">
+    <span class="dg-row-count" data-original="1 row">1 row</span>
+    <div class="dg-toolbar-actions">
+      <div class="dg-search" onmouseenter="dgSearchHover(this,true)" onmouseleave="dgSearchHover(this,false)">
+        <svg class="dg-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+        <input class="dg-search-input" type="text" placeholder="Search results" oninput="dgSearchTable(this)" onfocus="dgSearchFocus(this,true)" onblur="dgSearchFocus(this,false)" onkeydown="if(event.key==='Escape'){dgSearchClear(this)}">
+        <button class="dg-search-clear" onclick="dgSearchClear(this)" title="Clear search" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-clear-fill"/></svg>
+        </button>
+      </div>
+      <div class="dg-colsel-wrapper">
+        <button class="dg-colsel-btn" onclick="dgToggleColSel(this)" title="Column selection">
+          <svg viewBox="0 0 16 16" fill="currentColor"><use href="#icon-col-filter"/></svg>
+        </button>
+        <div class="dg-colsel-popover" hidden>
+          <div class="dg-colsel-search">
+            <svg class="dg-colsel-search-icon" viewBox="0 0 16 16" fill="currentColor"><use href="#icon-search"/></svg>
+            <input class="dg-colsel-search-input" type="text" placeholder="Search" oninput="dgColSelSearch(this)">
+          </div>
+          <label class="dg-colsel-item dg-colsel-all"><input type="checkbox" checked onchange="dgToggleAllCols(this)"><span class="dg-colsel-label">Select all</span></label>
+          <div class="dg-colsel-sep"></div>
+          <div class="dg-colsel-list"><label class="dg-colsel-item"><input type="checkbox" checked data-col="0" onchange="dgToggleCol(this)"><span class="dg-colsel-label">AGENT_RESPONSE</span></label></div>
+          <div class="dg-colsel-empty" hidden></div>
+          <div class="dg-colsel-sep"></div>
+          <button class="dg-colsel-apply" onclick="dgColSelApply(this)">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dg-scroll" style="max-height:64px">
+    <table class="dg-table">
+      <thead>
+        <tr><th class="dg-row-num"></th><th data-col-type="nominal"><div class="dg-col-header"><span class="dg-col-name">AGENT_RESPONSE</span><span class="dg-sort-arrow"></span><button class="dg-col-menu-btn" title="Column options" onclick="dgOpenColMenu(event,this,1)">&#8942;</button></div></th></tr>
+        <tr class="dg-stats-row" hidden><th class="dg-row-num"></th><th class="dg-stats-th"></th></tr>
+      </thead>
+      <tbody><tr><td class="dg-row-num">1</td><td><div class="dg-cell" data-raw="{&quot;content&quot;:[{&quot;thinking&quot;:{&quot;text&quot;:&quot;Let me query the AVE_DECILE_TEST table for actual vs expected frequency by decile.&quot;},&quot;type&quot;:&quot;thinking&quot;},{&quot;tool_use&quot;:{&quot;client_side_execute&quot;:false,&quot;input&quot;:{&quot;pruning_question&quot;:&quot;actual vs expected frequency by decile on test set&quot;},&quot;name&quot;:&quot;rating_analytics&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_018WAqNwTevyEDczPHpNxiaT&quot;,&quot;type&quot;:&quot;system_agentic_semantic_context&quot;},&quot;type&quot;:&quot;tool_use&quot;},{&quot;tool_result&quot;:{&quot;content&quot;:[{&quot;json&quot;:{&quot;pruned_note&quot;:&quot;**Note**: This semantic model fits within the agent&#x27;s token budget, so it is shown in full. You do not need to set pruning_question on future calls referencing this same semantic model.&quot;,&quot;relationships&quot;:[{&quot;join_type&quot;:&quot;inner&quot;,&quot;left_table&quot;:&quot;freq_model_features&quot;,&quot;name&quot;:&quot;FREQ_MODEL_FEATURES_TO_PURE_PREMIUM&quot;,&quot;relationship_columns&quot;:[{&quot;left_column&quot;:&quot;idpol&quot;,&quot;right_column&quot;:&quot;idpol&quot;}],&quot;relationship_type&quot;:&quot;one_to_one&quot;,&quot;right_table&quot;:&quot;pure_premium&quot;}],&quot;semantic_model_description&quot;:&quot;Insurance pricing analytics for the French MTPL2 portfolio. Contains GLM rating relativities (exp(coefficient)) from Poisson frequency and Gamma severity models, policy-level pure premiums (frequency x severity), model validation decile analysis (actual vs expected), and policy risk factor features. Supports questions about rating factors, technical premiums, model performance, and risk segmentation.&quot;,&quot;semantic_model_key&quot;:&quot;rating_analytics&quot;,&quot;semantic_model_name&quot;:&quot;insurance_rating_analytics&quot;,&quot;semantic_view_fqn&quot;:&quot;FREMTPL2.FREMTPL2_INVESTIGATION.INSURANCE_RATING_ANALYTICS&quot;,&quot;sql_best_practices&quot;:&quot;## SQL Generation Rules and Best Practices\n\n**CRITICAL — Ambiguity Gate (check BEFORE writing SQL):**\nIf the user&#x27;s question contains a business term that could map to more than one metric or dimension in the semantic model, STOP and do the following:\n1. Check the [Additional Instructions] section of your system prompt for an ambiguous terms table or clarification rules.\n2. If those instructions say to ask for clarification, you MUST respond with a clarification question to the user. Do NOT generate SQL. Do NOT pick what seems \&quot;most likely.\&quot;\n3. Only generate SQL if the term unambiguously maps to exactly one metric, or if no clarification rules exist in the Additional Instructions.\nViolating this gate by guessing a metric when clarification is required will produce incorrect results for the user.\n\nYou can write SQL against the provided semantic model to retrieve data. When doing so, you are an expert data scientist well-versed in BI concepts and your goal is to write accurate, readable queries to fetch the relevant data. Use the following sections as guidelines for your task.\n\nThe semantic model is explained in section 1. Standard SQL (using logical names from the semantic model, which are postprocessed to physical SQL) is detailed in section 2. General SQL rules are in section 3.\n\n### 1. How to use the Semantic Model\n\nA semantic model is intended to provide additional information about the relevant entities that you may want to query for an analysis.\n\nA semantic model is comprised of a set of logical tables. A logical table maps onto an actual SQL table or view, called a base table. Each logical table is comprised of facts, dimensions, and metrics.\n\n- **Facts** are row-level quantitative values (e.g., sales amount, quantity, cost). They are unaggregated and exist at the granularity of the table.\n- **Dimensions** are categorical attributes used to group, filter, and slice data (e.g., region, product category, date). They provide context to metrics. They are commonly used to GROUP BY.\n- **Metrics** are aggregations over facts using functions like SUM, AVG, COUNT. They represent business KPIs. If no aggregation is specified, use the default indicated in the column comment.\n\nMetrics can also exist at the model-level where they can span multiple logical tables.\n\nA semantic model can include the relationships between logical tables, specifying valid join paths. Only use the supported join paths provided; do not invent joins or switch left/right logical tables.\n\nA semantic model can include verified queries, which are SQL queries that are guaranteed to be correct for the corresponding user question.\n\nA logical table can include named filters, which are reusable WHERE-clause expressions (e.g., `is_active = TRUE`). Use these filters in your SQL when they match the user&#x27;s intent rather than writing equivalent expressions from scratch.\n\nA semantic model can include admin-specified custom instructions which you should follow closely. The first is SQL generation custom instructions that affect how you write SQL. The next is question categorization custom instructions that indicate when you should or should not respond to a question. Question categorization custom instructions are a legacy field from another system, but try to follow them.\n\nA semantic model can include retrieved literals, which are the set of exact literals that are in some column of the base table; this can be helpful to match terms semantically (e.g. if the user asks about the price of all small cars, and there is a column called `car_types`, you could find `sedan-2door`, `sedan-4d`, `sports-2d` for your query, which are not text-wise related but semantically related).\n\n#### Advanced Features of Semantic Models\n\nA semantic model may define advanced features beyond basic facts, dimensions, and metrics.\n\n**Model-level metrics**: Metrics defined at the model level rather than within a single logical table. These metrics may span multiple tables. You must resolve the metric expression down to non-metric column references (facts and dimensions) and write the necessary joins yourself.\n\n**Asof joins**: A semantic model may contain **asof** relationship keys. Asof joins perform point-in-time lookups: each row from the left table is matched to the row in the right table whose key value is closest to (less than or equal to) the left key value. Use Snowflake&#x27;s `ASOF JOIN ... MATCH_CONDITION(left.col &gt;= right.col) ON equi_conditions` syntax as shown in the supported join paths.\n\n**Range joins**: A semantic model may contain **range** relationship keys. Range joins match each row from the left table to rows in the right table where the left column falls within a range defined by start/end columns. Use the non-equi join conditions as shown in the supported join paths (e.g., `(start_col IS NULL OR left_col &gt;= start_col) AND (end_col IS NULL OR left_col &lt; end_col)`).\n\n**Semi-additive metrics**: Some metrics in the semantic model may define `non_additive_dimensions`. These indicate the metric is **semi-additive** (e.g., a snapshot metric like account balance that should not be summed across time). Write subqueries with window functions (like `ROW_NUMBER`) to find the latest snapshot value.\n\n### 2. Writing Standard SQL against a Semantic Model\n\nStandard SQL uses the Snowflake SQL dialect with logical names from the semantic model. In this mode, you write queries using the logical table and column names (dimensions, facts, time_dimensions) defined in the semantic model. The SQL will be automatically postprocessed to resolve to physical table and column names before execution.\n\n- **Use Semantic Model Column Names**: ALWAYS use column names from the semantic model (dimensions and facts). The SQL will be automatically postprocessed to resolve to physical column names.\n- **Reference Logical Tables**: Use the logical table names from the semantic model with a `__` prefix. Do NOT use fully qualified physical table names (e.g., use `__orders` not `orders` or `DATABASE.SCHEMA.ORDERS`). This prefix is required for all table references, including in FROM, JOIN, and column qualifiers (e.g., `__orders.order_total`).\n- **Always query logical tables, not the underlying base tables**: The base tables can only be accessed through the logical tables using logical SQL. If you encounter errors running logical SQL, fix the query — do not fall back to querying base tables directly.\n- **Do not rewrite logical table CTEs**: The postprocessing step creates CTEs in the final SQL like `WITH __logical_table AS (SELECT ... FROM DB.SCH.BASE_TABLE)` to resolve the logical tables. You should NOT write these CTEs again on subsequent turns, as the SQL you write on logical tables in subsequent turns will be postprocessed to get the CTEs back. You can fully ignore those logical table CTEs.\n- **Identify metrics**: Metrics are typically calculations upon facts. If no specific aggregation mentioned, use the default aggregation indicated in the column comment.\n- **Identify dimensions for GROUP BY**: Dimensions provide context to data - they are descriptive attributes used to slice and dice data (e.g., geography, product categories, customer segments).\n- **Identify facts**: Facts are quantitative data that can be aggregated, summed, averaged, or counted. They are typically numeric fields.\n- **Count Correctly**: In single-table queries, use COUNT(DISTINCT column) for dimension columns that may have duplicate values. Use COUNT(column) without DISTINCT only if the column has unique values like a primary key.\n\nNote that you are not allowed to use all of the Snowflake SQL dialect, which is detailed in Section 3.\n\n### 3. Rules for SQL Generation\n\nAcross all queries you write, you should keep in mind these guidelines when they are relevant.\n\n**Current Date: 2026-09-24 (i.e., today is September 24, 2026)** - Use this as reference for relative time filters.\n\n#### Aggregation and Granularity\n- The primary key defines data granularity. When calculating metrics on different granularity, ALWAYS use GROUP BY to ensure correct aggregation.\n- Every column in SELECT must either have an aggregation function OR be included in GROUP BY.\n- Use PARTITION BY for window functions as needed.\n\n#### Time Series Analysis\n\n**IMPORTANT: ALWAYS use CURRENT_DATE (or CURRENT_TIMESTAMP) in SQL for any reference to \&quot;today\&quot;, \&quot;now\&quot;, or the current date. Do NOT hardcode specific date literals like &#x27;2026-03-22&#x27;. The current date provided above is for interpreting ambiguous time references only (e.g., inferring the year when not specified).**\n\n##### Current Date Reference\n- If a question asks about a specific month without a year (e.g., \&quot;sales for March\&quot;), assume the current year 2026.\n\n##### Time Frequency Conversion\n- For questions requiring time aggregation at different frequency than provided, use DATE_TRUNC() to convert and aggregate facts properly with GROUP BY.\n- To compare time to a NUMBER column, use DATE_PART() to extract year/month/day from a timestamp.\n- For day of week, use DAYOFWEEK() function.\n\n##### Calendar Time Units (week, month, year)\n- If the user asks about \&quot;last week\&quot;, \&quot;this month\&quot;, \&quot;last year\&quot;, ALWAYS assume they mean the CALENDAR unit:\n  - \&quot;last week\&quot;: DATE &gt;= DATE_TRUNC(&#x27;week&#x27;, CURRENT_DATE - INTERVAL &#x27;1 week&#x27;) AND DATE &lt; DATE_TRUNC(&#x27;week&#x27;, CURRENT_DATE)\n  - \&quot;this month\&quot;: DATE &gt;= DATE_TRUNC(&#x27;month&#x27;, CURRENT_DATE)\n  - \&quot;last year\&quot;: DATE &gt;= DATE_TRUNC(&#x27;year&#x27;, CURRENT_DATE - INTERVAL &#x27;1 year&#x27;) AND DATE &lt; DATE_TRUNC(&#x27;year&#x27;, CURRENT_DATE)\n\n##### Past N Days\n- If the user asks \&quot;past X days\&quot; or \&quot;last X days\&quot;, use: DATE &gt;= DATEADD(day, -X, CURRENT_DATE)\n\n##### References to \&quot;Today\&quot; or \&quot;Now\&quot;\n- If the user mentions \&quot;today\&quot;, \&quot;as of today\&quot;, \&quot;to today\&quot;, \&quot;up to now\&quot;, \&quot;until now\&quot;, or similar, ALWAYS use CURRENT_DATE in SQL.\n  - Example: \&quot;from June 2025 to today\&quot; → DATE &gt;= &#x27;2025-06-01&#x27; AND DATE &lt;= CURRENT_DATE\n  - Example: \&quot;sales up to today\&quot; → DATE &lt;= CURRENT_DATE\n- Do NOT resolve \&quot;today\&quot; to a hardcoded date literal.\n\n##### Period-over-Period (DoD, MoM, YoY)\n- ALWAYS include current period, previous period, current value, and previous value in output columns.\n- Calculate BOTH absolute change AND percentage change unless specified otherwise.\n- DO NOT use LEAD() or LAG() for previous period values - these assume consecutive time data which may not be true.\n- Use self-joins or CTEs instead:\n```sql\nSELECT\n    curr.date AS curr_date,\n    prev.date AS prev_date,\n    curr.value AS curr_value,\n    prev.value AS prev_value,\n    curr.value - prev.value AS change,\n    (curr.value - prev.value) / NULLIF(prev.value, 0) AS pct_change\nFROM daily_table AS curr\nLEFT JOIN daily_table AS prev ON curr.date = prev.date + INTERVAL &#x27;1 day&#x27;\nORDER BY curr_date DESC NULLS LAST;\n```\n\n##### Rolling Window Metrics\n- For rolling metrics, ALWAYS: (1) aggregate by day/time granularity first, (2) create CTE to compute rolling metrics, (3) filter to time period last.\n```sql\nWITH daily_sales AS (\n    SELECT date, SUM(sales) AS daily_sales FROM table GROUP BY date\n),\nrolling_avg AS (\n    SELECT date, AVG(daily_sales) OVER (ORDER BY date ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS rolling_avg_3d\n    FROM daily_sales\n)\nSELECT * FROM rolling_avg WHERE DATE_PART(&#x27;YEAR&#x27;, date) = 2026 ORDER BY date DESC NULLS LAST;\n```\n\n##### Missing Time Period\n- If no time range is specified, assume the ENTIRE available time period in the data.\n- Include MIN(date) as start_date and MAX(date) as end_date in output to show the time range used.\n\n#### Ranking, Sorting, and Top-K\n\n##### Sorting\n- When sorting by highest/lowest metric, ALWAYS include NULLS LAST: ORDER BY ratio DESC NULLS LAST\n- For time series without specific sorting, default to sorting time DESCENDING to show latest information first.\n\n##### Top K Queries\n- For simple top-K without partitions: use ORDER BY ... LIMIT K\n- For top-K within partitions (e.g., \&quot;top 5 per month\&quot;): use RANK() or ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)\n```sql\nWITH ranked AS (\n    SELECT *, RANK() OVER (PARTITION BY month ORDER BY sales DESC NULLS LAST) AS rnk\n    FROM monthly_sales\n)\nSELECT * FROM ranked WHERE rnk &lt;= 5 ORDER BY month DESC, rnk NULLS LAST;\n```\n\n#### Joins and Relationships\n\n##### Choosing the JOIN type (LEFT vs INNER)\nThe JOIN type must match the question&#x27;s granularity:\n\n- **Identify the driving table first** — the entity in phrases like \&quot;for each X\&quot;, \&quot;every X\&quot;, \&quot;per X\&quot;, or \&quot;show me each X&#x27;s ...\&quot;. Put it in `FROM`; join everything else to it. The driving table MUST be the table named in `FROM`, never one joined onto another via `JOIN` — the driving table on the wrong side of a `LEFT JOIN` still drops its rows.\n- **`LEFT JOIN`** related tables onto the driving table when the question asks about *every* / *all* / *for each* of the driving entity. This preserves driving-entity rows that have no matching related row. Handle the resulting NULLs explicitly in aggregates (`COALESCE`, or `CASE WHEN COUNT(...) = 0 THEN NULL ELSE ... END`).\n- **`INNER JOIN`** ONLY when the question explicitly restricts to rows *with* related data (\&quot;X **with** Y\&quot;, \&quot;X **that have** Y\&quot;), or when a metric formula requires the related row to exist (e.g., a ratio whose denominator comes from the joined table).\n- **Never** use `INNER JOIN` to \&quot;filter out NULLs\&quot; implicitly — that silently drops rows the user wanted to see. If you need to filter NULLs, do it explicitly with `WHERE x IS NOT NULL`.\n- When in doubt between LEFT and INNER, prefer LEFT — silently dropping rows is a worse failure mode than including a row with NULL aggregates.\n\n```sql\n-- For \&quot;show me the order count for each customer\&quot;:\n-- WRONG: __customers is on the right side of LEFT JOIN, so customers without orders are dropped\nSELECT c.id, COUNT(o.id) FROM __orders o LEFT JOIN __customers c ON o.cust_id = c.id GROUP BY c.id;\n\n-- CORRECT: __customers (the driving entity) is on the left\nSELECT c.id, COUNT(o.id) FROM __customers c LEFT JOIN __orders o ON o.cust_id = c.id GROUP BY c.id;\n```\n\n##### Other join rules\n- Use ONLY the supported join paths provided in the semantic model.\n- When joining multiple tables, assign aliases and ALWAYS qualify columns with table alias in ALL clauses.\n- Avoid joins in subqueries; use CTEs instead.\n- Be aware of data granularity: when joining one-to-many or many-to-many, consider data duplication during aggregations.\n- Extract unique records when necessary to avoid double-counting:\n```sql\n-- WRONG: AVG(income) on joined table counts each customer multiple times\n-- CORRECT: Extract unique customers first, then aggregate\nWITH unique_customers AS (\n    SELECT DISTINCT customer_id, income, region FROM orders o JOIN customers c ON ...\n)\nSELECT region, AVG(income) FROM unique_customers GROUP BY region;\n```\n\n#### Handling Text and Literal Values\n- **Use sample_values for exact matching**: Dimensions include sample_values showing actual data values. Use these to match user-mentioned entities:\n  - If user says \&quot;California\&quot;, check sample_values to see if values are \&quot;CA\&quot;, \&quot;California\&quot;, \&quot;CALIFORNIA\&quot;, etc.\n  - If user mentions a product name, find the closest match in sample_values\n- **Case-Insensitive Matching**: Use ILIKE instead of LIKE or = when exact case is uncertain\n- **Pattern Matching**: Use ILIKE &#x27;%pattern%&#x27; to find partial matches when sample_values don&#x27;t have an exact match\n- **Escape single quotes**: Use two single quotes (&#x27;&#x27;) to escape literal single quotes in strings\n\n#### Ratios and Percentages\n- DO NOT multiply by 100 for ratio/percentage calculations. Keep numbers as decimals.\n\n#### Error Prevention and Snowflake Syntax\n- When creating table or column aliases, avoid Snowflake SQL keywords (e.g., \&quot;to\&quot;, \&quot;date\&quot;, \&quot;order\&quot;)\n- Handle NULL values with COALESCE(column, default_value)\n- Use NULLIF to prevent division by zero: value / NULLIF(denominator, 0)\n- Use double quotes for case-sensitive identifiers: \&quot;ColumnName\&quot;\n- Use FLATTEN() for semi-structured/array data\n- Use QUALIFY for post-aggregation filtering with window functions\n- Use TRY_CAST or TRY_TO_NUMBER for safe type conversions\n&quot;,&quot;tables&quot;:[{&quot;dimensions&quot;:[{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;actual_claims&quot;,&quot;name&quot;:&quot;actual_claims&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;cum_actual&quot;,&quot;name&quot;:&quot;cum_actual&quot;},{&quot;data_type&quot;:&quot;NUMBER(18,0)&quot;,&quot;expr&quot;:&quot;decile&quot;,&quot;name&quot;:&quot;decile&quot;},{&quot;data_type&quot;:&quot;NUMBER(18,0)&quot;,&quot;expr&quot;:&quot;n_policies&quot;,&quot;name&quot;:&quot;n_policies&quot;}],&quot;facts&quot;:[{&quot;data_type&quot;:&quot;NUMBER(38,6)&quot;,&quot;expr&quot;:&quot;actual_freq&quot;,&quot;name&quot;:&quot;actual_freq&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;ae_ratio&quot;,&quot;name&quot;:&quot;ae_ratio&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;avg_pure_premium&quot;,&quot;name&quot;:&quot;avg_pure_premium&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,2)&quot;,&quot;expr&quot;:&quot;cum_actual_pct&quot;,&quot;name&quot;:&quot;cum_actual_pct&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;cum_expected&quot;,&quot;name&quot;:&quot;cum_expected&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,2)&quot;,&quot;expr&quot;:&quot;cum_population_pct&quot;,&quot;name&quot;:&quot;cum_population_pct&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;expected_claims&quot;,&quot;name&quot;:&quot;expected_claims&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;expected_freq&quot;,&quot;name&quot;:&quot;expected_freq&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,2)&quot;,&quot;expr&quot;:&quot;total_exposure&quot;,&quot;name&quot;:&quot;total_exposure&quot;}],&quot;name&quot;:&quot;ave_decile_test&quot;},{&quot;dimensions&quot;:[{&quot;data_type&quot;:&quot;VARCHAR(16777216)&quot;,&quot;expr&quot;:&quot;area&quot;,&quot;name&quot;:&quot;area&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;bonusmalus&quot;,&quot;name&quot;:&quot;bonusmalus&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;bonusmalus_capped&quot;,&quot;name&quot;:&quot;bonusmalus_capped&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;claimnb&quot;,&quot;name&quot;:&quot;claimnb&quot;},{&quot;data_type&quot;:&quot;VARCHAR(5)&quot;,&quot;expr&quot;:&quot;dataset&quot;,&quot;name&quot;:&quot;dataset&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;density&quot;,&quot;name&quot;:&quot;density&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;drivage&quot;,&quot;name&quot;:&quot;drivage&quot;},{&quot;data_type&quot;:&quot;VARCHAR(5)&quot;,&quot;expr&quot;:&quot;drivage_band&quot;,&quot;name&quot;:&quot;drivage_band&quot;},{&quot;data_type&quot;:&quot;NUMBER(1,0)&quot;,&quot;expr&quot;:&quot;has_claim&quot;,&quot;name&quot;:&quot;has_claim&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;idpol&quot;,&quot;name&quot;:&quot;idpol&quot;},{&quot;data_type&quot;:&quot;VARCHAR(16777216)&quot;,&quot;expr&quot;:&quot;region&quot;,&quot;name&quot;:&quot;region&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;vehage&quot;,&quot;name&quot;:&quot;vehage&quot;},{&quot;data_type&quot;:&quot;VARCHAR(5)&quot;,&quot;expr&quot;:&quot;vehage_band&quot;,&quot;name&quot;:&quot;vehage_band&quot;},{&quot;data_type&quot;:&quot;VARCHAR(16777216)&quot;,&quot;expr&quot;:&quot;vehbrand&quot;,&quot;name&quot;:&quot;vehbrand&quot;},{&quot;data_type&quot;:&quot;VARCHAR(16777216)&quot;,&quot;expr&quot;:&quot;vehgas&quot;,&quot;name&quot;:&quot;vehgas&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;vehpower&quot;,&quot;name&quot;:&quot;vehpower&quot;}],&quot;facts&quot;:[{&quot;data_type&quot;:&quot;NUMBER(38,9)&quot;,&quot;expr&quot;:&quot;exposure&quot;,&quot;name&quot;:&quot;exposure&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;ln_density&quot;,&quot;name&quot;:&quot;ln_density&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;predicted_freq&quot;,&quot;name&quot;:&quot;predicted_freq&quot;}],&quot;name&quot;:&quot;freq_model_features&quot;,&quot;primary_key&quot;:[&quot;idpol&quot;]},{&quot;dimensions&quot;:[{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;claimnb&quot;,&quot;name&quot;:&quot;claimnb&quot;},{&quot;data_type&quot;:&quot;VARCHAR(5)&quot;,&quot;expr&quot;:&quot;dataset&quot;,&quot;name&quot;:&quot;dataset&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;idpol&quot;,&quot;name&quot;:&quot;idpol&quot;},{&quot;data_type&quot;:&quot;NUMBER(18,0)&quot;,&quot;expr&quot;:&quot;n_claims_actual&quot;,&quot;name&quot;:&quot;n_claims_actual&quot;}],&quot;facts&quot;:[{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;avg_actual_sev&quot;,&quot;name&quot;:&quot;avg_actual_sev&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,9)&quot;,&quot;expr&quot;:&quot;exposure&quot;,&quot;name&quot;:&quot;exposure&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;predicted_freq&quot;,&quot;name&quot;:&quot;predicted_freq&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;predicted_sev&quot;,&quot;name&quot;:&quot;predicted_sev&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;pure_premium&quot;,&quot;name&quot;:&quot;pure_premium&quot;}],&quot;name&quot;:&quot;pure_premium&quot;,&quot;primary_key&quot;:[&quot;idpol&quot;]},{&quot;dimensions&quot;:[{&quot;data_type&quot;:&quot;VARCHAR(16777216)&quot;,&quot;expr&quot;:&quot;factor_level&quot;,&quot;name&quot;:&quot;factor_level&quot;},{&quot;data_type&quot;:&quot;VARCHAR(9)&quot;,&quot;expr&quot;:&quot;model&quot;,&quot;name&quot;:&quot;model&quot;},{&quot;data_type&quot;:&quot;VARCHAR(17)&quot;,&quot;expr&quot;:&quot;risk_factor&quot;,&quot;name&quot;:&quot;risk_factor&quot;},{&quot;data_type&quot;:&quot;VARCHAR(3)&quot;,&quot;expr&quot;:&quot;significance&quot;,&quot;name&quot;:&quot;significance&quot;}],&quot;facts&quot;:[{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;estimate&quot;,&quot;name&quot;:&quot;estimate&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;p_value&quot;,&quot;name&quot;:&quot;p_value&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;relativity&quot;,&quot;name&quot;:&quot;relativity&quot;}],&quot;name&quot;:&quot;rating_table&quot;}],&quot;verified_queries&quot;:[{&quot;question&quot;:&quot;What are the frequency rating relativities for each risk factor level?&quot;,&quot;sql&quot;:&quot;SELECT risk_factor, factor_level, relativity, significance FROM __rating_table WHERE model = &#x27;FREQUENCY&#x27; AND NOT risk_factor IN (&#x27;Intercept&#x27;, &#x27;VEHPOWER&#x27;, &#x27;BONUSMALUS_CAPPED&#x27;, &#x27;LN_DENSITY&#x27;) ORDER BY risk_factor, factor_level&quot;},{&quot;question&quot;:&quot;What are the severity rating relativities for each risk factor level?&quot;,&quot;sql&quot;:&quot;SELECT risk_factor, factor_level, relativity, significance FROM __rating_table WHERE model = &#x27;SEVERITY&#x27; AND NOT risk_factor IN (&#x27;Intercept&#x27;, &#x27;VEHPOWER&#x27;, &#x27;BONUSMALUS_CAPPED&#x27;, &#x27;LN_DENSITY&#x27;) ORDER BY risk_factor, factor_level&quot;},{&quot;question&quot;:&quot;What are the combined frequency and severity relativities for each rating factor level?&quot;,&quot;sql&quot;:&quot;SELECT r1.risk_factor, r1.factor_level, r1.relativity AS freq_relativity, r2.relativity AS sev_relativity, ROUND(r1.relativity * r2.relativity, 4) AS combined_relativity FROM __rating_table AS r1 JOIN __rating_table AS r2 ON r1.risk_factor = r2.risk_factor AND r1.factor_level = r2.factor_level WHERE r1.model = &#x27;FREQUENCY&#x27; AND r2.model = &#x27;SEVERITY&#x27; ORDER BY r1.risk_factor, r1.factor_level&quot;},{&quot;question&quot;:&quot;What is the relativity for each driver age band?&quot;,&quot;sql&quot;:&quot;SELECT risk_factor, factor_level, model, relativity FROM __rating_table WHERE risk_factor = &#x27;DRIVAGE_BAND&#x27; ORDER BY model, factor_level&quot;},{&quot;question&quot;:&quot;Which rating factors have the biggest impact on claim frequency?&quot;,&quot;sql&quot;:&quot;SELECT risk_factor, factor_level, model, ABS(estimate) AS abs_effect, relativity FROM __rating_table WHERE model = &#x27;FREQUENCY&#x27; ORDER BY ABS(estimate) DESC LIMIT 10&quot;},{&quot;question&quot;:&quot;How does model performance vary across risk deciles in terms of predicted versus actual claim frequency?&quot;,&quot;sql&quot;:&quot;SELECT decile, actual_freq, expected_freq, ae_ratio, avg_pure_premium FROM __ave_decile_test ORDER BY decile&quot;},{&quot;question&quot;:&quot;How do the average pure premiums and model predictions compare between the training and test datasets?&quot;,&quot;sql&quot;:&quot;SELECT dataset, COUNT(*) AS n_policies, ROUND(AVG(pure_premium), 2) AS avg_pure_premium, ROUND(AVG(predicted_freq), 6) AS avg_predicted_freq, ROUND(AVG(predicted_sev), 2) AS avg_predicted_sev FROM __pure_premium GROUP BY dataset ORDER BY dataset&quot;},{&quot;question&quot;:&quot;What is the average pure premium by driver age band and area?&quot;,&quot;sql&quot;:&quot;SELECT drivage_band, area, ROUND(AVG(pure_premium), 2) AS avg_pure_premium, COUNT(*) AS n_policies FROM __freq_model_features AS f JOIN __pure_premium AS p ON f.idpol = p.idpol GROUP BY drivage_band, area ORDER BY avg_pure_premium DESC&quot;}]},&quot;type&quot;:&quot;json&quot;}],&quot;name&quot;:&quot;rating_analytics&quot;,&quot;status&quot;:&quot;success&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_018WAqNwTevyEDczPHpNxiaT&quot;,&quot;type&quot;:&quot;system_agentic_semantic_context&quot;},&quot;type&quot;:&quot;tool_result&quot;},{&quot;tool_use&quot;:{&quot;client_side_execute&quot;:false,&quot;input&quot;:{&quot;semantic_model&quot;:&quot;rating_analytics&quot;,&quot;sql&quot;:&quot;SELECT decile, n_policies, total_exposure, actual_freq, expected_freq, ae_ratio FROM __ave_decile_test ORDER BY decile&quot;,&quot;verified_query_used&quot;:true},&quot;name&quot;:&quot;system_execute_sql&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_019XA5cspQPNJjaq69LV2HnB&quot;,&quot;type&quot;:&quot;system_execute_sql&quot;},&quot;type&quot;:&quot;tool_use&quot;},{&quot;tool_result&quot;:{&quot;content&quot;:[{&quot;json&quot;:{&quot;query_id&quot;:&quot;01c7468a-0107-2694-0002-0716066c0f7a&quot;,&quot;result_set&quot;:{&quot;data&quot;:[[&quot;1&quot;,&quot;18835&quot;,&quot;7160.61&quot;,&quot;0.224143&quot;,&quot;0.226352&quot;,&quot;0.99019999999999997&quot;],[&quot;2&quot;,&quot;17357&quot;,&quot;7160.87&quot;,&quot;0.142580&quot;,&quot;0.14161699999999999&quot;,&quot;1.0067999999999999&quot;],[&quot;3&quot;,&quot;15481&quot;,&quot;7160.84&quot;,&quot;0.124287&quot;,&quot;0.112951&quot;,&quot;1.1004&quot;],[&quot;4&quot;,&quot;13265&quot;,&quot;7160.81&quot;,&quot;0.099849&quot;,&quot;0.096200999999999995&quot;,&quot;1.0379&quot;],[&quot;5&quot;,&quot;12327&quot;,&quot;7161.29&quot;,&quot;0.088252&quot;,&quot;0.087529999999999997&quot;,&quot;1.0082&quot;],[&quot;6&quot;,&quot;11890&quot;,&quot;7160.78&quot;,&quot;0.080997&quot;,&quot;0.081278000000000003&quot;,&quot;0.99650000000000005&quot;],[&quot;7&quot;,&quot;11752&quot;,&quot;7160.84&quot;,&quot;0.079041&quot;,&quot;0.075568999999999997&quot;,&quot;1.0459000000000001&quot;],[&quot;8&quot;,&quot;11678&quot;,&quot;7160.48&quot;,&quot;0.070526&quot;,&quot;0.069520999999999999&quot;,&quot;1.0145&quot;],[&quot;9&quot;,&quot;11709&quot;,&quot;7160.84&quot;,&quot;0.059490&quot;,&quot;0.062361&quot;,&quot;0.95399999999999996&quot;],[&quot;10&quot;,&quot;11309&quot;,&quot;7161.49&quot;,&quot;0.043287&quot;,&quot;0.051233000000000001&quot;,&quot;0.84489999999999998&quot;]],&quot;resultSetMetaData&quot;:{&quot;format&quot;:&quot;jsonv2&quot;,&quot;numRows&quot;:10,&quot;partition&quot;:0,&quot;partitionInfo&quot;:[{&quot;rowCount&quot;:10,&quot;uncompressedSize&quot;:729}],&quot;rowType&quot;:[{&quot;length&quot;:0,&quot;name&quot;:&quot;DECILE&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:38,&quot;scale&quot;:0,&quot;type&quot;:&quot;fixed&quot;},{&quot;length&quot;:0,&quot;name&quot;:&quot;N_POLICIES&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:18,&quot;scale&quot;:0,&quot;type&quot;:&quot;fixed&quot;},{&quot;length&quot;:0,&quot;name&quot;:&quot;TOTAL_EXPOSURE&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:38,&quot;scale&quot;:2,&quot;type&quot;:&quot;fixed&quot;},{&quot;length&quot;:0,&quot;name&quot;:&quot;ACTUAL_FREQ&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:38,&quot;scale&quot;:6,&quot;type&quot;:&quot;fixed&quot;},{&quot;length&quot;:0,&quot;name&quot;:&quot;EXPECTED_FREQ&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:0,&quot;scale&quot;:0,&quot;type&quot;:&quot;real&quot;},{&quot;length&quot;:0,&quot;name&quot;:&quot;AE_RATIO&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:0,&quot;scale&quot;:0,&quot;type&quot;:&quot;real&quot;}]},&quot;statementHandle&quot;:&quot;01c7468a-0107-2694-0002-0716066c0f7a&quot;},&quot;semantic_model_path&quot;:&quot;FREMTPL2.FREMTPL2_INVESTIGATION.INSURANCE_RATING_ANALYTICS&quot;,&quot;sql&quot;:&quot;WITH __ave_decile_test AS (\n  SELECT\n    decile,\n    n_policies,\n    actual_freq,\n    ae_ratio,\n    expected_freq,\n    total_exposure\n  FROM FREMTPL2.FREMTPL2_INVESTIGATION.AVE_DECILE_TEST\n)\nSELECT\n  decile,\n  n_policies,\n  total_exposure,\n  actual_freq,\n  expected_freq,\n  ae_ratio\nFROM __ave_decile_test\nORDER BY\n  decile /* Generated by Cortex */;&quot;,&quot;verified_query_used&quot;:true},&quot;type&quot;:&quot;json&quot;}],&quot;name&quot;:&quot;system_execute_sql&quot;,&quot;status&quot;:&quot;success&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_019XA5cspQPNJjaq69LV2HnB&quot;,&quot;type&quot;:&quot;system_execute_sql&quot;},&quot;type&quot;:&quot;tool_result&quot;},{&quot;tool_use&quot;:{&quot;client_side_execute&quot;:false,&quot;input&quot;:{&quot;skill_name&quot;:&quot;chart_instructions&quot;},&quot;name&quot;:&quot;server_skill&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_01H5DPAENE91uDMRnXdBsMXd&quot;,&quot;type&quot;:&quot;server_skill&quot;},&quot;type&quot;:&quot;tool_use&quot;},{&quot;tool_result&quot;:{&quot;content&quot;:[{&quot;json&quot;:{&quot;content&quot;:&quot;# Skill: chart_instructions\n\n**Description**: Instructions for generating Vega-Lite chart specifications with unrestricted chart types\n\n## Instructions\n\n\n# WHEN TO GENERATE A CHART\n\n**PHASE 1: DECIDING TO GENERATE A CHART** (happens DURING your reasoning, BEFORE you have a chart tool result)\n\nInspecting results from system_execute_sql, you MUST evaluate in &lt;thinking&gt;:\n\n**Step 1: Should I generate a chart?**\n  - Prefer charts over tables for: comparisons, trends, rankings, distributions, time-series\n  - MUST generate charts when SQL results have 2+ rows with numerical metrics (revenue, sales, counts, growth rates, percentages)\n  - Example of MANDATORY chart scenarios:\n    - Comparisons: revenue by region, sales by product, performance by team\n    - Rankings: top 10 customers, bottom performers, leaderboards\n    - Time series: monthly trends, year-over-year growth, daily metrics\n    - Distributions: category breakdowns, segment analysis\n  - Do NOT chart: singular values (e.g., \&quot;What is total revenue?\&quot; → just answer \&quot;The total revenue is $X\&quot;)\n  - Prefer using the prior SQL result&#x27;s `tool_use_id` as `tool_result_id` when available\n  - If you do NOT have a usable `tool_use_id` but you do have a Snowflake `query_id`, you MAY call the chart tool with `query_id` instead\n  - If you do NOT have any SQL-backed source but you DO have small, well-formed records you computed yourself or that came from a non-SQL tool, you MAY pass them as inline `values`. Do NOT paste raw CSV — convert to structured row objects first.\n  - In a code-execution sandbox, prefer writing larger datasets to a CSV file on a Snowflake stage and passing its path as `csv_path` instead of inflating your context with inline `values`.\n\n**Step 2: Is the SQL result visualization-ready?**\n  - Check: row count, column names, aggregation level, data shape\n  - Check if the question mentions a specific chart type that should be generated. If it does, check if the SQL result is visualization-ready for the requested chart type.\n  - **IMPORTANT - Check custom instructions**: Review the system prompt for any custom response instructions or chart-related preferences. Custom instructions should take precedence over recommendations in this guide, unless they are breaking the system. For example, if custom instructions say \&quot;always use bar charts for time series\&quot;, you MUST use a bar chart even though this guide recommends line charts for time series. Double-check any instructions under \&quot;[Important Case-specific Instructions]\&quot; section in the system prompt, and apply any chart-relevant guidance.\n\n**Step 3: Prepare data and generate a chart**\n  - If data is NOT visualization-ready → Use a vega-lite transform to reshape the data before calling data_to_chart again. Reuse the prior SQL result&#x27;s tool_use_id; do NOT run a new SQL query for chart data reshaping unless absolutely necessary and you need different data.\n  - Always provide context text BEFORE the chart block, then show the chart (both inline in your answer text).\n\n**Step 4: Consider generating multiple charts**\n  - You CAN generate multiple charts when a single chart would be insufficient or misleading:\n    - **Different scales**: When metrics have vastly different magnitudes (e.g., revenue in millions vs. growth rate in percentages), a single chart may hide patterns in smaller values. Create separate charts for each scale.\n    - **Different perspectives**: When the user&#x27;s question benefits from multiple views (e.g., \&quot;analyze sales performance\&quot; could show both a trend over time AND a breakdown by category).\n    - **Comparison clarity**: When comparing items with very different value ranges, separate charts can make each comparison more straightforward.\n  - To generate multiple charts:\n    1. Call data_to_chart multiple times, once for each chart\n    2. Present each chart with a brief label explaining what it shows. Remember to cite each chart separately\n    3. Example: \&quot;Here&#x27;s the revenue trend:\&quot; followed by chart 1, then \&quot;And here&#x27;s the growth rate trend:\&quot; followed by chart 2\n  - Do NOT generate multiple charts just to show more visualizations - only when it genuinely improves understanding.\n\n**PHASE 2: PRESENTING THE CHART** (happens AFTER you have a chart tool result in conversation history)\n\nOnce you have called data_to_chart tool and received a tool result:\n  * Find the data_to_chart tool result with the chart in conversation history\n  * Provide the &lt;chart&gt;toolUseId&lt;/chart&gt; block inline in your answer text after the thinking block where toolUseId is from the data_to_chart tool result\n  * Valid chart block format: &lt;chart&gt;tooluse_8n3P5qRk7aWzJ1cYxTvEfg&lt;/chart&gt;\n  * If you cannot find ANY valid tool results from data_to_chart tool in conversation history, just say \&quot;I couldn&#x27;t generate a valid visualization.\&quot;\n  * **AVOID REPETITION**: When user did not ask for a chart explicitly, your chart response comes AFTER your initial response in the conversation. Do NOT repeat information already provided in your previous answer before generating the chart:\n    - Do NOT repeat the summary or analysis from your first response\n    - Introduce the chart and optionally add NEW observations visible only in the visualization (e.g., visual patterns, outliers that stand out graphically) or new findings that you were not aware of before.\n  * All chart blocks must be placed inline in your answer text, not before the thinking block.\n  * DO NOT use tool IDs from system_execute_sql tool results to generate a chart block. These will cause rendering errors. ONLY use data_to_chart tool use IDs in chart blocks.\n  * DO NOT reference or describe chart colors (e.g., \&quot;the blue line\&quot;, \&quot;red bars\&quot;) in your &lt;thinking&gt; sections, unless you explicitly specified them in chart specification.\n  * **Colors**: The chart&#x27;s Vega-Lite spec may include a `color_mapping` object at `usermeta.snowflake.color_mapping` (e.g. `{\&quot;Health\&quot;:{\&quot;hex\&quot;:\&quot;#1a6ce7\&quot;,\&quot;name\&quot;:\&quot;blue\&quot;}}`) where each entry maps a category to its rendered hex and color name. Whenever the user refers to a series by color or asks to recolor one, you MUST consult `color_mapping` to identify the category. Match the user&#x27;s color word to the closest `name` — do not require an exact match; map approximate or near human color words to the nearest name (e.g. \&quot;sky\&quot;/\&quot;sky blue\&quot;/\&quot;navy\&quot;/\&quot;azure\&quot;/\&quot;cobalt\&quot; → \&quot;blue\&quot;, \&quot;crimson\&quot;/\&quot;maroon\&quot;/\&quot;scarlet\&quot; → \&quot;red\&quot;, \&quot;lime\&quot;/\&quot;emerald\&quot;/\&quot;olive\&quot; → \&quot;green\&quot;, \&quot;gold\&quot;/\&quot;amber\&quot; → \&quot;orange\&quot;). Use the matched category whether they ask about a color (e.g. \&quot;what does the red line show?\&quot;) or ask to recolor it (e.g. \&quot;change the sky-blue bar to yellow\&quot;); for recolor, change only that category&#x27;s color and preserve all other encodings.\n\n# HOW TO USE\n\n## Step 1: Call data_to_chart\n\nProvide:\n\n1. **`chart`**: a complete Vega-Lite JSON specification (see format below)\n2. Exactly one data reference:\n   - **Preferred: `tool_result_id`** — the `tool_use_id` of a previous system_execute_sql result whose data should be used. Refreshable.\n   - **Fallback: `query_id`** — a Snowflake `query_id` whose result should be charted when no usable `tool_result_id` is available. Refreshable when SQL provenance can be recovered.\n   - **Inline: `values`** — an array of row objects (e.g. `[{\&quot;month\&quot;: \&quot;2025-01\&quot;, \&quot;value\&quot;: 100}, ...]`) for small, LLM-computed or non-SQL data. Keep small (single-screen tables) so size validation passes. Not refreshable. Do NOT paste raw CSV — convert to structured row objects first.\n   - **File: `csv_path`** — a sandbox workspace path to a CSV file (e.g. `\&quot;/workspace/data.csv\&quot;`). Write the CSV under `/workspace` in the sandbox first; the orchestrator downloads it from the workspace stage and parses the CSV server-side, so the data does NOT pass through your context. Path must start with `/workspace/` and reference a `.csv` file. Do NOT pass `@`-stage paths or `snow://...` URLs. Not refreshable.\n\n## Step 2: Cite the chart\n\nUse the data_to_chart `tool_use_id` when citing the chart inline in your answer text:\n```\n&lt;chart&gt;tool_use_id&lt;/chart&gt;\n```\n\n## Sandbox / code-execution sessions\n\nIf you have access to a code-execution sandbox (e.g. `bash` with Python, pandas, plotly), you MUST still produce charts via data_to_chart. Do NOT generate Plotly / matplotlib / D3 HTML and embed it in the answer (e.g. via `iframe srcdoc`, `&lt;script&gt;` blocks, or raw HTML) — those bypass chart validation, customization, and the renderer pipeline, and will not be styled consistently with the rest of the surface.\n\nTwo patterns, picked by dataset size:\n\n### Small datasets (~tens of rows): inline `values`\n\n1. Use `bash` (Python/pandas/SQL CLI/etc.) to derive the data you want to plot.\n2. Print the result as a small JSON array of row objects (one row per record, scalar values only).\n3. Call data_to_chart with that array passed as inline `values`, plus a Vega-Lite spec.\n\n### Larger datasets: write a CSV to `/workspace/`, then pass it as `csv_path`\n\nFor anything bigger than a few dozen rows, write a CSV under `/workspace/` and pass that sandbox path directly as `csv_path`. The orchestrator downloads and parses the CSV server-side, so the data does NOT consume your context window.\n\n1. In `bash`, write the CSV under `/workspace/`, e.g.:\n\n   ```python\n   import pandas as pd\n   df = ... # your aggregated / filtered dataset\n   df.to_csv(\&quot;/workspace/sales_by_month.csv\&quot;, index=False)\n   ```\n\n   The first row MUST be a header (column names). Cells must be scalar (numbers, strings, empty) — no nested JSON, no Python repr, no commas inside unquoted values (pandas handles quoting correctly by default).\n\n2. Call data_to_chart with `csv_path` set to the same `/workspace/...` path you wrote (e.g. `\&quot;/workspace/sales_by_month.csv\&quot;`), plus your Vega-Lite spec. Do not pass `values`, `tool_result_id`, or `query_id` in the same call. Do NOT pass `@`-stage paths or `snow://...` URLs as `csv_path` — only sandbox `/workspace/...` paths are accepted.\n\nIf the dataset is huge, aggregate or top-N it in `bash` first; the chart pipeline still enforces a per-chart row cap, and tiny preprocessed CSVs render faster.\n\n# CHART SPEC FORMAT\n\nThe `chart` parameter must be a valid Vega-Lite JSON object.\n\n## Single-view constraint\nThe rendering backend only supports **single-view** specs. Do NOT use `vconcat`, `hconcat`, `facet`, or `repeat`.\n\nTo combine multiple chart types (e.g., bar + line), use `layer` within a single-view spec.\nIf the user asks for side-by-side panels, generate **separate charts** by calling data_to_chart multiple times.\n\n## Data handling\n- **Do NOT include a top-level `\&quot;data\&quot;` field.** The referenced SQL result is injected automatically and **overwrites** any `data` you provide. Because of this override, your `encoding.field` names MUST match the **SQL result column names exactly** — Snowflake returns them UPPERCASE by default (e.g. `INCIDENT_MONTH`, `INCIDENT_COUNT`) — NOT any friendlier alias you might invent.\n  - **This is the #1 cause of blank charts:** writing inline data like `{\&quot;month\&quot;: ..., \&quot;count\&quot;: ...}` and then encoding `\&quot;field\&quot;: \&quot;month\&quot;`. The pipeline replaces your data with columns `INCIDENT_MONTH`/`INCIDENT_COUNT`, so `month`/`count` no longer exist and no marks are drawn. Always take field names from the actual SQL result columns in the conversation, not from your prose or example data.\n- **Do NOT include `\&quot;width\&quot;` or `\&quot;height\&quot;`.** These are set in post-processing.\n- **The ONLY place a `\&quot;data\&quot;` field is allowed is inside an annotation layer** — a `rule`/`text` reference-line or label layer where you supply your own constant positions/labels (see Tip 8). That per-layer `data.values` is NOT overwritten. Never put `data` at the top level, and never put it on a primary data-bearing layer.\n- For `layer` specs, omit top-level `\&quot;data\&quot;`; the injected SQL result is shared across all data-bearing layers.\n\n## Single-layer example\n```json\n{\n  \&quot;title\&quot;: \&quot;Monthly Revenue\&quot;,\n  \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;area\&quot;, \&quot;opacity\&quot;: 0.7},\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;temporal\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REVENUE\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n## Multi-layer example (dual-axis)\n```json\n{\n  \&quot;title\&quot;: \&quot;Revenue vs Orders\&quot;,\n  \&quot;layer\&quot;: [\n    {\n      \&quot;mark\&quot;: \&quot;bar\&quot;,\n      \&quot;encoding\&quot;: {\n        \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;ordinal\&quot;},\n        \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REVENUE\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;, \&quot;axis\&quot;: {\&quot;title\&quot;: \&quot;Revenue ($)\&quot;}}\n      }\n    },\n    {\n      \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;line\&quot;, \&quot;color\&quot;: \&quot;red\&quot;, \&quot;strokeWidth\&quot;: 2},\n      \&quot;encoding\&quot;: {\n        \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;ordinal\&quot;},\n        \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;ORDERS\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;, \&quot;axis\&quot;: {\&quot;title\&quot;: \&quot;Orders\&quot;}}\n      }\n    }\n  ],\n  \&quot;resolve\&quot;: {\&quot;scale\&quot;: {\&quot;y\&quot;: \&quot;independent\&quot;}}\n}\n```\n\n# FIELD TYPES\n\n- `\&quot;quantitative\&quot;` — numeric values\n- `\&quot;nominal\&quot;` — categorical without order\n- `\&quot;ordinal\&quot;` — categorical with order\n- `\&quot;temporal\&quot;` — date/time values\n\n# TIPS\n\n\n1. **Dual-axis**: Use `layer` with `resolve: {scale: {y: \&quot;independent\&quot;}}`. **Use at most 2 layers.** More than 2 layers causes overlapping Y-axis labels. If you need to show 3+ metrics on different scales, generate **separate charts** by calling data_to_chart multiple times instead.\n2. **Heatmaps**: Use `mark: \&quot;rect\&quot;` with `color` on quantitative, `x`/`y` on nominal\n3. **Boxplots**: Use `mark: \&quot;boxplot\&quot;`\n4. **Waterfall**: Use `calculate` transforms for running totals, then `bar` with `y`/`y2`\n5. **Technical/helper columns**: If you create a transform output that is only used for styling, positioning, or other internal chart mechanics, its field name MUST start with `_`. Examples: `_color`, `_label_x`, `_x`, `_y`, `_label`. These internal helper fields are not user-facing and should not be intended for tooltips or legends unless you explicitly mean to expose them.\n6. **Custom colors**: When the user (or chart customization soft instructions) requests specific colors per series or wants to highlight specific marks, read [references/colors.md](references/colors.md) for the two `_color` patterns (multi-series via `scale.range.field` vs highlight via `scale: null`) and the rules that keep them mutually exclusive.\n7. **Global styling**: Use the `config` object for background, fonts, default mark color, etc. (e.g., `\&quot;config\&quot;: {\&quot;background\&quot;: \&quot;lightgray\&quot;}`)\n8. **Annotations, reference lines, and bar text labels**: Add annotation layers ONLY when the user (or chart customization soft instructions) explicitly asks for reference lines, event markers, value labels on bars, or text callouts.\n\n   Use `rule` or `text` layers with **per-layer `data`** and `field`-based encoding. Do **NOT** use `datum` — it is not supported by the renderer and will render at position 0. Give each annotation layer its own `\&quot;data\&quot;: {\&quot;values\&quot;: [...]}` with the position values, then reference them via `field`.\n\n   Example — vertical reference line + label on a temporal x-axis:\n   ```json\n   {\n     \&quot;layer\&quot;: [\n       {\n         \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;rule\&quot;, \&quot;color\&quot;: \&quot;#FF6B6B\&quot;, \&quot;strokeDash\&quot;: [4, 4]},\n         \&quot;data\&quot;: {\&quot;values\&quot;: [{\&quot;_X\&quot;: \&quot;2025-04-18\&quot;}]},\n         \&quot;encoding\&quot;: {\&quot;x\&quot;: {\&quot;field\&quot;: \&quot;_X\&quot;, \&quot;type\&quot;: \&quot;temporal\&quot;}}\n       },\n       {\n         \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;text\&quot;, \&quot;align\&quot;: \&quot;left\&quot;, \&quot;dx\&quot;: 5, \&quot;dy\&quot;: -5, \&quot;color\&quot;: \&quot;#FF6B6B\&quot;, \&quot;fontSize\&quot;: 11},\n         \&quot;data\&quot;: {\&quot;values\&quot;: [{\&quot;_X\&quot;: \&quot;2025-04-18\&quot;, \&quot;_Y\&quot;: 190, \&quot;_LABEL\&quot;: \&quot;Event date\&quot;}]},\n         \&quot;encoding\&quot;: {\n           \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;_X\&quot;, \&quot;type\&quot;: \&quot;temporal\&quot;},\n           \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;_Y\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n           \&quot;text\&quot;: {\&quot;field\&quot;: \&quot;_LABEL\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n         }\n       }\n     ]\n   }\n   ```\n   For horizontal reference lines use `\&quot;y\&quot;` instead of `\&quot;x\&quot;` with the same per-layer data pattern.\n\n   **CRITICAL — ordinal axis with explicit `sort` array**: When the main axis is `ordinal` with an explicit `sort` array (e.g. `[1,2,...,12]` or month names), the annotation layer&#x27;s `data.values` key AND `encoding.field` MUST match the main layer&#x27;s field name **exactly** (same casing). Renaming it (`MONTH` → `_MONTH`) silently breaks the shared scale&#x27;s sort and falls back to alphabetical order. Pick ONE field name and reuse it in every layer.\n\n   Example — annotation on an ordinal axis with `sort`:\n   ```json\n   {\n     \&quot;layer\&quot;: [\n       {\n         \&quot;mark\&quot;: \&quot;bar\&quot;,\n         \&quot;encoding\&quot;: {\n           \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;ordinal\&quot;, \&quot;sort\&quot;: [1,2,3,4,5,6,7,8,9,10,11,12]},\n           \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REVENUE\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;}\n         }\n       },\n       {\n         \&quot;data\&quot;: {\&quot;values\&quot;: [{\&quot;MONTH\&quot;: 12, \&quot;_LABEL\&quot;: \&quot;Year-end\&quot;}]},\n         \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;text\&quot;, \&quot;align\&quot;: \&quot;right\&quot;, \&quot;dx\&quot;: -4, \&quot;dy\&quot;: -10, \&quot;fontWeight\&quot;: \&quot;bold\&quot;},\n         \&quot;encoding\&quot;: {\n           \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;ordinal\&quot;, \&quot;sort\&quot;: [1,2,3,4,5,6,7,8,9,10,11,12]},\n           \&quot;y\&quot;: {\&quot;value\&quot;: 10},\n           \&quot;text\&quot;: {\&quot;field\&quot;: \&quot;_LABEL\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n         }\n       }\n     ]\n   }\n   ```\n\n   **Bar text labels**: Center labels at the midpoint of each bar via a `calculate` transform (e.g. `datum.SALES / 2`). Use a contrasting color (e.g. white text on dark bars).\n   ```json\n   {\n     \&quot;layer\&quot;: [\n       {\&quot;mark\&quot;: \&quot;bar\&quot;, \&quot;encoding\&quot;: {\&quot;x\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;}, \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}}},\n       {\n         \&quot;transform\&quot;: [{\&quot;calculate\&quot;: \&quot;datum.SALES / 2\&quot;, \&quot;as\&quot;: \&quot;_label_x\&quot;}],\n         \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;text\&quot;, \&quot;color\&quot;: \&quot;white\&quot;},\n         \&quot;encoding\&quot;: {\n           \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;_label_x\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n           \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n           \&quot;text\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;}\n         }\n       }\n     ]\n   }\n   ```\n9. **Multiple panels**: Call data_to_chart multiple times instead of using `hconcat`/`vconcat`\n\n# DATA QUALITY RULES\n\nFollow these rules to ensure charts render correctly. These prevent the most common failures.\n\n## 1. Bar charts: no duplicate categories\n\nFor bar charts without an aggregate, each (categorical_field, color_field) tuple must be unique. Duplicate categories cause stacked/overlapping bars that misrepresent the data. Avoid that, unless specifically requested by user.\n\n**Fix — aggregate transform** (preferred):\n```json\n{\n  \&quot;transform\&quot;: [\n    {\&quot;aggregate\&quot;: [{\&quot;op\&quot;: \&quot;sum\&quot;, \&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;as\&quot;: \&quot;SALES\&quot;}], \&quot;groupby\&quot;: [\&quot;REGION\&quot;, \&quot;CATEGORY\&quot;]}\n  ],\n  \&quot;mark\&quot;: \&quot;bar\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n**Fix — grouped bar chart** (when you want to show per-item bars side by side instead of stacking):\nUse `xOffset` (vertical bars) or `yOffset` (horizontal bars) to place bars next to each other. This is the **default** for multi-color bar charts.\n```json\n{\n  \&quot;title\&quot;: \&quot;Revenue by Region and Category\&quot;,\n  \&quot;mark\&quot;: \&quot;bar\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;yOffset\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;, \&quot;title\&quot;: \&quot;Category\&quot;}\n  }\n}\n```\n\n**Fix — stacked bar chart** (ONLY when the user explicitly asks for a \&quot;stacked bar chart\&quot;):\nAdd `\&quot;stack\&quot;: \&quot;zero\&quot;` to the **quantitative** axis encoding and do NOT include `xOffset`/`yOffset`. Use `\&quot;stack\&quot;: \&quot;normalize\&quot;` only when the user explicitly asks for normalized/percentage stacked bars.\nNEVER use `\&quot;stack\&quot;: false`, `\&quot;stack\&quot;: null`, or `\&quot;stack\&quot;: \&quot;center\&quot;` — these cause broken or overlapping bars.\n```json\n{\n  \&quot;title\&quot;: \&quot;Sales by Region and Category (Stacked)\&quot;,\n  \&quot;mark\&quot;: \&quot;bar\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;, \&quot;stack\&quot;: \&quot;zero\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;, \&quot;title\&quot;: \&quot;Category\&quot;}\n  }\n}\n```\nWhen combining with fold (wide-format data with multiple metric columns):\n```json\n{\n  \&quot;transform\&quot;: [\n    {\&quot;fold\&quot;: [\&quot;CAPACITY\&quot;, \&quot;UTILIZATION\&quot;]},\n    {\&quot;calculate\&quot;: \&quot;({&#x27;CAPACITY&#x27;: &#x27;Capacity&#x27;, &#x27;UTILIZATION&#x27;: &#x27;Utilization&#x27;})[datum.key]\&quot;, \&quot;as\&quot;: \&quot;key\&quot;}\n  ],\n  \&quot;mark\&quot;: \&quot;bar\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;value\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;ACCOUNT\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;yOffset\&quot;: {\&quot;field\&quot;: \&quot;key\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;key\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;, \&quot;title\&quot;: \&quot;Metric\&quot;}\n  }\n}\n```\n**Rule**: The `xOffset`/`yOffset` field MUST be different from `x` and `y` fields. Never use the same field in multiple encodings.\n\n## 2. Line charts: unique x-values per series\n\nEach color series in a line chart must have unique x-values. Duplicate x-values within the same series create ambiguous zigzag lines.\n\n**Fix — wide-format data** (multiple value columns → fold):\n```json\n{\n  \&quot;transform\&quot;: [{\&quot;fold\&quot;: [\&quot;REVENUE\&quot;, \&quot;ORDERS\&quot;]}],\n  \&quot;mark\&quot;: \&quot;line\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;temporal\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;value\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;key\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n**Fix — duplicate rows** (aggregate transform):\n```json\n{\n  \&quot;transform\&quot;: [\n    {\&quot;aggregate\&quot;: [{\&quot;op\&quot;: \&quot;sum\&quot;, \&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;as\&quot;: \&quot;SALES\&quot;}], \&quot;groupby\&quot;: [\&quot;DATE\&quot;, \&quot;REGION\&quot;]}\n  ],\n  \&quot;mark\&quot;: \&quot;line\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;DATE\&quot;, \&quot;type\&quot;: \&quot;temporal\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n**Fix — missing color encoding**: If data has a category column causing duplicates, add `color` encoding so each series gets its own line with unique x-values.\n\n## 3. Bar charts: custom x-axis domains cause bars extending off-screen\n\nBar marks always start from 0 on the quantitative axis. If you set a custom `scale.domain` that excludes 0 (e.g., `[0.95, 1.1]` for values near 1.0), bars will stretch from 0 (off-screen) to their value, appearing as extremely long bars extending to the left (horizontal) or bottom (vertical).\n\n**Fix — use `x2`/`y2` to anchor the bar baseline at the domain start:**\n```json\n{\n  \&quot;mark\&quot;: \&quot;bar\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;METRIC\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;, \&quot;scale\&quot;: {\&quot;domain\&quot;: [0.95, 1.1]}},\n    \&quot;x2\&quot;: {\&quot;datum\&quot;: 0.95},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n**Alternative — use tick or point marks** which don&#x27;t have a baseline:\n```json\n{\n  \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;tick\&quot;, \&quot;thickness\&quot;: 3},\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;METRIC\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;, \&quot;scale\&quot;: {\&quot;domain\&quot;: [0.95, 1.1]}},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n**Rule**: Whenever you use a bar chart with a custom `scale.domain` that does not include 0, you MUST either set `x2`/`y2` to the domain start value, or use a non-bar mark type (tick, point, circle).\n\n## 4. Temporal line charts: regular spacing\n\nFor temporal line charts, avoid data with very irregular time gaps (e.g., daily data with multi-month gaps). Vega-Lite draws straight lines between points, making large gaps misleading.\n\n**Fix options**:\n- If the user explicitly asks for a line chart with irregular data, use `\&quot;point\&quot;: true` to show where real observations exist: `\&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;line\&quot;, \&quot;point\&quot;: true}`\n- Otherwise, prefer a Vega-Lite `filter`/`aggregate` transform to produce data with regular time intervals (e.g., fill gaps with zeros or nulls, or aggregate to a coarser granularity like monthly/quarterly). Only run a new SQL query when absolutely necessary — i.e., the required transformation cannot be expressed as a vega-lite transform\n- Provide separate charts for each interval\n\n\n## 5. Field name casing must match SQL column names exactly — and must match across layers\n\nVega-Lite field matching is **case-sensitive**. Snowflake SQL returns column names in UPPERCASE by default. Always use the exact casing from the SQL result set.\n\n**Correct:** `{\&quot;field\&quot;: \&quot;REVENUE\&quot;, ...}` (matches Snowflake column `REVENUE`)\n**Wrong:** `{\&quot;field\&quot;: \&quot;revenue\&quot;, ...}` or `{\&quot;field\&quot;: \&quot;Revenue\&quot;, ...}`\n\nThis applies everywhere: encoding fields, `calculate` expressions (`datum.REVENUE`), `fold` field lists, `sort` field references, and `aggregate` groupby fields.\n\n**Cross-layer rule (layered specs):** Once a `field` name is used on a shared scale (e.g. `x` is `field: \&quot;MONTH\&quot;` in the bar layer), every other layer that draws on that same scale **and** every key in those layers&#x27; inline `data.values` must use the *exact* same string. Do NOT rename a column to make it look \&quot;internal\&quot; by adding/removing an underscore (`MONTH` → `_MONTH`) or changing case (`_month_name` → `_MONTH_NAME`) in an annotation layer — the rename silently breaks shared-scale features (sort fall-through, color-scale fall-through, axis-domain mismatch). When in doubt, reuse the *same* field name everywhere.\n\n# COMMON MISTAKES\n\n- Do NOT include a top-level `\&quot;data\&quot;`, `\&quot;width\&quot;`, `\&quot;height\&quot;`, or `\&quot;$schema\&quot;` — they are handled automatically (top-level `data` is overwritten by the injected SQL result). The only allowed `data` is per-layer `data.values` in a `rule`/`text` annotation layer (Tip 8)\n- Field names must match the injected SQL result column names EXACTLY (case-sensitive) — never the aliases you use in prose or inline example data\n- When using `layer`, all layers share compatible encodings unless using `resolve`\n- When using `fold` transform, the new fields default to `\&quot;key\&quot;` and `\&quot;value\&quot;`\n- **NEVER** use `vconcat`, `hconcat`, `facet`, or `repeat` — renderer only supports single-view\n- **DO NOT CREATE** `maps` - reading map json is blocked and will not render properly\n- **NEVER** use `datum` in `rule` or `text` annotation layers — always use per-layer `\&quot;data\&quot;: {\&quot;values\&quot;: [...]}` with `field`-based encoding (see Tip 8)\n\n\n\n## Skill Directory Contents\n\nThe following files are available in this skill. Use the `read` tool to explore them if needed.\n\n| File Path | Size |\n|-----------|------|\n| `/app/skills/chart_instructions/references/` | (dir) |\n| `/app/skills/chart_instructions/references/colors.md` | 2.3 KB |\n\n**To read a file**, use the `read` tool with `file_path` set to the full path shown above.\nExample: `{\&quot;file_path\&quot;: \&quot;/app/skills/chart_instructions/example.md\&quot;, \&quot;offset\&quot;: 0, \&quot;limit\&quot;: 100}`\n&quot;,&quot;skill_name&quot;:&quot;chart_instructions&quot;},&quot;type&quot;:&quot;json&quot;}],&quot;name&quot;:&quot;server_skill&quot;,&quot;status&quot;:&quot;success&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_01H5DPAENE91uDMRnXdBsMXd&quot;,&quot;type&quot;:&quot;server_skill&quot;},&quot;type&quot;:&quot;tool_result&quot;},{&quot;tool_use&quot;:{&quot;client_side_execute&quot;:false,&quot;input&quot;:{&quot;chart&quot;:&quot;{\&quot;title\&quot;:\&quot;Actual vs Expected Frequency by Decile (Test Set)\&quot;,\&quot;transform\&quot;:[{\&quot;fold\&quot;:[\&quot;ACTUAL_FREQ\&quot;,\&quot;EXPECTED_FREQ\&quot;]},{\&quot;calculate\&quot;:\&quot;({&#x27;ACTUAL_FREQ&#x27;:&#x27;Actual&#x27;,&#x27;EXPECTED_FREQ&#x27;:&#x27;Expected&#x27;})[datum.key]\&quot;,\&quot;as\&quot;:\&quot;key\&quot;}],\&quot;mark\&quot;:{\&quot;type\&quot;:\&quot;line\&quot;,\&quot;point\&quot;:true},\&quot;encoding\&quot;:{\&quot;x\&quot;:{\&quot;field\&quot;:\&quot;DECILE\&quot;,\&quot;type\&quot;:\&quot;ordinal\&quot;,\&quot;axis\&quot;:{\&quot;title\&quot;:\&quot;Risk Decile\&quot;}},\&quot;y\&quot;:{\&quot;field\&quot;:\&quot;value\&quot;,\&quot;type\&quot;:\&quot;quantitative\&quot;,\&quot;axis\&quot;:{\&quot;title\&quot;:\&quot;Claim Frequency\&quot;}},\&quot;color\&quot;:{\&quot;field\&quot;:\&quot;key\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;,\&quot;title\&quot;:\&quot;Series\&quot;}}}&quot;,&quot;question&quot;:&quot;THIS FIELD WILL BE DEPRECATED SOON. Please stop using it and use the &#x27;chart&#x27; field instead.&quot;,&quot;tool_result_id&quot;:&quot;toolu_bdrk_019XA5cspQPNJjaq69LV2HnB&quot;},&quot;name&quot;:&quot;data_to_chart&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_01YRReokodmjXunA3VwYonHA&quot;,&quot;type&quot;:&quot;data_to_chart&quot;},&quot;type&quot;:&quot;tool_use&quot;},{&quot;tool_result&quot;:{&quot;content&quot;:[{&quot;json&quot;:{&quot;charts&quot;:[&quot;{\&quot;$schema\&quot;:\&quot;https://vega.github.io/schema/vega-lite/v5.json\&quot;,\&quot;config\&quot;:{\&quot;bar\&quot;:{\&quot;minBandSize\&quot;:5}},\&quot;data\&quot;:{\&quot;values\&quot;:[{\&quot;ACTUAL_FREQ\&quot;:0.224143,\&quot;DECILE\&quot;:1,\&quot;EXPECTED_FREQ\&quot;:0.226352},{\&quot;ACTUAL_FREQ\&quot;:0.14258,\&quot;DECILE\&quot;:2,\&quot;EXPECTED_FREQ\&quot;:0.141617},{\&quot;ACTUAL_FREQ\&quot;:0.124287,\&quot;DECILE\&quot;:3,\&quot;EXPECTED_FREQ\&quot;:0.112951},{\&quot;ACTUAL_FREQ\&quot;:0.099849,\&quot;DECILE\&quot;:4,\&quot;EXPECTED_FREQ\&quot;:0.096201},{\&quot;ACTUAL_FREQ\&quot;:0.088252,\&quot;DECILE\&quot;:5,\&quot;EXPECTED_FREQ\&quot;:0.08753},{\&quot;ACTUAL_FREQ\&quot;:0.080997,\&quot;DECILE\&quot;:6,\&quot;EXPECTED_FREQ\&quot;:0.081278},{\&quot;ACTUAL_FREQ\&quot;:0.079041,\&quot;DECILE\&quot;:7,\&quot;EXPECTED_FREQ\&quot;:0.075569},{\&quot;ACTUAL_FREQ\&quot;:0.070526,\&quot;DECILE\&quot;:8,\&quot;EXPECTED_FREQ\&quot;:0.069521},{\&quot;ACTUAL_FREQ\&quot;:0.05949,\&quot;DECILE\&quot;:9,\&quot;EXPECTED_FREQ\&quot;:0.062361},{\&quot;ACTUAL_FREQ\&quot;:0.043287,\&quot;DECILE\&quot;:10,\&quot;EXPECTED_FREQ\&quot;:0.051233}]},\&quot;encoding\&quot;:{\&quot;color\&quot;:{\&quot;field\&quot;:\&quot;key\&quot;,\&quot;title\&quot;:\&quot;Series\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;},\&quot;tooltip\&quot;:[{\&quot;field\&quot;:\&quot;key\&quot;,\&quot;title\&quot;:\&quot;Series\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;},{\&quot;field\&quot;:\&quot;DECILE\&quot;,\&quot;title\&quot;:\&quot;Decile\&quot;,\&quot;type\&quot;:\&quot;ordinal\&quot;},{\&quot;field\&quot;:\&quot;value\&quot;,\&quot;format\&quot;:\&quot;,.6~f\&quot;,\&quot;title\&quot;:\&quot;Value\&quot;,\&quot;type\&quot;:\&quot;quantitative\&quot;},{\&quot;field\&quot;:\&quot;ACTUAL_FREQ\&quot;},{\&quot;field\&quot;:\&quot;EXPECTED_FREQ\&quot;}],\&quot;x\&quot;:{\&quot;axis\&quot;:{\&quot;title\&quot;:\&quot;Risk Decile\&quot;},\&quot;field\&quot;:\&quot;DECILE\&quot;,\&quot;type\&quot;:\&quot;ordinal\&quot;},\&quot;y\&quot;:{\&quot;axis\&quot;:{\&quot;title\&quot;:\&quot;Claim Frequency\&quot;},\&quot;field\&quot;:\&quot;value\&quot;,\&quot;sort\&quot;:null,\&quot;type\&quot;:\&quot;quantitative\&quot;}},\&quot;mark\&quot;:{\&quot;point\&quot;:true,\&quot;type\&quot;:\&quot;line\&quot;},\&quot;title\&quot;:\&quot;Actual vs Expected Frequency by Decile (Test Set)\&quot;,\&quot;transform\&quot;:[{\&quot;fold\&quot;:[\&quot;ACTUAL_FREQ\&quot;,\&quot;EXPECTED_FREQ\&quot;]},{\&quot;as\&quot;:\&quot;key\&quot;,\&quot;calculate\&quot;:\&quot;({&#x27;ACTUAL_FREQ&#x27;:&#x27;Actual&#x27;,&#x27;EXPECTED_FREQ&#x27;:&#x27;Expected&#x27;})[datum.key]\&quot;}],\&quot;usermeta\&quot;:{\&quot;snowflake\&quot;:{\&quot;color_mapping\&quot;:{\&quot;Actual\&quot;:{\&quot;hex\&quot;:\&quot;#4c78a8\&quot;,\&quot;name\&quot;:\&quot;blue\&quot;},\&quot;Expected\&quot;:{\&quot;hex\&quot;:\&quot;#f58518\&quot;,\&quot;name\&quot;:\&quot;orange\&quot;}},\&quot;columnRoles\&quot;:{\&quot;ACTUAL_FREQ\&quot;:\&quot;measure\&quot;,\&quot;AE_RATIO\&quot;:\&quot;measure\&quot;,\&quot;DECILE\&quot;:\&quot;dimension\&quot;,\&quot;EXPECTED_FREQ\&quot;:\&quot;measure\&quot;,\&quot;N_POLICIES\&quot;:\&quot;dimension\&quot;,\&quot;TOTAL_EXPOSURE\&quot;:\&quot;measure\&quot;}}}}&quot;]},&quot;type&quot;:&quot;json&quot;}],&quot;name&quot;:&quot;data_to_chart&quot;,&quot;status&quot;:&quot;success&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_01YRReokodmjXunA3VwYonHA&quot;,&quot;type&quot;:&quot;data_to_chart&quot;},&quot;type&quot;:&quot;tool_result&quot;},{&quot;text&quot;:&quot;Here is the actual vs. expected claim frequency by risk decile on the test set. Decile 1 contains the highest-risk policies (highest predicted frequency) and decile 10 the lowest-risk.\n\n&quot;,&quot;type&quot;:&quot;text&quot;},{&quot;table&quot;:{&quot;query_id&quot;:&quot;01c7468a-0107-2694-0002-0716066c0f7a&quot;,&quot;result_set&quot;:{&quot;data&quot;:[[&quot;1&quot;,&quot;18835&quot;,&quot;7160.61&quot;,&quot;0.224143&quot;,&quot;0.226352&quot;,&quot;0.99019999999999997&quot;],[&quot;2&quot;,&quot;17357&quot;,&quot;7160.87&quot;,&quot;0.142580&quot;,&quot;0.14161699999999999&quot;,&quot;1.0067999999999999&quot;],[&quot;3&quot;,&quot;15481&quot;,&quot;7160.84&quot;,&quot;0.124287&quot;,&quot;0.112951&quot;,&quot;1.1004&quot;],[&quot;4&quot;,&quot;13265&quot;,&quot;7160.81&quot;,&quot;0.099849&quot;,&quot;0.096200999999999995&quot;,&quot;1.0379&quot;],[&quot;5&quot;,&quot;12327&quot;,&quot;7161.29&quot;,&quot;0.088252&quot;,&quot;0.087529999999999997&quot;,&quot;1.0082&quot;],[&quot;6&quot;,&quot;11890&quot;,&quot;7160.78&quot;,&quot;0.080997&quot;,&quot;0.081278000000000003&quot;,&quot;0.99650000000000005&quot;],[&quot;7&quot;,&quot;11752&quot;,&quot;7160.84&quot;,&quot;0.079041&quot;,&quot;0.075568999999999997&quot;,&quot;1.0459000000000001&quot;],[&quot;8&quot;,&quot;11678&quot;,&quot;7160.48&quot;,&quot;0.070526&quot;,&quot;0.069520999999999999&quot;,&quot;1.0145&quot;],[&quot;9&quot;,&quot;11709&quot;,&quot;7160.84&quot;,&quot;0.059490&quot;,&quot;0.062361&quot;,&quot;0.95399999999999996&quot;],[&quot;10&quot;,&quot;11309&quot;,&quot;7161.49&quot;,&quot;0.043287&quot;,&quot;0.051233000000000001&quot;,&quot;0.84489999999999998&quot;]],&quot;resultSetMetaData&quot;:{&quot;format&quot;:&quot;jsonv2&quot;,&quot;numRows&quot;:10,&quot;partition&quot;:0,&quot;rowType&quot;:[{&quot;length&quot;:0,&quot;name&quot;:&quot;DECILE&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:38,&quot;scale&quot;:0,&quot;type&quot;:&quot;fixed&quot;},{&quot;length&quot;:0,&quot;name&quot;:&quot;N_POLICIES&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:18,&quot;scale&quot;:0,&quot;type&quot;:&quot;fixed&quot;},{&quot;length&quot;:0,&quot;name&quot;:&quot;TOTAL_EXPOSURE&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:38,&quot;scale&quot;:2,&quot;type&quot;:&quot;fixed&quot;},{&quot;length&quot;:0,&quot;name&quot;:&quot;ACTUAL_FREQ&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:38,&quot;scale&quot;:6,&quot;type&quot;:&quot;fixed&quot;},{&quot;length&quot;:0,&quot;name&quot;:&quot;EXPECTED_FREQ&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:0,&quot;scale&quot;:0,&quot;type&quot;:&quot;real&quot;},{&quot;length&quot;:0,&quot;name&quot;:&quot;AE_RATIO&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:0,&quot;scale&quot;:0,&quot;type&quot;:&quot;real&quot;}]},&quot;statementHandle&quot;:&quot;01c7468a-0107-2694-0002-0716066c0f7a&quot;},&quot;title&quot;:&quot;Actual vs Expected Frequency by Decile (Test Set)&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_019XA5cspQPNJjaq69LV2HnB&quot;},&quot;type&quot;:&quot;table&quot;},{&quot;chart&quot;:{&quot;chart_spec&quot;:&quot;{\&quot;$schema\&quot;:\&quot;https://vega.github.io/schema/vega-lite/v5.json\&quot;,\&quot;config\&quot;:{\&quot;bar\&quot;:{\&quot;minBandSize\&quot;:5}},\&quot;data\&quot;:{\&quot;values\&quot;:[{\&quot;ACTUAL_FREQ\&quot;:0.224143,\&quot;DECILE\&quot;:1,\&quot;EXPECTED_FREQ\&quot;:0.226352},{\&quot;ACTUAL_FREQ\&quot;:0.14258,\&quot;DECILE\&quot;:2,\&quot;EXPECTED_FREQ\&quot;:0.141617},{\&quot;ACTUAL_FREQ\&quot;:0.124287,\&quot;DECILE\&quot;:3,\&quot;EXPECTED_FREQ\&quot;:0.112951},{\&quot;ACTUAL_FREQ\&quot;:0.099849,\&quot;DECILE\&quot;:4,\&quot;EXPECTED_FREQ\&quot;:0.096201},{\&quot;ACTUAL_FREQ\&quot;:0.088252,\&quot;DECILE\&quot;:5,\&quot;EXPECTED_FREQ\&quot;:0.08753},{\&quot;ACTUAL_FREQ\&quot;:0.080997,\&quot;DECILE\&quot;:6,\&quot;EXPECTED_FREQ\&quot;:0.081278},{\&quot;ACTUAL_FREQ\&quot;:0.079041,\&quot;DECILE\&quot;:7,\&quot;EXPECTED_FREQ\&quot;:0.075569},{\&quot;ACTUAL_FREQ\&quot;:0.070526,\&quot;DECILE\&quot;:8,\&quot;EXPECTED_FREQ\&quot;:0.069521},{\&quot;ACTUAL_FREQ\&quot;:0.05949,\&quot;DECILE\&quot;:9,\&quot;EXPECTED_FREQ\&quot;:0.062361},{\&quot;ACTUAL_FREQ\&quot;:0.043287,\&quot;DECILE\&quot;:10,\&quot;EXPECTED_FREQ\&quot;:0.051233}]},\&quot;encoding\&quot;:{\&quot;color\&quot;:{\&quot;field\&quot;:\&quot;key\&quot;,\&quot;title\&quot;:\&quot;Series\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;},\&quot;tooltip\&quot;:[{\&quot;field\&quot;:\&quot;key\&quot;,\&quot;title\&quot;:\&quot;Series\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;},{\&quot;field\&quot;:\&quot;DECILE\&quot;,\&quot;title\&quot;:\&quot;Decile\&quot;,\&quot;type\&quot;:\&quot;ordinal\&quot;},{\&quot;field\&quot;:\&quot;value\&quot;,\&quot;format\&quot;:\&quot;,.6~f\&quot;,\&quot;title\&quot;:\&quot;Value\&quot;,\&quot;type\&quot;:\&quot;quantitative\&quot;},{\&quot;field\&quot;:\&quot;ACTUAL_FREQ\&quot;},{\&quot;field\&quot;:\&quot;EXPECTED_FREQ\&quot;}],\&quot;x\&quot;:{\&quot;axis\&quot;:{\&quot;title\&quot;:\&quot;Risk Decile\&quot;},\&quot;field\&quot;:\&quot;DECILE\&quot;,\&quot;type\&quot;:\&quot;ordinal\&quot;},\&quot;y\&quot;:{\&quot;axis\&quot;:{\&quot;title\&quot;:\&quot;Claim Frequency\&quot;},\&quot;field\&quot;:\&quot;value\&quot;,\&quot;sort\&quot;:null,\&quot;type\&quot;:\&quot;quantitative\&quot;}},\&quot;mark\&quot;:{\&quot;point\&quot;:true,\&quot;type\&quot;:\&quot;line\&quot;},\&quot;title\&quot;:\&quot;Actual vs Expected Frequency by Decile (Test Set)\&quot;,\&quot;transform\&quot;:[{\&quot;fold\&quot;:[\&quot;ACTUAL_FREQ\&quot;,\&quot;EXPECTED_FREQ\&quot;]},{\&quot;as\&quot;:\&quot;key\&quot;,\&quot;calculate\&quot;:\&quot;({&#x27;ACTUAL_FREQ&#x27;:&#x27;Actual&#x27;,&#x27;EXPECTED_FREQ&#x27;:&#x27;Expected&#x27;})[datum.key]\&quot;}],\&quot;usermeta\&quot;:{\&quot;snowflake\&quot;:{\&quot;color_mapping\&quot;:{\&quot;Actual\&quot;:{\&quot;hex\&quot;:\&quot;#4c78a8\&quot;,\&quot;name\&quot;:\&quot;blue\&quot;},\&quot;Expected\&quot;:{\&quot;hex\&quot;:\&quot;#f58518\&quot;,\&quot;name\&quot;:\&quot;orange\&quot;}},\&quot;columnRoles\&quot;:{\&quot;ACTUAL_FREQ\&quot;:\&quot;measure\&quot;,\&quot;AE_RATIO\&quot;:\&quot;measure\&quot;,\&quot;DECILE\&quot;:\&quot;dimension\&quot;,\&quot;EXPECTED_FREQ\&quot;:\&quot;measure\&quot;,\&quot;N_POLICIES\&quot;:\&quot;dimension\&quot;,\&quot;TOTAL_EXPOSURE\&quot;:\&quot;measure\&quot;}}}}&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_01YRReokodmjXunA3VwYonHA&quot;},&quot;type&quot;:&quot;chart&quot;},{&quot;text&quot;:&quot;\n\nA few observations on model calibration:\n\n- **Overall monotonic ordering holds well** — both actual and expected frequency decline steadily from decile 1 (~0.224) to decile 10 (~0.043), confirming the model correctly rank-orders risk.\n- **Best-calibrated segments**: deciles 1, 2, 5, 6, and 8 all have A/E ratios within ±1.5% of 1.0 — essentially on target.\n- **Under-prediction in the mid-range**: decile 3 (A/E = 1.10) and decile 7 (A/E = 1.05) show the model slightly under-predicting actual frequency.\n- **Over-prediction in the lowest-risk tail**: decile 10 has A/E = 0.84 (actual 0.043 vs. expected 0.051) and decile 9 A/E = 0.95, meaning the model expects more claims than actually occur for the safest policies — a mild conservatism at the low-risk end that may warrant a closer look.\n\nExposure is well-balanced across deciles (~7,160 each), so these ratios are comparable across bands.&quot;,&quot;type&quot;:&quot;text&quot;},{&quot;suggested_queries&quot;:[{&quot;query&quot;:&quot;How does the average pure premium compare across the risk deciles on the test set?&quot;},{&quot;query&quot;:&quot;How does the actual vs expected frequency by decile compare between the training and test datasets?&quot;},{&quot;query&quot;:&quot;What does the cumulative actual claims percentage look like by decile (a Lorenz-style gains curve)?&quot;}],&quot;type&quot;:&quot;suggested_queries&quot;}],&quot;metadata&quot;:{&quot;assistant_message_id&quot;:570741024307846,&quot;run_id&quot;:&quot;8708817637-570741024305190&quot;,&quot;thread_id&quot;:8708817637,&quot;usage&quot;:{&quot;tokens_consumed&quot;:[{&quot;context_window&quot;:1000000,&quot;input_tokens&quot;:{&quot;cache_read&quot;:157334,&quot;cache_write&quot;:28106,&quot;total&quot;:185452,&quot;uncached&quot;:12},&quot;model_name&quot;:&quot;claude-opus-4-8&quot;,&quot;model_role&quot;:&quot;orchestration&quot;,&quot;output_tokens&quot;:{&quot;total&quot;:1358}}]},&quot;user_message_id&quot;:570741024305190},&quot;role&quot;:&quot;assistant&quot;,&quot;schema_version&quot;:&quot;v2&quot;,&quot;sequence_number&quot;:151,&quot;status&quot;:&quot;completed&quot;}">{&quot;content&quot;:[{&quot;thinking&quot;:{&quot;text&quot;:&quot;Let me query the AVE_DECILE_TEST table for actual vs expected frequency by decile.&quot;},&quot;type&quot;:&quot;thinking&quot;},{&quot;tool_use&quot;:{&quot;client_side_execute&quot;:false,&quot;input&quot;:{&quot;pruning_question&quot;:&quot;actual vs expected frequency by decile on test set&quot;},&quot;name&quot;:&quot;rating_analytics&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_018WAqNwTevyEDczPHpNxiaT&quot;,&quot;type&quot;:&quot;system_agentic_semantic_context&quot;},&quot;type&quot;:&quot;tool_use&quot;},{&quot;tool_result&quot;:{&quot;content&quot;:[{&quot;json&quot;:{&quot;pruned_note&quot;:&quot;**Note**: This semantic model fits within the agent&#x27;s token budget, so it is shown in full. You do not need to set pruning_question on future calls referencing this same semantic model.&quot;,&quot;relationships&quot;:[{&quot;join_type&quot;:&quot;inner&quot;,&quot;left_table&quot;:&quot;freq_model_features&quot;,&quot;name&quot;:&quot;FREQ_MODEL_FEATURES_TO_PURE_PREMIUM&quot;,&quot;relationship_columns&quot;:[{&quot;left_column&quot;:&quot;idpol&quot;,&quot;right_column&quot;:&quot;idpol&quot;}],&quot;relationship_type&quot;:&quot;one_to_one&quot;,&quot;right_table&quot;:&quot;pure_premium&quot;}],&quot;semantic_model_description&quot;:&quot;Insurance pricing analytics for the French MTPL2 portfolio. Contains GLM rating relativities (exp(coefficient)) from Poisson frequency and Gamma severity models, policy-level pure premiums (frequency x severity), model validation decile analysis (actual vs expected), and policy risk factor features. Supports questions about rating factors, technical premiums, model performance, and risk segmentation.&quot;,&quot;semantic_model_key&quot;:&quot;rating_analytics&quot;,&quot;semantic_model_name&quot;:&quot;insurance_rating_analytics&quot;,&quot;semantic_view_fqn&quot;:&quot;FREMTPL2.FREMTPL2_INVESTIGATION.INSURANCE_RATING_ANALYTICS&quot;,&quot;sql_best_practices&quot;:&quot;## SQL Generation Rules and Best Practices\n\n**CRITICAL — Ambiguity Gate (check BEFORE writing SQL):**\nIf the user&#x27;s question contains a business term that could map to more than one metric or dimension in the semantic model, STOP and do the following:\n1. Check the [Additional Instructions] section of your system prompt for an ambiguous terms table or clarification rules.\n2. If those instructions say to ask for clarification, you MUST respond with a clarification question to the user. Do NOT generate SQL. Do NOT pick what seems \&quot;most likely.\&quot;\n3. Only generate SQL if the term unambiguously maps to exactly one metric, or if no clarification rules exist in the Additional Instructions.\nViolating this gate by guessing a metric when clarification is required will produce incorrect results for the user.\n\nYou can write SQL against the provided semantic model to retrieve data. When doing so, you are an expert data scientist well-versed in BI concepts and your goal is to write accurate, readable queries to fetch the relevant data. Use the following sections as guidelines for your task.\n\nThe semantic model is explained in section 1. Standard SQL (using logical names from the semantic model, which are postprocessed to physical SQL) is detailed in section 2. General SQL rules are in section 3.\n\n### 1. How to use the Semantic Model\n\nA semantic model is intended to provide additional information about the relevant entities that you may want to query for an analysis.\n\nA semantic model is comprised of a set of logical tables. A logical table maps onto an actual SQL table or view, called a base table. Each logical table is comprised of facts, dimensions, and metrics.\n\n- **Facts** are row-level quantitative values (e.g., sales amount, quantity, cost). They are unaggregated and exist at the granularity of the table.\n- **Dimensions** are categorical attributes used to group, filter, and slice data (e.g., region, product category, date). They provide context to metrics. They are commonly used to GROUP BY.\n- **Metrics** are aggregations over facts using functions like SUM, AVG, COUNT. They represent business KPIs. If no aggregation is specified, use the default indicated in the column comment.\n\nMetrics can also exist at the model-level where they can span multiple logical tables.\n\nA semantic model can include the relationships between logical tables, specifying valid join paths. Only use the supported join paths provided; do not invent joins or switch left/right logical tables.\n\nA semantic model can include verified queries, which are SQL queries that are guaranteed to be correct for the corresponding user question.\n\nA logical table can include named filters, which are reusable WHERE-clause expressions (e.g., `is_active = TRUE`). Use these filters in your SQL when they match the user&#x27;s intent rather than writing equivalent expressions from scratch.\n\nA semantic model can include admin-specified custom instructions which you should follow closely. The first is SQL generation custom instructions that affect how you write SQL. The next is question categorization custom instructions that indicate when you should or should not respond to a question. Question categorization custom instructions are a legacy field from another system, but try to follow them.\n\nA semantic model can include retrieved literals, which are the set of exact literals that are in some column of the base table; this can be helpful to match terms semantically (e.g. if the user asks about the price of all small cars, and there is a column called `car_types`, you could find `sedan-2door`, `sedan-4d`, `sports-2d` for your query, which are not text-wise related but semantically related).\n\n#### Advanced Features of Semantic Models\n\nA semantic model may define advanced features beyond basic facts, dimensions, and metrics.\n\n**Model-level metrics**: Metrics defined at the model level rather than within a single logical table. These metrics may span multiple tables. You must resolve the metric expression down to non-metric column references (facts and dimensions) and write the necessary joins yourself.\n\n**Asof joins**: A semantic model may contain **asof** relationship keys. Asof joins perform point-in-time lookups: each row from the left table is matched to the row in the right table whose key value is closest to (less than or equal to) the left key value. Use Snowflake&#x27;s `ASOF JOIN ... MATCH_CONDITION(left.col &gt;= right.col) ON equi_conditions` syntax as shown in the supported join paths.\n\n**Range joins**: A semantic model may contain **range** relationship keys. Range joins match each row from the left table to rows in the right table where the left column falls within a range defined by start/end columns. Use the non-equi join conditions as shown in the supported join paths (e.g., `(start_col IS NULL OR left_col &gt;= start_col) AND (end_col IS NULL OR left_col &lt; end_col)`).\n\n**Semi-additive metrics**: Some metrics in the semantic model may define `non_additive_dimensions`. These indicate the metric is **semi-additive** (e.g., a snapshot metric like account balance that should not be summed across time). Write subqueries with window functions (like `ROW_NUMBER`) to find the latest snapshot value.\n\n### 2. Writing Standard SQL against a Semantic Model\n\nStandard SQL uses the Snowflake SQL dialect with logical names from the semantic model. In this mode, you write queries using the logical table and column names (dimensions, facts, time_dimensions) defined in the semantic model. The SQL will be automatically postprocessed to resolve to physical table and column names before execution.\n\n- **Use Semantic Model Column Names**: ALWAYS use column names from the semantic model (dimensions and facts). The SQL will be automatically postprocessed to resolve to physical column names.\n- **Reference Logical Tables**: Use the logical table names from the semantic model with a `__` prefix. Do NOT use fully qualified physical table names (e.g., use `__orders` not `orders` or `DATABASE.SCHEMA.ORDERS`). This prefix is required for all table references, including in FROM, JOIN, and column qualifiers (e.g., `__orders.order_total`).\n- **Always query logical tables, not the underlying base tables**: The base tables can only be accessed through the logical tables using logical SQL. If you encounter errors running logical SQL, fix the query — do not fall back to querying base tables directly.\n- **Do not rewrite logical table CTEs**: The postprocessing step creates CTEs in the final SQL like `WITH __logical_table AS (SELECT ... FROM DB.SCH.BASE_TABLE)` to resolve the logical tables. You should NOT write these CTEs again on subsequent turns, as the SQL you write on logical tables in subsequent turns will be postprocessed to get the CTEs back. You can fully ignore those logical table CTEs.\n- **Identify metrics**: Metrics are typically calculations upon facts. If no specific aggregation mentioned, use the default aggregation indicated in the column comment.\n- **Identify dimensions for GROUP BY**: Dimensions provide context to data - they are descriptive attributes used to slice and dice data (e.g., geography, product categories, customer segments).\n- **Identify facts**: Facts are quantitative data that can be aggregated, summed, averaged, or counted. They are typically numeric fields.\n- **Count Correctly**: In single-table queries, use COUNT(DISTINCT column) for dimension columns that may have duplicate values. Use COUNT(column) without DISTINCT only if the column has unique values like a primary key.\n\nNote that you are not allowed to use all of the Snowflake SQL dialect, which is detailed in Section 3.\n\n### 3. Rules for SQL Generation\n\nAcross all queries you write, you should keep in mind these guidelines when they are relevant.\n\n**Current Date: 2026-09-24 (i.e., today is September 24, 2026)** - Use this as reference for relative time filters.\n\n#### Aggregation and Granularity\n- The primary key defines data granularity. When calculating metrics on different granularity, ALWAYS use GROUP BY to ensure correct aggregation.\n- Every column in SELECT must either have an aggregation function OR be included in GROUP BY.\n- Use PARTITION BY for window functions as needed.\n\n#### Time Series Analysis\n\n**IMPORTANT: ALWAYS use CURRENT_DATE (or CURRENT_TIMESTAMP) in SQL for any reference to \&quot;today\&quot;, \&quot;now\&quot;, or the current date. Do NOT hardcode specific date literals like &#x27;2026-03-22&#x27;. The current date provided above is for interpreting ambiguous time references only (e.g., inferring the year when not specified).**\n\n##### Current Date Reference\n- If a question asks about a specific month without a year (e.g., \&quot;sales for March\&quot;), assume the current year 2026.\n\n##### Time Frequency Conversion\n- For questions requiring time aggregation at different frequency than provided, use DATE_TRUNC() to convert and aggregate facts properly with GROUP BY.\n- To compare time to a NUMBER column, use DATE_PART() to extract year/month/day from a timestamp.\n- For day of week, use DAYOFWEEK() function.\n\n##### Calendar Time Units (week, month, year)\n- If the user asks about \&quot;last week\&quot;, \&quot;this month\&quot;, \&quot;last year\&quot;, ALWAYS assume they mean the CALENDAR unit:\n  - \&quot;last week\&quot;: DATE &gt;= DATE_TRUNC(&#x27;week&#x27;, CURRENT_DATE - INTERVAL &#x27;1 week&#x27;) AND DATE &lt; DATE_TRUNC(&#x27;week&#x27;, CURRENT_DATE)\n  - \&quot;this month\&quot;: DATE &gt;= DATE_TRUNC(&#x27;month&#x27;, CURRENT_DATE)\n  - \&quot;last year\&quot;: DATE &gt;= DATE_TRUNC(&#x27;year&#x27;, CURRENT_DATE - INTERVAL &#x27;1 year&#x27;) AND DATE &lt; DATE_TRUNC(&#x27;year&#x27;, CURRENT_DATE)\n\n##### Past N Days\n- If the user asks \&quot;past X days\&quot; or \&quot;last X days\&quot;, use: DATE &gt;= DATEADD(day, -X, CURRENT_DATE)\n\n##### References to \&quot;Today\&quot; or \&quot;Now\&quot;\n- If the user mentions \&quot;today\&quot;, \&quot;as of today\&quot;, \&quot;to today\&quot;, \&quot;up to now\&quot;, \&quot;until now\&quot;, or similar, ALWAYS use CURRENT_DATE in SQL.\n  - Example: \&quot;from June 2025 to today\&quot; → DATE &gt;= &#x27;2025-06-01&#x27; AND DATE &lt;= CURRENT_DATE\n  - Example: \&quot;sales up to today\&quot; → DATE &lt;= CURRENT_DATE\n- Do NOT resolve \&quot;today\&quot; to a hardcoded date literal.\n\n##### Period-over-Period (DoD, MoM, YoY)\n- ALWAYS include current period, previous period, current value, and previous value in output columns.\n- Calculate BOTH absolute change AND percentage change unless specified otherwise.\n- DO NOT use LEAD() or LAG() for previous period values - these assume consecutive time data which may not be true.\n- Use self-joins or CTEs instead:\n```sql\nSELECT\n    curr.date AS curr_date,\n    prev.date AS prev_date,\n    curr.value AS curr_value,\n    prev.value AS prev_value,\n    curr.value - prev.value AS change,\n    (curr.value - prev.value) / NULLIF(prev.value, 0) AS pct_change\nFROM daily_table AS curr\nLEFT JOIN daily_table AS prev ON curr.date = prev.date + INTERVAL &#x27;1 day&#x27;\nORDER BY curr_date DESC NULLS LAST;\n```\n\n##### Rolling Window Metrics\n- For rolling metrics, ALWAYS: (1) aggregate by day/time granularity first, (2) create CTE to compute rolling metrics, (3) filter to time period last.\n```sql\nWITH daily_sales AS (\n    SELECT date, SUM(sales) AS daily_sales FROM table GROUP BY date\n),\nrolling_avg AS (\n    SELECT date, AVG(daily_sales) OVER (ORDER BY date ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS rolling_avg_3d\n    FROM daily_sales\n)\nSELECT * FROM rolling_avg WHERE DATE_PART(&#x27;YEAR&#x27;, date) = 2026 ORDER BY date DESC NULLS LAST;\n```\n\n##### Missing Time Period\n- If no time range is specified, assume the ENTIRE available time period in the data.\n- Include MIN(date) as start_date and MAX(date) as end_date in output to show the time range used.\n\n#### Ranking, Sorting, and Top-K\n\n##### Sorting\n- When sorting by highest/lowest metric, ALWAYS include NULLS LAST: ORDER BY ratio DESC NULLS LAST\n- For time series without specific sorting, default to sorting time DESCENDING to show latest information first.\n\n##### Top K Queries\n- For simple top-K without partitions: use ORDER BY ... LIMIT K\n- For top-K within partitions (e.g., \&quot;top 5 per month\&quot;): use RANK() or ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)\n```sql\nWITH ranked AS (\n    SELECT *, RANK() OVER (PARTITION BY month ORDER BY sales DESC NULLS LAST) AS rnk\n    FROM monthly_sales\n)\nSELECT * FROM ranked WHERE rnk &lt;= 5 ORDER BY month DESC, rnk NULLS LAST;\n```\n\n#### Joins and Relationships\n\n##### Choosing the JOIN type (LEFT vs INNER)\nThe JOIN type must match the question&#x27;s granularity:\n\n- **Identify the driving table first** — the entity in phrases like \&quot;for each X\&quot;, \&quot;every X\&quot;, \&quot;per X\&quot;, or \&quot;show me each X&#x27;s ...\&quot;. Put it in `FROM`; join everything else to it. The driving table MUST be the table named in `FROM`, never one joined onto another via `JOIN` — the driving table on the wrong side of a `LEFT JOIN` still drops its rows.\n- **`LEFT JOIN`** related tables onto the driving table when the question asks about *every* / *all* / *for each* of the driving entity. This preserves driving-entity rows that have no matching related row. Handle the resulting NULLs explicitly in aggregates (`COALESCE`, or `CASE WHEN COUNT(...) = 0 THEN NULL ELSE ... END`).\n- **`INNER JOIN`** ONLY when the question explicitly restricts to rows *with* related data (\&quot;X **with** Y\&quot;, \&quot;X **that have** Y\&quot;), or when a metric formula requires the related row to exist (e.g., a ratio whose denominator comes from the joined table).\n- **Never** use `INNER JOIN` to \&quot;filter out NULLs\&quot; implicitly — that silently drops rows the user wanted to see. If you need to filter NULLs, do it explicitly with `WHERE x IS NOT NULL`.\n- When in doubt between LEFT and INNER, prefer LEFT — silently dropping rows is a worse failure mode than including a row with NULL aggregates.\n\n```sql\n-- For \&quot;show me the order count for each customer\&quot;:\n-- WRONG: __customers is on the right side of LEFT JOIN, so customers without orders are dropped\nSELECT c.id, COUNT(o.id) FROM __orders o LEFT JOIN __customers c ON o.cust_id = c.id GROUP BY c.id;\n\n-- CORRECT: __customers (the driving entity) is on the left\nSELECT c.id, COUNT(o.id) FROM __customers c LEFT JOIN __orders o ON o.cust_id = c.id GROUP BY c.id;\n```\n\n##### Other join rules\n- Use ONLY the supported join paths provided in the semantic model.\n- When joining multiple tables, assign aliases and ALWAYS qualify columns with table alias in ALL clauses.\n- Avoid joins in subqueries; use CTEs instead.\n- Be aware of data granularity: when joining one-to-many or many-to-many, consider data duplication during aggregations.\n- Extract unique records when necessary to avoid double-counting:\n```sql\n-- WRONG: AVG(income) on joined table counts each customer multiple times\n-- CORRECT: Extract unique customers first, then aggregate\nWITH unique_customers AS (\n    SELECT DISTINCT customer_id, income, region FROM orders o JOIN customers c ON ...\n)\nSELECT region, AVG(income) FROM unique_customers GROUP BY region;\n```\n\n#### Handling Text and Literal Values\n- **Use sample_values for exact matching**: Dimensions include sample_values showing actual data values. Use these to match user-mentioned entities:\n  - If user says \&quot;California\&quot;, check sample_values to see if values are \&quot;CA\&quot;, \&quot;California\&quot;, \&quot;CALIFORNIA\&quot;, etc.\n  - If user mentions a product name, find the closest match in sample_values\n- **Case-Insensitive Matching**: Use ILIKE instead of LIKE or = when exact case is uncertain\n- **Pattern Matching**: Use ILIKE &#x27;%pattern%&#x27; to find partial matches when sample_values don&#x27;t have an exact match\n- **Escape single quotes**: Use two single quotes (&#x27;&#x27;) to escape literal single quotes in strings\n\n#### Ratios and Percentages\n- DO NOT multiply by 100 for ratio/percentage calculations. Keep numbers as decimals.\n\n#### Error Prevention and Snowflake Syntax\n- When creating table or column aliases, avoid Snowflake SQL keywords (e.g., \&quot;to\&quot;, \&quot;date\&quot;, \&quot;order\&quot;)\n- Handle NULL values with COALESCE(column, default_value)\n- Use NULLIF to prevent division by zero: value / NULLIF(denominator, 0)\n- Use double quotes for case-sensitive identifiers: \&quot;ColumnName\&quot;\n- Use FLATTEN() for semi-structured/array data\n- Use QUALIFY for post-aggregation filtering with window functions\n- Use TRY_CAST or TRY_TO_NUMBER for safe type conversions\n&quot;,&quot;tables&quot;:[{&quot;dimensions&quot;:[{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;actual_claims&quot;,&quot;name&quot;:&quot;actual_claims&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;cum_actual&quot;,&quot;name&quot;:&quot;cum_actual&quot;},{&quot;data_type&quot;:&quot;NUMBER(18,0)&quot;,&quot;expr&quot;:&quot;decile&quot;,&quot;name&quot;:&quot;decile&quot;},{&quot;data_type&quot;:&quot;NUMBER(18,0)&quot;,&quot;expr&quot;:&quot;n_policies&quot;,&quot;name&quot;:&quot;n_policies&quot;}],&quot;facts&quot;:[{&quot;data_type&quot;:&quot;NUMBER(38,6)&quot;,&quot;expr&quot;:&quot;actual_freq&quot;,&quot;name&quot;:&quot;actual_freq&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;ae_ratio&quot;,&quot;name&quot;:&quot;ae_ratio&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;avg_pure_premium&quot;,&quot;name&quot;:&quot;avg_pure_premium&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,2)&quot;,&quot;expr&quot;:&quot;cum_actual_pct&quot;,&quot;name&quot;:&quot;cum_actual_pct&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;cum_expected&quot;,&quot;name&quot;:&quot;cum_expected&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,2)&quot;,&quot;expr&quot;:&quot;cum_population_pct&quot;,&quot;name&quot;:&quot;cum_population_pct&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;expected_claims&quot;,&quot;name&quot;:&quot;expected_claims&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;expected_freq&quot;,&quot;name&quot;:&quot;expected_freq&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,2)&quot;,&quot;expr&quot;:&quot;total_exposure&quot;,&quot;name&quot;:&quot;total_exposure&quot;}],&quot;name&quot;:&quot;ave_decile_test&quot;},{&quot;dimensions&quot;:[{&quot;data_type&quot;:&quot;VARCHAR(16777216)&quot;,&quot;expr&quot;:&quot;area&quot;,&quot;name&quot;:&quot;area&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;bonusmalus&quot;,&quot;name&quot;:&quot;bonusmalus&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;bonusmalus_capped&quot;,&quot;name&quot;:&quot;bonusmalus_capped&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;claimnb&quot;,&quot;name&quot;:&quot;claimnb&quot;},{&quot;data_type&quot;:&quot;VARCHAR(5)&quot;,&quot;expr&quot;:&quot;dataset&quot;,&quot;name&quot;:&quot;dataset&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;density&quot;,&quot;name&quot;:&quot;density&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;drivage&quot;,&quot;name&quot;:&quot;drivage&quot;},{&quot;data_type&quot;:&quot;VARCHAR(5)&quot;,&quot;expr&quot;:&quot;drivage_band&quot;,&quot;name&quot;:&quot;drivage_band&quot;},{&quot;data_type&quot;:&quot;NUMBER(1,0)&quot;,&quot;expr&quot;:&quot;has_claim&quot;,&quot;name&quot;:&quot;has_claim&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;idpol&quot;,&quot;name&quot;:&quot;idpol&quot;},{&quot;data_type&quot;:&quot;VARCHAR(16777216)&quot;,&quot;expr&quot;:&quot;region&quot;,&quot;name&quot;:&quot;region&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;vehage&quot;,&quot;name&quot;:&quot;vehage&quot;},{&quot;data_type&quot;:&quot;VARCHAR(5)&quot;,&quot;expr&quot;:&quot;vehage_band&quot;,&quot;name&quot;:&quot;vehage_band&quot;},{&quot;data_type&quot;:&quot;VARCHAR(16777216)&quot;,&quot;expr&quot;:&quot;vehbrand&quot;,&quot;name&quot;:&quot;vehbrand&quot;},{&quot;data_type&quot;:&quot;VARCHAR(16777216)&quot;,&quot;expr&quot;:&quot;vehgas&quot;,&quot;name&quot;:&quot;vehgas&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;vehpower&quot;,&quot;name&quot;:&quot;vehpower&quot;}],&quot;facts&quot;:[{&quot;data_type&quot;:&quot;NUMBER(38,9)&quot;,&quot;expr&quot;:&quot;exposure&quot;,&quot;name&quot;:&quot;exposure&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;ln_density&quot;,&quot;name&quot;:&quot;ln_density&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;predicted_freq&quot;,&quot;name&quot;:&quot;predicted_freq&quot;}],&quot;name&quot;:&quot;freq_model_features&quot;,&quot;primary_key&quot;:[&quot;idpol&quot;]},{&quot;dimensions&quot;:[{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;claimnb&quot;,&quot;name&quot;:&quot;claimnb&quot;},{&quot;data_type&quot;:&quot;VARCHAR(5)&quot;,&quot;expr&quot;:&quot;dataset&quot;,&quot;name&quot;:&quot;dataset&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,0)&quot;,&quot;expr&quot;:&quot;idpol&quot;,&quot;name&quot;:&quot;idpol&quot;},{&quot;data_type&quot;:&quot;NUMBER(18,0)&quot;,&quot;expr&quot;:&quot;n_claims_actual&quot;,&quot;name&quot;:&quot;n_claims_actual&quot;}],&quot;facts&quot;:[{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;avg_actual_sev&quot;,&quot;name&quot;:&quot;avg_actual_sev&quot;},{&quot;data_type&quot;:&quot;NUMBER(38,9)&quot;,&quot;expr&quot;:&quot;exposure&quot;,&quot;name&quot;:&quot;exposure&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;predicted_freq&quot;,&quot;name&quot;:&quot;predicted_freq&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;predicted_sev&quot;,&quot;name&quot;:&quot;predicted_sev&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;pure_premium&quot;,&quot;name&quot;:&quot;pure_premium&quot;}],&quot;name&quot;:&quot;pure_premium&quot;,&quot;primary_key&quot;:[&quot;idpol&quot;]},{&quot;dimensions&quot;:[{&quot;data_type&quot;:&quot;VARCHAR(16777216)&quot;,&quot;expr&quot;:&quot;factor_level&quot;,&quot;name&quot;:&quot;factor_level&quot;},{&quot;data_type&quot;:&quot;VARCHAR(9)&quot;,&quot;expr&quot;:&quot;model&quot;,&quot;name&quot;:&quot;model&quot;},{&quot;data_type&quot;:&quot;VARCHAR(17)&quot;,&quot;expr&quot;:&quot;risk_factor&quot;,&quot;name&quot;:&quot;risk_factor&quot;},{&quot;data_type&quot;:&quot;VARCHAR(3)&quot;,&quot;expr&quot;:&quot;significance&quot;,&quot;name&quot;:&quot;significance&quot;}],&quot;facts&quot;:[{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;estimate&quot;,&quot;name&quot;:&quot;estimate&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;p_value&quot;,&quot;name&quot;:&quot;p_value&quot;},{&quot;data_type&quot;:&quot;FLOAT&quot;,&quot;expr&quot;:&quot;relativity&quot;,&quot;name&quot;:&quot;relativity&quot;}],&quot;name&quot;:&quot;rating_table&quot;}],&quot;verified_queries&quot;:[{&quot;question&quot;:&quot;What are the frequency rating relativities for each risk factor level?&quot;,&quot;sql&quot;:&quot;SELECT risk_factor, factor_level, relativity, significance FROM __rating_table WHERE model = &#x27;FREQUENCY&#x27; AND NOT risk_factor IN (&#x27;Intercept&#x27;, &#x27;VEHPOWER&#x27;, &#x27;BONUSMALUS_CAPPED&#x27;, &#x27;LN_DENSITY&#x27;) ORDER BY risk_factor, factor_level&quot;},{&quot;question&quot;:&quot;What are the severity rating relativities for each risk factor level?&quot;,&quot;sql&quot;:&quot;SELECT risk_factor, factor_level, relativity, significance FROM __rating_table WHERE model = &#x27;SEVERITY&#x27; AND NOT risk_factor IN (&#x27;Intercept&#x27;, &#x27;VEHPOWER&#x27;, &#x27;BONUSMALUS_CAPPED&#x27;, &#x27;LN_DENSITY&#x27;) ORDER BY risk_factor, factor_level&quot;},{&quot;question&quot;:&quot;What are the combined frequency and severity relativities for each rating factor level?&quot;,&quot;sql&quot;:&quot;SELECT r1.risk_factor, r1.factor_level, r1.relativity AS freq_relativity, r2.relativity AS sev_relativity, ROUND(r1.relativity * r2.relativity, 4) AS combined_relativity FROM __rating_table AS r1 JOIN __rating_table AS r2 ON r1.risk_factor = r2.risk_factor AND r1.factor_level = r2.factor_level WHERE r1.model = &#x27;FREQUENCY&#x27; AND r2.model = &#x27;SEVERITY&#x27; ORDER BY r1.risk_factor, r1.factor_level&quot;},{&quot;question&quot;:&quot;What is the relativity for each driver age band?&quot;,&quot;sql&quot;:&quot;SELECT risk_factor, factor_level, model, relativity FROM __rating_table WHERE risk_factor = &#x27;DRIVAGE_BAND&#x27; ORDER BY model, factor_level&quot;},{&quot;question&quot;:&quot;Which rating factors have the biggest impact on claim frequency?&quot;,&quot;sql&quot;:&quot;SELECT risk_factor, factor_level, model, ABS(estimate) AS abs_effect, relativity FROM __rating_table WHERE model = &#x27;FREQUENCY&#x27; ORDER BY ABS(estimate) DESC LIMIT 10&quot;},{&quot;question&quot;:&quot;How does model performance vary across risk deciles in terms of predicted versus actual claim frequency?&quot;,&quot;sql&quot;:&quot;SELECT decile, actual_freq, expected_freq, ae_ratio, avg_pure_premium FROM __ave_decile_test ORDER BY decile&quot;},{&quot;question&quot;:&quot;How do the average pure premiums and model predictions compare between the training and test datasets?&quot;,&quot;sql&quot;:&quot;SELECT dataset, COUNT(*) AS n_policies, ROUND(AVG(pure_premium), 2) AS avg_pure_premium, ROUND(AVG(predicted_freq), 6) AS avg_predicted_freq, ROUND(AVG(predicted_sev), 2) AS avg_predicted_sev FROM __pure_premium GROUP BY dataset ORDER BY dataset&quot;},{&quot;question&quot;:&quot;What is the average pure premium by driver age band and area?&quot;,&quot;sql&quot;:&quot;SELECT drivage_band, area, ROUND(AVG(pure_premium), 2) AS avg_pure_premium, COUNT(*) AS n_policies FROM __freq_model_features AS f JOIN __pure_premium AS p ON f.idpol = p.idpol GROUP BY drivage_band, area ORDER BY avg_pure_premium DESC&quot;}]},&quot;type&quot;:&quot;json&quot;}],&quot;name&quot;:&quot;rating_analytics&quot;,&quot;status&quot;:&quot;success&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_018WAqNwTevyEDczPHpNxiaT&quot;,&quot;type&quot;:&quot;system_agentic_semantic_context&quot;},&quot;type&quot;:&quot;tool_result&quot;},{&quot;tool_use&quot;:{&quot;client_side_execute&quot;:false,&quot;input&quot;:{&quot;semantic_model&quot;:&quot;rating_analytics&quot;,&quot;sql&quot;:&quot;SELECT decile, n_policies, total_exposure, actual_freq, expected_freq, ae_ratio FROM __ave_decile_test ORDER BY decile&quot;,&quot;verified_query_used&quot;:true},&quot;name&quot;:&quot;system_execute_sql&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_019XA5cspQPNJjaq69LV2HnB&quot;,&quot;type&quot;:&quot;system_execute_sql&quot;},&quot;type&quot;:&quot;tool_use&quot;},{&quot;tool_result&quot;:{&quot;content&quot;:[{&quot;json&quot;:{&quot;query_id&quot;:&quot;01c7468a-0107-2694-0002-0716066c0f7a&quot;,&quot;result_set&quot;:{&quot;data&quot;:[[&quot;1&quot;,&quot;18835&quot;,&quot;7160.61&quot;,&quot;0.224143&quot;,&quot;0.226352&quot;,&quot;0.99019999999999997&quot;],[&quot;2&quot;,&quot;17357&quot;,&quot;7160.87&quot;,&quot;0.142580&quot;,&quot;0.14161699999999999&quot;,&quot;1.0067999999999999&quot;],[&quot;3&quot;,&quot;15481&quot;,&quot;7160.84&quot;,&quot;0.124287&quot;,&quot;0.112951&quot;,&quot;1.1004&quot;],[&quot;4&quot;,&quot;13265&quot;,&quot;7160.81&quot;,&quot;0.099849&quot;,&quot;0.096200999999999995&quot;,&quot;1.0379&quot;],[&quot;5&quot;,&quot;12327&quot;,&quot;7161.29&quot;,&quot;0.088252&quot;,&quot;0.087529999999999997&quot;,&quot;1.0082&quot;],[&quot;6&quot;,&quot;11890&quot;,&quot;7160.78&quot;,&quot;0.080997&quot;,&quot;0.081278000000000003&quot;,&quot;0.99650000000000005&quot;],[&quot;7&quot;,&quot;11752&quot;,&quot;7160.84&quot;,&quot;0.079041&quot;,&quot;0.075568999999999997&quot;,&quot;1.0459000000000001&quot;],[&quot;8&quot;,&quot;11678&quot;,&quot;7160.48&quot;,&quot;0.070526&quot;,&quot;0.069520999999999999&quot;,&quot;1.0145&quot;],[&quot;9&quot;,&quot;11709&quot;,&quot;7160.84&quot;,&quot;0.059490&quot;,&quot;0.062361&quot;,&quot;0.95399999999999996&quot;],[&quot;10&quot;,&quot;11309&quot;,&quot;7161.49&quot;,&quot;0.043287&quot;,&quot;0.051233000000000001&quot;,&quot;0.84489999999999998&quot;]],&quot;resultSetMetaData&quot;:{&quot;format&quot;:&quot;jsonv2&quot;,&quot;numRows&quot;:10,&quot;partition&quot;:0,&quot;partitionInfo&quot;:[{&quot;rowCount&quot;:10,&quot;uncompressedSize&quot;:729}],&quot;rowType&quot;:[{&quot;length&quot;:0,&quot;name&quot;:&quot;DECILE&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:38,&quot;scale&quot;:0,&quot;type&quot;:&quot;fixed&quot;},{&quot;length&quot;:0,&quot;name&quot;:&quot;N_POLICIES&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:18,&quot;scale&quot;:0,&quot;type&quot;:&quot;fixed&quot;},{&quot;length&quot;:0,&quot;name&quot;:&quot;TOTAL_EXPOSURE&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:38,&quot;scale&quot;:2,&quot;type&quot;:&quot;fixed&quot;},{&quot;length&quot;:0,&quot;name&quot;:&quot;ACTUAL_FREQ&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:38,&quot;scale&quot;:6,&quot;type&quot;:&quot;fixed&quot;},{&quot;length&quot;:0,&quot;name&quot;:&quot;EXPECTED_FREQ&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:0,&quot;scale&quot;:0,&quot;type&quot;:&quot;real&quot;},{&quot;length&quot;:0,&quot;name&quot;:&quot;AE_RATIO&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:0,&quot;scale&quot;:0,&quot;type&quot;:&quot;real&quot;}]},&quot;statementHandle&quot;:&quot;01c7468a-0107-2694-0002-0716066c0f7a&quot;},&quot;semantic_model_path&quot;:&quot;FREMTPL2.FREMTPL2_INVESTIGATION.INSURANCE_RATING_ANALYTICS&quot;,&quot;sql&quot;:&quot;WITH __ave_decile_test AS (\n  SELECT\n    decile,\n    n_policies,\n    actual_freq,\n    ae_ratio,\n    expected_freq,\n    total_exposure\n  FROM FREMTPL2.FREMTPL2_INVESTIGATION.AVE_DECILE_TEST\n)\nSELECT\n  decile,\n  n_policies,\n  total_exposure,\n  actual_freq,\n  expected_freq,\n  ae_ratio\nFROM __ave_decile_test\nORDER BY\n  decile /* Generated by Cortex */;&quot;,&quot;verified_query_used&quot;:true},&quot;type&quot;:&quot;json&quot;}],&quot;name&quot;:&quot;system_execute_sql&quot;,&quot;status&quot;:&quot;success&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_019XA5cspQPNJjaq69LV2HnB&quot;,&quot;type&quot;:&quot;system_execute_sql&quot;},&quot;type&quot;:&quot;tool_result&quot;},{&quot;tool_use&quot;:{&quot;client_side_execute&quot;:false,&quot;input&quot;:{&quot;skill_name&quot;:&quot;chart_instructions&quot;},&quot;name&quot;:&quot;server_skill&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_01H5DPAENE91uDMRnXdBsMXd&quot;,&quot;type&quot;:&quot;server_skill&quot;},&quot;type&quot;:&quot;tool_use&quot;},{&quot;tool_result&quot;:{&quot;content&quot;:[{&quot;json&quot;:{&quot;content&quot;:&quot;# Skill: chart_instructions\n\n**Description**: Instructions for generating Vega-Lite chart specifications with unrestricted chart types\n\n## Instructions\n\n\n# WHEN TO GENERATE A CHART\n\n**PHASE 1: DECIDING TO GENERATE A CHART** (happens DURING your reasoning, BEFORE you have a chart tool result)\n\nInspecting results from system_execute_sql, you MUST evaluate in &lt;thinking&gt;:\n\n**Step 1: Should I generate a chart?**\n  - Prefer charts over tables for: comparisons, trends, rankings, distributions, time-series\n  - MUST generate charts when SQL results have 2+ rows with numerical metrics (revenue, sales, counts, growth rates, percentages)\n  - Example of MANDATORY chart scenarios:\n    - Comparisons: revenue by region, sales by product, performance by team\n    - Rankings: top 10 customers, bottom performers, leaderboards\n    - Time series: monthly trends, year-over-year growth, daily metrics\n    - Distributions: category breakdowns, segment analysis\n  - Do NOT chart: singular values (e.g., \&quot;What is total revenue?\&quot; → just answer \&quot;The total revenue is $X\&quot;)\n  - Prefer using the prior SQL result&#x27;s `tool_use_id` as `tool_result_id` when available\n  - If you do NOT have a usable `tool_use_id` but you do have a Snowflake `query_id`, you MAY call the chart tool with `query_id` instead\n  - If you do NOT have any SQL-backed source but you DO have small, well-formed records you computed yourself or that came from a non-SQL tool, you MAY pass them as inline `values`. Do NOT paste raw CSV — convert to structured row objects first.\n  - In a code-execution sandbox, prefer writing larger datasets to a CSV file on a Snowflake stage and passing its path as `csv_path` instead of inflating your context with inline `values`.\n\n**Step 2: Is the SQL result visualization-ready?**\n  - Check: row count, column names, aggregation level, data shape\n  - Check if the question mentions a specific chart type that should be generated. If it does, check if the SQL result is visualization-ready for the requested chart type.\n  - **IMPORTANT - Check custom instructions**: Review the system prompt for any custom response instructions or chart-related preferences. Custom instructions should take precedence over recommendations in this guide, unless they are breaking the system. For example, if custom instructions say \&quot;always use bar charts for time series\&quot;, you MUST use a bar chart even though this guide recommends line charts for time series. Double-check any instructions under \&quot;[Important Case-specific Instructions]\&quot; section in the system prompt, and apply any chart-relevant guidance.\n\n**Step 3: Prepare data and generate a chart**\n  - If data is NOT visualization-ready → Use a vega-lite transform to reshape the data before calling data_to_chart again. Reuse the prior SQL result&#x27;s tool_use_id; do NOT run a new SQL query for chart data reshaping unless absolutely necessary and you need different data.\n  - Always provide context text BEFORE the chart block, then show the chart (both inline in your answer text).\n\n**Step 4: Consider generating multiple charts**\n  - You CAN generate multiple charts when a single chart would be insufficient or misleading:\n    - **Different scales**: When metrics have vastly different magnitudes (e.g., revenue in millions vs. growth rate in percentages), a single chart may hide patterns in smaller values. Create separate charts for each scale.\n    - **Different perspectives**: When the user&#x27;s question benefits from multiple views (e.g., \&quot;analyze sales performance\&quot; could show both a trend over time AND a breakdown by category).\n    - **Comparison clarity**: When comparing items with very different value ranges, separate charts can make each comparison more straightforward.\n  - To generate multiple charts:\n    1. Call data_to_chart multiple times, once for each chart\n    2. Present each chart with a brief label explaining what it shows. Remember to cite each chart separately\n    3. Example: \&quot;Here&#x27;s the revenue trend:\&quot; followed by chart 1, then \&quot;And here&#x27;s the growth rate trend:\&quot; followed by chart 2\n  - Do NOT generate multiple charts just to show more visualizations - only when it genuinely improves understanding.\n\n**PHASE 2: PRESENTING THE CHART** (happens AFTER you have a chart tool result in conversation history)\n\nOnce you have called data_to_chart tool and received a tool result:\n  * Find the data_to_chart tool result with the chart in conversation history\n  * Provide the &lt;chart&gt;toolUseId&lt;/chart&gt; block inline in your answer text after the thinking block where toolUseId is from the data_to_chart tool result\n  * Valid chart block format: &lt;chart&gt;tooluse_8n3P5qRk7aWzJ1cYxTvEfg&lt;/chart&gt;\n  * If you cannot find ANY valid tool results from data_to_chart tool in conversation history, just say \&quot;I couldn&#x27;t generate a valid visualization.\&quot;\n  * **AVOID REPETITION**: When user did not ask for a chart explicitly, your chart response comes AFTER your initial response in the conversation. Do NOT repeat information already provided in your previous answer before generating the chart:\n    - Do NOT repeat the summary or analysis from your first response\n    - Introduce the chart and optionally add NEW observations visible only in the visualization (e.g., visual patterns, outliers that stand out graphically) or new findings that you were not aware of before.\n  * All chart blocks must be placed inline in your answer text, not before the thinking block.\n  * DO NOT use tool IDs from system_execute_sql tool results to generate a chart block. These will cause rendering errors. ONLY use data_to_chart tool use IDs in chart blocks.\n  * DO NOT reference or describe chart colors (e.g., \&quot;the blue line\&quot;, \&quot;red bars\&quot;) in your &lt;thinking&gt; sections, unless you explicitly specified them in chart specification.\n  * **Colors**: The chart&#x27;s Vega-Lite spec may include a `color_mapping` object at `usermeta.snowflake.color_mapping` (e.g. `{\&quot;Health\&quot;:{\&quot;hex\&quot;:\&quot;#1a6ce7\&quot;,\&quot;name\&quot;:\&quot;blue\&quot;}}`) where each entry maps a category to its rendered hex and color name. Whenever the user refers to a series by color or asks to recolor one, you MUST consult `color_mapping` to identify the category. Match the user&#x27;s color word to the closest `name` — do not require an exact match; map approximate or near human color words to the nearest name (e.g. \&quot;sky\&quot;/\&quot;sky blue\&quot;/\&quot;navy\&quot;/\&quot;azure\&quot;/\&quot;cobalt\&quot; → \&quot;blue\&quot;, \&quot;crimson\&quot;/\&quot;maroon\&quot;/\&quot;scarlet\&quot; → \&quot;red\&quot;, \&quot;lime\&quot;/\&quot;emerald\&quot;/\&quot;olive\&quot; → \&quot;green\&quot;, \&quot;gold\&quot;/\&quot;amber\&quot; → \&quot;orange\&quot;). Use the matched category whether they ask about a color (e.g. \&quot;what does the red line show?\&quot;) or ask to recolor it (e.g. \&quot;change the sky-blue bar to yellow\&quot;); for recolor, change only that category&#x27;s color and preserve all other encodings.\n\n# HOW TO USE\n\n## Step 1: Call data_to_chart\n\nProvide:\n\n1. **`chart`**: a complete Vega-Lite JSON specification (see format below)\n2. Exactly one data reference:\n   - **Preferred: `tool_result_id`** — the `tool_use_id` of a previous system_execute_sql result whose data should be used. Refreshable.\n   - **Fallback: `query_id`** — a Snowflake `query_id` whose result should be charted when no usable `tool_result_id` is available. Refreshable when SQL provenance can be recovered.\n   - **Inline: `values`** — an array of row objects (e.g. `[{\&quot;month\&quot;: \&quot;2025-01\&quot;, \&quot;value\&quot;: 100}, ...]`) for small, LLM-computed or non-SQL data. Keep small (single-screen tables) so size validation passes. Not refreshable. Do NOT paste raw CSV — convert to structured row objects first.\n   - **File: `csv_path`** — a sandbox workspace path to a CSV file (e.g. `\&quot;/workspace/data.csv\&quot;`). Write the CSV under `/workspace` in the sandbox first; the orchestrator downloads it from the workspace stage and parses the CSV server-side, so the data does NOT pass through your context. Path must start with `/workspace/` and reference a `.csv` file. Do NOT pass `@`-stage paths or `snow://...` URLs. Not refreshable.\n\n## Step 2: Cite the chart\n\nUse the data_to_chart `tool_use_id` when citing the chart inline in your answer text:\n```\n&lt;chart&gt;tool_use_id&lt;/chart&gt;\n```\n\n## Sandbox / code-execution sessions\n\nIf you have access to a code-execution sandbox (e.g. `bash` with Python, pandas, plotly), you MUST still produce charts via data_to_chart. Do NOT generate Plotly / matplotlib / D3 HTML and embed it in the answer (e.g. via `iframe srcdoc`, `&lt;script&gt;` blocks, or raw HTML) — those bypass chart validation, customization, and the renderer pipeline, and will not be styled consistently with the rest of the surface.\n\nTwo patterns, picked by dataset size:\n\n### Small datasets (~tens of rows): inline `values`\n\n1. Use `bash` (Python/pandas/SQL CLI/etc.) to derive the data you want to plot.\n2. Print the result as a small JSON array of row objects (one row per record, scalar values only).\n3. Call data_to_chart with that array passed as inline `values`, plus a Vega-Lite spec.\n\n### Larger datasets: write a CSV to `/workspace/`, then pass it as `csv_path`\n\nFor anything bigger than a few dozen rows, write a CSV under `/workspace/` and pass that sandbox path directly as `csv_path`. The orchestrator downloads and parses the CSV server-side, so the data does NOT consume your context window.\n\n1. In `bash`, write the CSV under `/workspace/`, e.g.:\n\n   ```python\n   import pandas as pd\n   df = ... # your aggregated / filtered dataset\n   df.to_csv(\&quot;/workspace/sales_by_month.csv\&quot;, index=False)\n   ```\n\n   The first row MUST be a header (column names). Cells must be scalar (numbers, strings, empty) — no nested JSON, no Python repr, no commas inside unquoted values (pandas handles quoting correctly by default).\n\n2. Call data_to_chart with `csv_path` set to the same `/workspace/...` path you wrote (e.g. `\&quot;/workspace/sales_by_month.csv\&quot;`), plus your Vega-Lite spec. Do not pass `values`, `tool_result_id`, or `query_id` in the same call. Do NOT pass `@`-stage paths or `snow://...` URLs as `csv_path` — only sandbox `/workspace/...` paths are accepted.\n\nIf the dataset is huge, aggregate or top-N it in `bash` first; the chart pipeline still enforces a per-chart row cap, and tiny preprocessed CSVs render faster.\n\n# CHART SPEC FORMAT\n\nThe `chart` parameter must be a valid Vega-Lite JSON object.\n\n## Single-view constraint\nThe rendering backend only supports **single-view** specs. Do NOT use `vconcat`, `hconcat`, `facet`, or `repeat`.\n\nTo combine multiple chart types (e.g., bar + line), use `layer` within a single-view spec.\nIf the user asks for side-by-side panels, generate **separate charts** by calling data_to_chart multiple times.\n\n## Data handling\n- **Do NOT include a top-level `\&quot;data\&quot;` field.** The referenced SQL result is injected automatically and **overwrites** any `data` you provide. Because of this override, your `encoding.field` names MUST match the **SQL result column names exactly** — Snowflake returns them UPPERCASE by default (e.g. `INCIDENT_MONTH`, `INCIDENT_COUNT`) — NOT any friendlier alias you might invent.\n  - **This is the #1 cause of blank charts:** writing inline data like `{\&quot;month\&quot;: ..., \&quot;count\&quot;: ...}` and then encoding `\&quot;field\&quot;: \&quot;month\&quot;`. The pipeline replaces your data with columns `INCIDENT_MONTH`/`INCIDENT_COUNT`, so `month`/`count` no longer exist and no marks are drawn. Always take field names from the actual SQL result columns in the conversation, not from your prose or example data.\n- **Do NOT include `\&quot;width\&quot;` or `\&quot;height\&quot;`.** These are set in post-processing.\n- **The ONLY place a `\&quot;data\&quot;` field is allowed is inside an annotation layer** — a `rule`/`text` reference-line or label layer where you supply your own constant positions/labels (see Tip 8). That per-layer `data.values` is NOT overwritten. Never put `data` at the top level, and never put it on a primary data-bearing layer.\n- For `layer` specs, omit top-level `\&quot;data\&quot;`; the injected SQL result is shared across all data-bearing layers.\n\n## Single-layer example\n```json\n{\n  \&quot;title\&quot;: \&quot;Monthly Revenue\&quot;,\n  \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;area\&quot;, \&quot;opacity\&quot;: 0.7},\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;temporal\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REVENUE\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n## Multi-layer example (dual-axis)\n```json\n{\n  \&quot;title\&quot;: \&quot;Revenue vs Orders\&quot;,\n  \&quot;layer\&quot;: [\n    {\n      \&quot;mark\&quot;: \&quot;bar\&quot;,\n      \&quot;encoding\&quot;: {\n        \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;ordinal\&quot;},\n        \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REVENUE\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;, \&quot;axis\&quot;: {\&quot;title\&quot;: \&quot;Revenue ($)\&quot;}}\n      }\n    },\n    {\n      \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;line\&quot;, \&quot;color\&quot;: \&quot;red\&quot;, \&quot;strokeWidth\&quot;: 2},\n      \&quot;encoding\&quot;: {\n        \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;ordinal\&quot;},\n        \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;ORDERS\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;, \&quot;axis\&quot;: {\&quot;title\&quot;: \&quot;Orders\&quot;}}\n      }\n    }\n  ],\n  \&quot;resolve\&quot;: {\&quot;scale\&quot;: {\&quot;y\&quot;: \&quot;independent\&quot;}}\n}\n```\n\n# FIELD TYPES\n\n- `\&quot;quantitative\&quot;` — numeric values\n- `\&quot;nominal\&quot;` — categorical without order\n- `\&quot;ordinal\&quot;` — categorical with order\n- `\&quot;temporal\&quot;` — date/time values\n\n# TIPS\n\n\n1. **Dual-axis**: Use `layer` with `resolve: {scale: {y: \&quot;independent\&quot;}}`. **Use at most 2 layers.** More than 2 layers causes overlapping Y-axis labels. If you need to show 3+ metrics on different scales, generate **separate charts** by calling data_to_chart multiple times instead.\n2. **Heatmaps**: Use `mark: \&quot;rect\&quot;` with `color` on quantitative, `x`/`y` on nominal\n3. **Boxplots**: Use `mark: \&quot;boxplot\&quot;`\n4. **Waterfall**: Use `calculate` transforms for running totals, then `bar` with `y`/`y2`\n5. **Technical/helper columns**: If you create a transform output that is only used for styling, positioning, or other internal chart mechanics, its field name MUST start with `_`. Examples: `_color`, `_label_x`, `_x`, `_y`, `_label`. These internal helper fields are not user-facing and should not be intended for tooltips or legends unless you explicitly mean to expose them.\n6. **Custom colors**: When the user (or chart customization soft instructions) requests specific colors per series or wants to highlight specific marks, read [references/colors.md](references/colors.md) for the two `_color` patterns (multi-series via `scale.range.field` vs highlight via `scale: null`) and the rules that keep them mutually exclusive.\n7. **Global styling**: Use the `config` object for background, fonts, default mark color, etc. (e.g., `\&quot;config\&quot;: {\&quot;background\&quot;: \&quot;lightgray\&quot;}`)\n8. **Annotations, reference lines, and bar text labels**: Add annotation layers ONLY when the user (or chart customization soft instructions) explicitly asks for reference lines, event markers, value labels on bars, or text callouts.\n\n   Use `rule` or `text` layers with **per-layer `data`** and `field`-based encoding. Do **NOT** use `datum` — it is not supported by the renderer and will render at position 0. Give each annotation layer its own `\&quot;data\&quot;: {\&quot;values\&quot;: [...]}` with the position values, then reference them via `field`.\n\n   Example — vertical reference line + label on a temporal x-axis:\n   ```json\n   {\n     \&quot;layer\&quot;: [\n       {\n         \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;rule\&quot;, \&quot;color\&quot;: \&quot;#FF6B6B\&quot;, \&quot;strokeDash\&quot;: [4, 4]},\n         \&quot;data\&quot;: {\&quot;values\&quot;: [{\&quot;_X\&quot;: \&quot;2025-04-18\&quot;}]},\n         \&quot;encoding\&quot;: {\&quot;x\&quot;: {\&quot;field\&quot;: \&quot;_X\&quot;, \&quot;type\&quot;: \&quot;temporal\&quot;}}\n       },\n       {\n         \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;text\&quot;, \&quot;align\&quot;: \&quot;left\&quot;, \&quot;dx\&quot;: 5, \&quot;dy\&quot;: -5, \&quot;color\&quot;: \&quot;#FF6B6B\&quot;, \&quot;fontSize\&quot;: 11},\n         \&quot;data\&quot;: {\&quot;values\&quot;: [{\&quot;_X\&quot;: \&quot;2025-04-18\&quot;, \&quot;_Y\&quot;: 190, \&quot;_LABEL\&quot;: \&quot;Event date\&quot;}]},\n         \&quot;encoding\&quot;: {\n           \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;_X\&quot;, \&quot;type\&quot;: \&quot;temporal\&quot;},\n           \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;_Y\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n           \&quot;text\&quot;: {\&quot;field\&quot;: \&quot;_LABEL\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n         }\n       }\n     ]\n   }\n   ```\n   For horizontal reference lines use `\&quot;y\&quot;` instead of `\&quot;x\&quot;` with the same per-layer data pattern.\n\n   **CRITICAL — ordinal axis with explicit `sort` array**: When the main axis is `ordinal` with an explicit `sort` array (e.g. `[1,2,...,12]` or month names), the annotation layer&#x27;s `data.values` key AND `encoding.field` MUST match the main layer&#x27;s field name **exactly** (same casing). Renaming it (`MONTH` → `_MONTH`) silently breaks the shared scale&#x27;s sort and falls back to alphabetical order. Pick ONE field name and reuse it in every layer.\n\n   Example — annotation on an ordinal axis with `sort`:\n   ```json\n   {\n     \&quot;layer\&quot;: [\n       {\n         \&quot;mark\&quot;: \&quot;bar\&quot;,\n         \&quot;encoding\&quot;: {\n           \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;ordinal\&quot;, \&quot;sort\&quot;: [1,2,3,4,5,6,7,8,9,10,11,12]},\n           \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REVENUE\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;}\n         }\n       },\n       {\n         \&quot;data\&quot;: {\&quot;values\&quot;: [{\&quot;MONTH\&quot;: 12, \&quot;_LABEL\&quot;: \&quot;Year-end\&quot;}]},\n         \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;text\&quot;, \&quot;align\&quot;: \&quot;right\&quot;, \&quot;dx\&quot;: -4, \&quot;dy\&quot;: -10, \&quot;fontWeight\&quot;: \&quot;bold\&quot;},\n         \&quot;encoding\&quot;: {\n           \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;ordinal\&quot;, \&quot;sort\&quot;: [1,2,3,4,5,6,7,8,9,10,11,12]},\n           \&quot;y\&quot;: {\&quot;value\&quot;: 10},\n           \&quot;text\&quot;: {\&quot;field\&quot;: \&quot;_LABEL\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n         }\n       }\n     ]\n   }\n   ```\n\n   **Bar text labels**: Center labels at the midpoint of each bar via a `calculate` transform (e.g. `datum.SALES / 2`). Use a contrasting color (e.g. white text on dark bars).\n   ```json\n   {\n     \&quot;layer\&quot;: [\n       {\&quot;mark\&quot;: \&quot;bar\&quot;, \&quot;encoding\&quot;: {\&quot;x\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;}, \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}}},\n       {\n         \&quot;transform\&quot;: [{\&quot;calculate\&quot;: \&quot;datum.SALES / 2\&quot;, \&quot;as\&quot;: \&quot;_label_x\&quot;}],\n         \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;text\&quot;, \&quot;color\&quot;: \&quot;white\&quot;},\n         \&quot;encoding\&quot;: {\n           \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;_label_x\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n           \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n           \&quot;text\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;}\n         }\n       }\n     ]\n   }\n   ```\n9. **Multiple panels**: Call data_to_chart multiple times instead of using `hconcat`/`vconcat`\n\n# DATA QUALITY RULES\n\nFollow these rules to ensure charts render correctly. These prevent the most common failures.\n\n## 1. Bar charts: no duplicate categories\n\nFor bar charts without an aggregate, each (categorical_field, color_field) tuple must be unique. Duplicate categories cause stacked/overlapping bars that misrepresent the data. Avoid that, unless specifically requested by user.\n\n**Fix — aggregate transform** (preferred):\n```json\n{\n  \&quot;transform\&quot;: [\n    {\&quot;aggregate\&quot;: [{\&quot;op\&quot;: \&quot;sum\&quot;, \&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;as\&quot;: \&quot;SALES\&quot;}], \&quot;groupby\&quot;: [\&quot;REGION\&quot;, \&quot;CATEGORY\&quot;]}\n  ],\n  \&quot;mark\&quot;: \&quot;bar\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n**Fix — grouped bar chart** (when you want to show per-item bars side by side instead of stacking):\nUse `xOffset` (vertical bars) or `yOffset` (horizontal bars) to place bars next to each other. This is the **default** for multi-color bar charts.\n```json\n{\n  \&quot;title\&quot;: \&quot;Revenue by Region and Category\&quot;,\n  \&quot;mark\&quot;: \&quot;bar\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;yOffset\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;, \&quot;title\&quot;: \&quot;Category\&quot;}\n  }\n}\n```\n\n**Fix — stacked bar chart** (ONLY when the user explicitly asks for a \&quot;stacked bar chart\&quot;):\nAdd `\&quot;stack\&quot;: \&quot;zero\&quot;` to the **quantitative** axis encoding and do NOT include `xOffset`/`yOffset`. Use `\&quot;stack\&quot;: \&quot;normalize\&quot;` only when the user explicitly asks for normalized/percentage stacked bars.\nNEVER use `\&quot;stack\&quot;: false`, `\&quot;stack\&quot;: null`, or `\&quot;stack\&quot;: \&quot;center\&quot;` — these cause broken or overlapping bars.\n```json\n{\n  \&quot;title\&quot;: \&quot;Sales by Region and Category (Stacked)\&quot;,\n  \&quot;mark\&quot;: \&quot;bar\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;, \&quot;stack\&quot;: \&quot;zero\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;, \&quot;title\&quot;: \&quot;Category\&quot;}\n  }\n}\n```\nWhen combining with fold (wide-format data with multiple metric columns):\n```json\n{\n  \&quot;transform\&quot;: [\n    {\&quot;fold\&quot;: [\&quot;CAPACITY\&quot;, \&quot;UTILIZATION\&quot;]},\n    {\&quot;calculate\&quot;: \&quot;({&#x27;CAPACITY&#x27;: &#x27;Capacity&#x27;, &#x27;UTILIZATION&#x27;: &#x27;Utilization&#x27;})[datum.key]\&quot;, \&quot;as\&quot;: \&quot;key\&quot;}\n  ],\n  \&quot;mark\&quot;: \&quot;bar\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;value\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;ACCOUNT\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;yOffset\&quot;: {\&quot;field\&quot;: \&quot;key\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;key\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;, \&quot;title\&quot;: \&quot;Metric\&quot;}\n  }\n}\n```\n**Rule**: The `xOffset`/`yOffset` field MUST be different from `x` and `y` fields. Never use the same field in multiple encodings.\n\n## 2. Line charts: unique x-values per series\n\nEach color series in a line chart must have unique x-values. Duplicate x-values within the same series create ambiguous zigzag lines.\n\n**Fix — wide-format data** (multiple value columns → fold):\n```json\n{\n  \&quot;transform\&quot;: [{\&quot;fold\&quot;: [\&quot;REVENUE\&quot;, \&quot;ORDERS\&quot;]}],\n  \&quot;mark\&quot;: \&quot;line\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;MONTH\&quot;, \&quot;type\&quot;: \&quot;temporal\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;value\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;key\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n**Fix — duplicate rows** (aggregate transform):\n```json\n{\n  \&quot;transform\&quot;: [\n    {\&quot;aggregate\&quot;: [{\&quot;op\&quot;: \&quot;sum\&quot;, \&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;as\&quot;: \&quot;SALES\&quot;}], \&quot;groupby\&quot;: [\&quot;DATE\&quot;, \&quot;REGION\&quot;]}\n  ],\n  \&quot;mark\&quot;: \&quot;line\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;DATE\&quot;, \&quot;type\&quot;: \&quot;temporal\&quot;},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;SALES\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;},\n    \&quot;color\&quot;: {\&quot;field\&quot;: \&quot;REGION\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n**Fix — missing color encoding**: If data has a category column causing duplicates, add `color` encoding so each series gets its own line with unique x-values.\n\n## 3. Bar charts: custom x-axis domains cause bars extending off-screen\n\nBar marks always start from 0 on the quantitative axis. If you set a custom `scale.domain` that excludes 0 (e.g., `[0.95, 1.1]` for values near 1.0), bars will stretch from 0 (off-screen) to their value, appearing as extremely long bars extending to the left (horizontal) or bottom (vertical).\n\n**Fix — use `x2`/`y2` to anchor the bar baseline at the domain start:**\n```json\n{\n  \&quot;mark\&quot;: \&quot;bar\&quot;,\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;METRIC\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;, \&quot;scale\&quot;: {\&quot;domain\&quot;: [0.95, 1.1]}},\n    \&quot;x2\&quot;: {\&quot;datum\&quot;: 0.95},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n**Alternative — use tick or point marks** which don&#x27;t have a baseline:\n```json\n{\n  \&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;tick\&quot;, \&quot;thickness\&quot;: 3},\n  \&quot;encoding\&quot;: {\n    \&quot;x\&quot;: {\&quot;field\&quot;: \&quot;METRIC\&quot;, \&quot;type\&quot;: \&quot;quantitative\&quot;, \&quot;scale\&quot;: {\&quot;domain\&quot;: [0.95, 1.1]}},\n    \&quot;y\&quot;: {\&quot;field\&quot;: \&quot;CATEGORY\&quot;, \&quot;type\&quot;: \&quot;nominal\&quot;}\n  }\n}\n```\n\n**Rule**: Whenever you use a bar chart with a custom `scale.domain` that does not include 0, you MUST either set `x2`/`y2` to the domain start value, or use a non-bar mark type (tick, point, circle).\n\n## 4. Temporal line charts: regular spacing\n\nFor temporal line charts, avoid data with very irregular time gaps (e.g., daily data with multi-month gaps). Vega-Lite draws straight lines between points, making large gaps misleading.\n\n**Fix options**:\n- If the user explicitly asks for a line chart with irregular data, use `\&quot;point\&quot;: true` to show where real observations exist: `\&quot;mark\&quot;: {\&quot;type\&quot;: \&quot;line\&quot;, \&quot;point\&quot;: true}`\n- Otherwise, prefer a Vega-Lite `filter`/`aggregate` transform to produce data with regular time intervals (e.g., fill gaps with zeros or nulls, or aggregate to a coarser granularity like monthly/quarterly). Only run a new SQL query when absolutely necessary — i.e., the required transformation cannot be expressed as a vega-lite transform\n- Provide separate charts for each interval\n\n\n## 5. Field name casing must match SQL column names exactly — and must match across layers\n\nVega-Lite field matching is **case-sensitive**. Snowflake SQL returns column names in UPPERCASE by default. Always use the exact casing from the SQL result set.\n\n**Correct:** `{\&quot;field\&quot;: \&quot;REVENUE\&quot;, ...}` (matches Snowflake column `REVENUE`)\n**Wrong:** `{\&quot;field\&quot;: \&quot;revenue\&quot;, ...}` or `{\&quot;field\&quot;: \&quot;Revenue\&quot;, ...}`\n\nThis applies everywhere: encoding fields, `calculate` expressions (`datum.REVENUE`), `fold` field lists, `sort` field references, and `aggregate` groupby fields.\n\n**Cross-layer rule (layered specs):** Once a `field` name is used on a shared scale (e.g. `x` is `field: \&quot;MONTH\&quot;` in the bar layer), every other layer that draws on that same scale **and** every key in those layers&#x27; inline `data.values` must use the *exact* same string. Do NOT rename a column to make it look \&quot;internal\&quot; by adding/removing an underscore (`MONTH` → `_MONTH`) or changing case (`_month_name` → `_MONTH_NAME`) in an annotation layer — the rename silently breaks shared-scale features (sort fall-through, color-scale fall-through, axis-domain mismatch). When in doubt, reuse the *same* field name everywhere.\n\n# COMMON MISTAKES\n\n- Do NOT include a top-level `\&quot;data\&quot;`, `\&quot;width\&quot;`, `\&quot;height\&quot;`, or `\&quot;$schema\&quot;` — they are handled automatically (top-level `data` is overwritten by the injected SQL result). The only allowed `data` is per-layer `data.values` in a `rule`/`text` annotation layer (Tip 8)\n- Field names must match the injected SQL result column names EXACTLY (case-sensitive) — never the aliases you use in prose or inline example data\n- When using `layer`, all layers share compatible encodings unless using `resolve`\n- When using `fold` transform, the new fields default to `\&quot;key\&quot;` and `\&quot;value\&quot;`\n- **NEVER** use `vconcat`, `hconcat`, `facet`, or `repeat` — renderer only supports single-view\n- **DO NOT CREATE** `maps` - reading map json is blocked and will not render properly\n- **NEVER** use `datum` in `rule` or `text` annotation layers — always use per-layer `\&quot;data\&quot;: {\&quot;values\&quot;: [...]}` with `field`-based encoding (see Tip 8)\n\n\n\n## Skill Directory Contents\n\nThe following files are available in this skill. Use the `read` tool to explore them if needed.\n\n| File Path | Size |\n|-----------|------|\n| `/app/skills/chart_instructions/references/` | (dir) |\n| `/app/skills/chart_instructions/references/colors.md` | 2.3 KB |\n\n**To read a file**, use the `read` tool with `file_path` set to the full path shown above.\nExample: `{\&quot;file_path\&quot;: \&quot;/app/skills/chart_instructions/example.md\&quot;, \&quot;offset\&quot;: 0, \&quot;limit\&quot;: 100}`\n&quot;,&quot;skill_name&quot;:&quot;chart_instructions&quot;},&quot;type&quot;:&quot;json&quot;}],&quot;name&quot;:&quot;server_skill&quot;,&quot;status&quot;:&quot;success&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_01H5DPAENE91uDMRnXdBsMXd&quot;,&quot;type&quot;:&quot;server_skill&quot;},&quot;type&quot;:&quot;tool_result&quot;},{&quot;tool_use&quot;:{&quot;client_side_execute&quot;:false,&quot;input&quot;:{&quot;chart&quot;:&quot;{\&quot;title\&quot;:\&quot;Actual vs Expected Frequency by Decile (Test Set)\&quot;,\&quot;transform\&quot;:[{\&quot;fold\&quot;:[\&quot;ACTUAL_FREQ\&quot;,\&quot;EXPECTED_FREQ\&quot;]},{\&quot;calculate\&quot;:\&quot;({&#x27;ACTUAL_FREQ&#x27;:&#x27;Actual&#x27;,&#x27;EXPECTED_FREQ&#x27;:&#x27;Expected&#x27;})[datum.key]\&quot;,\&quot;as\&quot;:\&quot;key\&quot;}],\&quot;mark\&quot;:{\&quot;type\&quot;:\&quot;line\&quot;,\&quot;point\&quot;:true},\&quot;encoding\&quot;:{\&quot;x\&quot;:{\&quot;field\&quot;:\&quot;DECILE\&quot;,\&quot;type\&quot;:\&quot;ordinal\&quot;,\&quot;axis\&quot;:{\&quot;title\&quot;:\&quot;Risk Decile\&quot;}},\&quot;y\&quot;:{\&quot;field\&quot;:\&quot;value\&quot;,\&quot;type\&quot;:\&quot;quantitative\&quot;,\&quot;axis\&quot;:{\&quot;title\&quot;:\&quot;Claim Frequency\&quot;}},\&quot;color\&quot;:{\&quot;field\&quot;:\&quot;key\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;,\&quot;title\&quot;:\&quot;Series\&quot;}}}&quot;,&quot;question&quot;:&quot;THIS FIELD WILL BE DEPRECATED SOON. Please stop using it and use the &#x27;chart&#x27; field instead.&quot;,&quot;tool_result_id&quot;:&quot;toolu_bdrk_019XA5cspQPNJjaq69LV2HnB&quot;},&quot;name&quot;:&quot;data_to_chart&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_01YRReokodmjXunA3VwYonHA&quot;,&quot;type&quot;:&quot;data_to_chart&quot;},&quot;type&quot;:&quot;tool_use&quot;},{&quot;tool_result&quot;:{&quot;content&quot;:[{&quot;json&quot;:{&quot;charts&quot;:[&quot;{\&quot;$schema\&quot;:\&quot;https://vega.github.io/schema/vega-lite/v5.json\&quot;,\&quot;config\&quot;:{\&quot;bar\&quot;:{\&quot;minBandSize\&quot;:5}},\&quot;data\&quot;:{\&quot;values\&quot;:[{\&quot;ACTUAL_FREQ\&quot;:0.224143,\&quot;DECILE\&quot;:1,\&quot;EXPECTED_FREQ\&quot;:0.226352},{\&quot;ACTUAL_FREQ\&quot;:0.14258,\&quot;DECILE\&quot;:2,\&quot;EXPECTED_FREQ\&quot;:0.141617},{\&quot;ACTUAL_FREQ\&quot;:0.124287,\&quot;DECILE\&quot;:3,\&quot;EXPECTED_FREQ\&quot;:0.112951},{\&quot;ACTUAL_FREQ\&quot;:0.099849,\&quot;DECILE\&quot;:4,\&quot;EXPECTED_FREQ\&quot;:0.096201},{\&quot;ACTUAL_FREQ\&quot;:0.088252,\&quot;DECILE\&quot;:5,\&quot;EXPECTED_FREQ\&quot;:0.08753},{\&quot;ACTUAL_FREQ\&quot;:0.080997,\&quot;DECILE\&quot;:6,\&quot;EXPECTED_FREQ\&quot;:0.081278},{\&quot;ACTUAL_FREQ\&quot;:0.079041,\&quot;DECILE\&quot;:7,\&quot;EXPECTED_FREQ\&quot;:0.075569},{\&quot;ACTUAL_FREQ\&quot;:0.070526,\&quot;DECILE\&quot;:8,\&quot;EXPECTED_FREQ\&quot;:0.069521},{\&quot;ACTUAL_FREQ\&quot;:0.05949,\&quot;DECILE\&quot;:9,\&quot;EXPECTED_FREQ\&quot;:0.062361},{\&quot;ACTUAL_FREQ\&quot;:0.043287,\&quot;DECILE\&quot;:10,\&quot;EXPECTED_FREQ\&quot;:0.051233}]},\&quot;encoding\&quot;:{\&quot;color\&quot;:{\&quot;field\&quot;:\&quot;key\&quot;,\&quot;title\&quot;:\&quot;Series\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;},\&quot;tooltip\&quot;:[{\&quot;field\&quot;:\&quot;key\&quot;,\&quot;title\&quot;:\&quot;Series\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;},{\&quot;field\&quot;:\&quot;DECILE\&quot;,\&quot;title\&quot;:\&quot;Decile\&quot;,\&quot;type\&quot;:\&quot;ordinal\&quot;},{\&quot;field\&quot;:\&quot;value\&quot;,\&quot;format\&quot;:\&quot;,.6~f\&quot;,\&quot;title\&quot;:\&quot;Value\&quot;,\&quot;type\&quot;:\&quot;quantitative\&quot;},{\&quot;field\&quot;:\&quot;ACTUAL_FREQ\&quot;},{\&quot;field\&quot;:\&quot;EXPECTED_FREQ\&quot;}],\&quot;x\&quot;:{\&quot;axis\&quot;:{\&quot;title\&quot;:\&quot;Risk Decile\&quot;},\&quot;field\&quot;:\&quot;DECILE\&quot;,\&quot;type\&quot;:\&quot;ordinal\&quot;},\&quot;y\&quot;:{\&quot;axis\&quot;:{\&quot;title\&quot;:\&quot;Claim Frequency\&quot;},\&quot;field\&quot;:\&quot;value\&quot;,\&quot;sort\&quot;:null,\&quot;type\&quot;:\&quot;quantitative\&quot;}},\&quot;mark\&quot;:{\&quot;point\&quot;:true,\&quot;type\&quot;:\&quot;line\&quot;},\&quot;title\&quot;:\&quot;Actual vs Expected Frequency by Decile (Test Set)\&quot;,\&quot;transform\&quot;:[{\&quot;fold\&quot;:[\&quot;ACTUAL_FREQ\&quot;,\&quot;EXPECTED_FREQ\&quot;]},{\&quot;as\&quot;:\&quot;key\&quot;,\&quot;calculate\&quot;:\&quot;({&#x27;ACTUAL_FREQ&#x27;:&#x27;Actual&#x27;,&#x27;EXPECTED_FREQ&#x27;:&#x27;Expected&#x27;})[datum.key]\&quot;}],\&quot;usermeta\&quot;:{\&quot;snowflake\&quot;:{\&quot;color_mapping\&quot;:{\&quot;Actual\&quot;:{\&quot;hex\&quot;:\&quot;#4c78a8\&quot;,\&quot;name\&quot;:\&quot;blue\&quot;},\&quot;Expected\&quot;:{\&quot;hex\&quot;:\&quot;#f58518\&quot;,\&quot;name\&quot;:\&quot;orange\&quot;}},\&quot;columnRoles\&quot;:{\&quot;ACTUAL_FREQ\&quot;:\&quot;measure\&quot;,\&quot;AE_RATIO\&quot;:\&quot;measure\&quot;,\&quot;DECILE\&quot;:\&quot;dimension\&quot;,\&quot;EXPECTED_FREQ\&quot;:\&quot;measure\&quot;,\&quot;N_POLICIES\&quot;:\&quot;dimension\&quot;,\&quot;TOTAL_EXPOSURE\&quot;:\&quot;measure\&quot;}}}}&quot;]},&quot;type&quot;:&quot;json&quot;}],&quot;name&quot;:&quot;data_to_chart&quot;,&quot;status&quot;:&quot;success&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_01YRReokodmjXunA3VwYonHA&quot;,&quot;type&quot;:&quot;data_to_chart&quot;},&quot;type&quot;:&quot;tool_result&quot;},{&quot;text&quot;:&quot;Here is the actual vs. expected claim frequency by risk decile on the test set. Decile 1 contains the highest-risk policies (highest predicted frequency) and decile 10 the lowest-risk.\n\n&quot;,&quot;type&quot;:&quot;text&quot;},{&quot;table&quot;:{&quot;query_id&quot;:&quot;01c7468a-0107-2694-0002-0716066c0f7a&quot;,&quot;result_set&quot;:{&quot;data&quot;:[[&quot;1&quot;,&quot;18835&quot;,&quot;7160.61&quot;,&quot;0.224143&quot;,&quot;0.226352&quot;,&quot;0.99019999999999997&quot;],[&quot;2&quot;,&quot;17357&quot;,&quot;7160.87&quot;,&quot;0.142580&quot;,&quot;0.14161699999999999&quot;,&quot;1.0067999999999999&quot;],[&quot;3&quot;,&quot;15481&quot;,&quot;7160.84&quot;,&quot;0.124287&quot;,&quot;0.112951&quot;,&quot;1.1004&quot;],[&quot;4&quot;,&quot;13265&quot;,&quot;7160.81&quot;,&quot;0.099849&quot;,&quot;0.096200999999999995&quot;,&quot;1.0379&quot;],[&quot;5&quot;,&quot;12327&quot;,&quot;7161.29&quot;,&quot;0.088252&quot;,&quot;0.087529999999999997&quot;,&quot;1.0082&quot;],[&quot;6&quot;,&quot;11890&quot;,&quot;7160.78&quot;,&quot;0.080997&quot;,&quot;0.081278000000000003&quot;,&quot;0.99650000000000005&quot;],[&quot;7&quot;,&quot;11752&quot;,&quot;7160.84&quot;,&quot;0.079041&quot;,&quot;0.075568999999999997&quot;,&quot;1.0459000000000001&quot;],[&quot;8&quot;,&quot;11678&quot;,&quot;7160.48&quot;,&quot;0.070526&quot;,&quot;0.069520999999999999&quot;,&quot;1.0145&quot;],[&quot;9&quot;,&quot;11709&quot;,&quot;7160.84&quot;,&quot;0.059490&quot;,&quot;0.062361&quot;,&quot;0.95399999999999996&quot;],[&quot;10&quot;,&quot;11309&quot;,&quot;7161.49&quot;,&quot;0.043287&quot;,&quot;0.051233000000000001&quot;,&quot;0.84489999999999998&quot;]],&quot;resultSetMetaData&quot;:{&quot;format&quot;:&quot;jsonv2&quot;,&quot;numRows&quot;:10,&quot;partition&quot;:0,&quot;rowType&quot;:[{&quot;length&quot;:0,&quot;name&quot;:&quot;DECILE&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:38,&quot;scale&quot;:0,&quot;type&quot;:&quot;fixed&quot;},{&quot;length&quot;:0,&quot;name&quot;:&quot;N_POLICIES&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:18,&quot;scale&quot;:0,&quot;type&quot;:&quot;fixed&quot;},{&quot;length&quot;:0,&quot;name&quot;:&quot;TOTAL_EXPOSURE&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:38,&quot;scale&quot;:2,&quot;type&quot;:&quot;fixed&quot;},{&quot;length&quot;:0,&quot;name&quot;:&quot;ACTUAL_FREQ&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:38,&quot;scale&quot;:6,&quot;type&quot;:&quot;fixed&quot;},{&quot;length&quot;:0,&quot;name&quot;:&quot;EXPECTED_FREQ&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:0,&quot;scale&quot;:0,&quot;type&quot;:&quot;real&quot;},{&quot;length&quot;:0,&quot;name&quot;:&quot;AE_RATIO&quot;,&quot;nullable&quot;:true,&quot;precision&quot;:0,&quot;scale&quot;:0,&quot;type&quot;:&quot;real&quot;}]},&quot;statementHandle&quot;:&quot;01c7468a-0107-2694-0002-0716066c0f7a&quot;},&quot;title&quot;:&quot;Actual vs Expected Frequency by Decile (Test Set)&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_019XA5cspQPNJjaq69LV2HnB&quot;},&quot;type&quot;:&quot;table&quot;},{&quot;chart&quot;:{&quot;chart_spec&quot;:&quot;{\&quot;$schema\&quot;:\&quot;https://vega.github.io/schema/vega-lite/v5.json\&quot;,\&quot;config\&quot;:{\&quot;bar\&quot;:{\&quot;minBandSize\&quot;:5}},\&quot;data\&quot;:{\&quot;values\&quot;:[{\&quot;ACTUAL_FREQ\&quot;:0.224143,\&quot;DECILE\&quot;:1,\&quot;EXPECTED_FREQ\&quot;:0.226352},{\&quot;ACTUAL_FREQ\&quot;:0.14258,\&quot;DECILE\&quot;:2,\&quot;EXPECTED_FREQ\&quot;:0.141617},{\&quot;ACTUAL_FREQ\&quot;:0.124287,\&quot;DECILE\&quot;:3,\&quot;EXPECTED_FREQ\&quot;:0.112951},{\&quot;ACTUAL_FREQ\&quot;:0.099849,\&quot;DECILE\&quot;:4,\&quot;EXPECTED_FREQ\&quot;:0.096201},{\&quot;ACTUAL_FREQ\&quot;:0.088252,\&quot;DECILE\&quot;:5,\&quot;EXPECTED_FREQ\&quot;:0.08753},{\&quot;ACTUAL_FREQ\&quot;:0.080997,\&quot;DECILE\&quot;:6,\&quot;EXPECTED_FREQ\&quot;:0.081278},{\&quot;ACTUAL_FREQ\&quot;:0.079041,\&quot;DECILE\&quot;:7,\&quot;EXPECTED_FREQ\&quot;:0.075569},{\&quot;ACTUAL_FREQ\&quot;:0.070526,\&quot;DECILE\&quot;:8,\&quot;EXPECTED_FREQ\&quot;:0.069521},{\&quot;ACTUAL_FREQ\&quot;:0.05949,\&quot;DECILE\&quot;:9,\&quot;EXPECTED_FREQ\&quot;:0.062361},{\&quot;ACTUAL_FREQ\&quot;:0.043287,\&quot;DECILE\&quot;:10,\&quot;EXPECTED_FREQ\&quot;:0.051233}]},\&quot;encoding\&quot;:{\&quot;color\&quot;:{\&quot;field\&quot;:\&quot;key\&quot;,\&quot;title\&quot;:\&quot;Series\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;},\&quot;tooltip\&quot;:[{\&quot;field\&quot;:\&quot;key\&quot;,\&quot;title\&quot;:\&quot;Series\&quot;,\&quot;type\&quot;:\&quot;nominal\&quot;},{\&quot;field\&quot;:\&quot;DECILE\&quot;,\&quot;title\&quot;:\&quot;Decile\&quot;,\&quot;type\&quot;:\&quot;ordinal\&quot;},{\&quot;field\&quot;:\&quot;value\&quot;,\&quot;format\&quot;:\&quot;,.6~f\&quot;,\&quot;title\&quot;:\&quot;Value\&quot;,\&quot;type\&quot;:\&quot;quantitative\&quot;},{\&quot;field\&quot;:\&quot;ACTUAL_FREQ\&quot;},{\&quot;field\&quot;:\&quot;EXPECTED_FREQ\&quot;}],\&quot;x\&quot;:{\&quot;axis\&quot;:{\&quot;title\&quot;:\&quot;Risk Decile\&quot;},\&quot;field\&quot;:\&quot;DECILE\&quot;,\&quot;type\&quot;:\&quot;ordinal\&quot;},\&quot;y\&quot;:{\&quot;axis\&quot;:{\&quot;title\&quot;:\&quot;Claim Frequency\&quot;},\&quot;field\&quot;:\&quot;value\&quot;,\&quot;sort\&quot;:null,\&quot;type\&quot;:\&quot;quantitative\&quot;}},\&quot;mark\&quot;:{\&quot;point\&quot;:true,\&quot;type\&quot;:\&quot;line\&quot;},\&quot;title\&quot;:\&quot;Actual vs Expected Frequency by Decile (Test Set)\&quot;,\&quot;transform\&quot;:[{\&quot;fold\&quot;:[\&quot;ACTUAL_FREQ\&quot;,\&quot;EXPECTED_FREQ\&quot;]},{\&quot;as\&quot;:\&quot;key\&quot;,\&quot;calculate\&quot;:\&quot;({&#x27;ACTUAL_FREQ&#x27;:&#x27;Actual&#x27;,&#x27;EXPECTED_FREQ&#x27;:&#x27;Expected&#x27;})[datum.key]\&quot;}],\&quot;usermeta\&quot;:{\&quot;snowflake\&quot;:{\&quot;color_mapping\&quot;:{\&quot;Actual\&quot;:{\&quot;hex\&quot;:\&quot;#4c78a8\&quot;,\&quot;name\&quot;:\&quot;blue\&quot;},\&quot;Expected\&quot;:{\&quot;hex\&quot;:\&quot;#f58518\&quot;,\&quot;name\&quot;:\&quot;orange\&quot;}},\&quot;columnRoles\&quot;:{\&quot;ACTUAL_FREQ\&quot;:\&quot;measure\&quot;,\&quot;AE_RATIO\&quot;:\&quot;measure\&quot;,\&quot;DECILE\&quot;:\&quot;dimension\&quot;,\&quot;EXPECTED_FREQ\&quot;:\&quot;measure\&quot;,\&quot;N_POLICIES\&quot;:\&quot;dimension\&quot;,\&quot;TOTAL_EXPOSURE\&quot;:\&quot;measure\&quot;}}}}&quot;,&quot;tool_use_id&quot;:&quot;toolu_bdrk_01YRReokodmjXunA3VwYonHA&quot;},&quot;type&quot;:&quot;chart&quot;},{&quot;text&quot;:&quot;\n\nA few observations on model calibration:\n\n- **Overall monotonic ordering holds well** — both actual and expected frequency decline steadily from decile 1 (~0.224) to decile 10 (~0.043), confirming the model correctly rank-orders risk.\n- **Best-calibrated segments**: deciles 1, 2, 5, 6, and 8 all have A/E ratios within ±1.5% of 1.0 — essentially on target.\n- **Under-prediction in the mid-range**: decile 3 (A/E = 1.10) and decile 7 (A/E = 1.05) show the model slightly under-predicting actual frequency.\n- **Over-prediction in the lowest-risk tail**: decile 10 has A/E = 0.84 (actual 0.043 vs. expected 0.051) and decile 9 A/E = 0.95, meaning the model expects more claims than actually occur for the safest policies — a mild conservatism at the low-risk end that may warrant a closer look.\n\nExposure is well-balanced across deciles (~7,160 each), so these ratios are comparable across bands.&quot;,&quot;type&quot;:&quot;text&quot;},{&quot;suggested_queries&quot;:[{&quot;query&quot;:&quot;How does the average pure premium compare across the risk deciles on the test set?&quot;},{&quot;query&quot;:&quot;How does the actual vs expected frequency by decile compare between the training and test datasets?&quot;},{&quot;query&quot;:&quot;What does the cumulative actual claims percentage look like by decile (a Lorenz-style gains curve)?&quot;}],&quot;type&quot;:&quot;suggested_queries&quot;}],&quot;metadata&quot;:{&quot;assistant_message_id&quot;:570741024307846,&quot;run_id&quot;:&quot;8708817637-570741024305190&quot;,&quot;thread_id&quot;:8708817637,&quot;usage&quot;:{&quot;tokens_consumed&quot;:[{&quot;context_window&quot;:1000000,&quot;input_tokens&quot;:{&quot;cache_read&quot;:157334,&quot;cache_write&quot;:28106,&quot;total&quot;:185452,&quot;uncached&quot;:12},&quot;model_name&quot;:&quot;claude-opus-4-8&quot;,&quot;model_role&quot;:&quot;orchestration&quot;,&quot;output_tokens&quot;:{&quot;total&quot;:1358}}]},&quot;user_message_id&quot;:570741024305190},&quot;role&quot;:&quot;assistant&quot;,&quot;schema_version&quot;:&quot;v2&quot;,&quot;sequence_number&quot;:151,&quot;status&quot;:&quot;completed&quot;}</div></td></tr></tbody>
+    </table>
+    <div class="dg-search-empty" hidden></div>
+  </div>
+</div></div>
+</div>
+<div class="cell cell-python" data-index="44" data-collapse-state="expanded">
+  <div class="cell-header"><span class="cell-badge"><svg class="cell-icon" viewBox="0 0 16 16" fill="#5d6a85"><use href="#icon-lang-python"/></svg>Python</span><span class="cell-counter">[37]</span></div>
+  <div class="cell-input cell-status-success"><div class="cell-source"><pre><code class="language-python"><span class="tok-keyword">import</span> <span class="tok-variableName">json</span>
+<span class="tok-keyword tok-definitionKeyword">from</span> <span class="tok-variableName">IPython</span><span class="tok-operator">.</span><span class="tok-variableName">display</span> <span class="tok-keyword">import</span> <span class="tok-variableName">Markdown</span><span class="tok-punctuation">,</span> <span class="tok-variableName">display</span>
+
+<span class="tok-variableName">raw</span> <span class="tok-operator">=</span> <span class="tok-variableName">test_ave_decile</span><span class="tok-operator">.</span><span class="tok-propertyName">collect</span><span class="tok-punctuation">(</span><span class="tok-punctuation">)</span><span class="tok-punctuation">[</span><span class="tok-number">0</span><span class="tok-punctuation">]</span><span class="tok-punctuation">[</span><span class="tok-string">&quot;AGENT_RESPONSE&quot;</span><span class="tok-punctuation">]</span>
+<span class="tok-variableName">obj</span> <span class="tok-operator">=</span> <span class="tok-variableName">json</span><span class="tok-operator">.</span><span class="tok-propertyName">loads</span><span class="tok-punctuation">(</span><span class="tok-variableName">raw</span><span class="tok-punctuation">)</span> <span class="tok-keyword">if</span> <span class="tok-variableName tok-functionName">isinstance</span><span class="tok-punctuation">(</span><span class="tok-variableName">raw</span><span class="tok-punctuation">,</span> <span class="tok-variableName">str</span><span class="tok-punctuation">)</span> <span class="tok-keyword">else</span> <span class="tok-variableName">raw</span>
+<span class="tok-variableName">text_parts</span> <span class="tok-operator">=</span> <span class="tok-punctuation">[</span><span class="tok-variableName">item</span><span class="tok-punctuation">[</span><span class="tok-string">&quot;text&quot;</span><span class="tok-punctuation">]</span> <span class="tok-keyword">for</span> <span class="tok-variableName">item</span> <span class="tok-keyword">in</span> <span class="tok-variableName">obj</span><span class="tok-operator">.</span><span class="tok-propertyName">get</span><span class="tok-punctuation">(</span><span class="tok-string">&quot;content&quot;</span><span class="tok-punctuation">,</span> <span class="tok-punctuation">[</span><span class="tok-punctuation">]</span><span class="tok-punctuation">)</span> <span class="tok-keyword">if</span> <span class="tok-variableName">item</span><span class="tok-operator">.</span><span class="tok-propertyName">get</span><span class="tok-punctuation">(</span><span class="tok-string">&quot;type&quot;</span><span class="tok-punctuation">)</span> <span class="tok-operator">==</span> <span class="tok-string">&quot;text&quot;</span><span class="tok-punctuation">]</span>
+<span class="tok-variableName tok-functionName">display</span><span class="tok-punctuation">(</span><span class="tok-variableName tok-functionName">Markdown</span><span class="tok-punctuation">(</span><span class="tok-string">&quot;\n\n&quot;</span><span class="tok-operator">.</span><span class="tok-propertyName">join</span><span class="tok-punctuation">(</span><span class="tok-variableName">text_parts</span><span class="tok-punctuation">)</span><span class="tok-punctuation">)</span><span class="tok-punctuation">)</span></code></pre></div></div>
+  <div class="cell-outputs"><div class="output-markdown"><p>Here is the actual vs. expected claim frequency by risk decile on the test set. Decile 1 contains the highest-risk policies (highest predicted frequency) and decile 10 the lowest-risk.</p>
+<p>A few observations on model calibration:</p>
+<ul>
+<li><strong>Overall monotonic ordering holds well</strong> — both actual and expected frequency decline steadily from decile 1 (<del>0.224) to decile 10 (</del>0.043), confirming the model correctly rank-orders risk.</li>
+<li><strong>Best-calibrated segments</strong>: deciles 1, 2, 5, 6, and 8 all have A/E ratios within ±1.5% of 1.0 — essentially on target.</li>
+<li><strong>Under-prediction in the mid-range</strong>: decile 3 (A/E = 1.10) and decile 7 (A/E = 1.05) show the model slightly under-predicting actual frequency.</li>
+<li><strong>Over-prediction in the lowest-risk tail</strong>: decile 10 has A/E = 0.84 (actual 0.043 vs. expected 0.051) and decile 9 A/E = 0.95, meaning the model expects more claims than actually occur for the safest policies — a mild conservatism at the low-risk end that may warrant a closer look.</li>
+</ul>
+<p>Exposure is well-balanced across deciles (~7,160 each), so these ratios are comparable across bands.</p>
+</div></div>
+</div>
+  </div>
+  <script>var __i18n = {"hideColumnStats":"Hide column stats","showColumnStats":"Show column stats/filters","sortAscending":"Sort ascending","sortDescending":"Sort descending","increaseDecimalPlaces":"Increase decimal places","decreaseDecimalPlaces":"Decrease decimal places","showThousandsSeparators":"Show thousands separators","displayAsPercentage":"Display as a percentage","formatAsCurrency":"Format as currency (USD)","selectDateFormat":"Select date format","noResultsFor":"No results for","filteredRowCount":"{visible} of {total} rows","totalRowCount":"{total} rows","totalRowCountSingular":"{total} row","none":"None","noneParenthesized":"(None)","barChart":"Bar chart","stackedBarChart":"Stacked bar chart","lineChart":"Line chart","areaChart":"Area chart","pieChart":"Pie chart","chartType":"Chart type","xAxis":"X-axis","sort":"Sort","yAxis":"Y-axis","value":"Value","aggregate":"Aggregate","groupBy":"Group by","limit":"Limit","timeResolution":"Time res.","byXAscending":"By X ascending","byXDescending":"By X descending","byYAscending":"By Y ascending","byYDescending":"By Y descending","sum":"Sum","average":"Average","count":"Count","min":"Min","max":"Max","median":"Median","year":"Year","month":"Month","week":"Week","day":"Day","hours":"Hours","minutes":"Minutes","top10":"Top 10","top25":"Top 25","top50":"Top 50","top100":"Top 100","bottom10":"Bottom 10","bottom50":"Bottom 50","bottom100":"Bottom 100","nulls":"Nulls","distinct":"Distinct","addColumn":"Add column","removeColumn":"Remove column","columns":"Columns","xAxisLabel":"X-axis label","yAxisLabel":"Y-axis label","addLabel":"Add label..."};</script>
+  <script>
+// ---------- tab switching ----------
+function switchTab(btn) {
+  var container = btn.closest('.rv-container');
+  container.querySelectorAll('.rv-tab').forEach(function(t) { t.classList.remove('rv-tab-active'); });
+  container.querySelectorAll('.rv-panel').forEach(function(p) { p.classList.add('rv-panel-hidden'); });
+  btn.classList.add('rv-tab-active');
+  var panel = document.getElementById(btn.getAttribute('data-target'));
+  if (!panel) return;
+  panel.classList.remove('rv-panel-hidden');
+  panel.querySelectorAll('.ch-layout').forEach(chInit);
+}
+
+// ---------- column menu ----------
+// Globals are scoped to a single standalone document. If this export is ever
+// embedded as an iframe alongside other instances, wrap in an IIFE to isolate state.
+var _dgMenu = { table: null, colIdx: -1 };
+var _dgFmtMap = new Map();
+
+function dgGetFmt(table, colIdx) {
+  if (!_dgFmtMap.has(table)) _dgFmtMap.set(table, {});
+  var m = _dgFmtMap.get(table);
+  if (!m[colIdx]) m[colIdx] = { precision: null, commas: false, percent: false, currency: false, dateFormat: null };
+  return m[colIdx];
+}
+
+// Build the menu with createElement so no string-escaping is needed inside the template literal.
+function dgOpenColMenu(e, btn, colIdx) {
+  e.stopPropagation();
+  var menu = document.getElementById('dg-col-menu');
+  var table = btn.closest('table');
+  if (_dgMenu.table === table && _dgMenu.colIdx === colIdx && !menu.hidden) {
+    menu.hidden = true;
+    return;
+  }
+  _dgMenu = { table: table, colIdx: colIdx };
+
+  var th = table.rows[0] && table.rows[0].cells[colIdx];
+  var colType = th ? (th.getAttribute('data-col-type') || 'nominal') : 'nominal';
+  var fmt = dgGetFmt(table, colIdx);
+  var statsRow = table.querySelector('.dg-stats-row');
+  var statsShown = statsRow && !statsRow.hidden;
+
+  // Clear previous items
+  while (menu.firstChild) menu.removeChild(menu.firstChild);
+
+  function addItem(label, fn, active) {
+    var b = document.createElement('button');
+    b.className = 'dg-col-menu-item' + (active ? ' dg-active' : '');
+    b.textContent = label;
+    b.onclick = fn;
+    menu.appendChild(b);
+  }
+  function addSep() {
+    var d = document.createElement('div');
+    d.className = 'dg-col-menu-sep';
+    menu.appendChild(d);
+  }
+
+  addItem(statsShown ? __i18n.hideColumnStats : __i18n.showColumnStats, dgToggleStats);
+  addSep();
+  addItem('↑ ' + __i18n.sortAscending,  function() { dgSortTable('asc');  });
+  addItem('↓ ' + __i18n.sortDescending, function() { dgSortTable('desc'); });
+
+  if (colType === 'quantitative') {
+    addSep();
+    addItem('.0+ ' + __i18n.increaseDecimalPlaces,  function() { dgFmtCol('precision_inc'); });
+    addItem('.0− ' + __i18n.decreaseDecimalPlaces, function() { dgFmtCol('precision_dec'); });
+    addSep();
+    addItem(', ' + __i18n.showThousandsSeparators, function() { dgFmtCol('commas');   }, fmt.commas);
+    addItem('% ' + __i18n.displayAsPercentage,   function() { dgFmtCol('percent');  }, fmt.percent);
+    addItem('$ ' + __i18n.formatAsCurrency,  function() { dgFmtCol('currency'); }, fmt.currency);
+  }
+
+  if (colType === 'temporal') {
+    addSep();
+
+    // Build example labels using today's date — same pattern as the live app's getDateFormatOptions()
+    var today = new Date();
+    var todayDate = today.toISOString().split('T')[0];                       // "2024-01-15"
+    var todayTime = today.toISOString().split('T')[1].split('.')[0];         // "14:30:22"
+    var todayMonthYear = today.toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }); // "January 2024"
+
+    var dateFormats = [
+      { key: 'ISO_DATETIME_SEP_BY_SPACE', label: todayDate + ' ' + todayTime },
+      { key: 'ISO_DATE',                  label: todayDate },
+      { key: 'LOCAL_MONTH_YEAR',          label: todayMonthYear },
+    ];
+
+    // "Select date format ▶" header — click toggles the inline sub-list
+    var subHeader = document.createElement('button');
+    subHeader.className = 'dg-col-menu-item dg-submenu-header';
+    subHeader.textContent = __i18n.selectDateFormat + ' ';
+    var arrow = document.createElement('span');
+    arrow.className = 'dg-submenu-arrow';
+    arrow.textContent = '▶';
+    subHeader.appendChild(arrow);
+    menu.appendChild(subHeader);
+
+    var subList = document.createElement('div');
+    subList.className = 'dg-submenu-list';
+    subList.hidden = true;
+
+    dateFormats.forEach(function(df) {
+      var b = document.createElement('button');
+      b.className = 'dg-col-menu-item dg-submenu-item' + (fmt.dateFormat === df.key ? ' dg-active' : '');
+      b.textContent = df.label;
+      b.onclick = function() {
+        fmt.dateFormat = df.key;
+        // Update active state without closing the menu (matches live app shouldCloseMenuOnSelect=false)
+        Array.from(subList.querySelectorAll('.dg-submenu-item')).forEach(function(el) {
+          el.classList.toggle('dg-active', el === b);
+        });
+        dgFmtDateCol(table, colIdx, df.key);
+      };
+      subList.appendChild(b);
+    });
+
+    subHeader.onclick = function() {
+      subList.hidden = !subList.hidden;
+      var arrow = subHeader.querySelector('.dg-submenu-arrow');
+      if (arrow) arrow.innerHTML = subList.hidden ? '▶' : '▼';
+    };
+
+    menu.appendChild(subList);
+  }
+
+  var r = btn.getBoundingClientRect();
+  menu.style.left = r.left + 'px';
+  menu.style.top  = (r.bottom + 2) + 'px';
+  menu.hidden = false;
+}
+
+// ---------- sort ----------
+function dgSortTable(dir) {
+  var table = _dgMenu.table;
+  var colIdx = _dgMenu.colIdx;
+  document.getElementById('dg-col-menu').hidden = true;
+  if (!table || colIdx < 0) return;
+  var tbody = table.querySelector('tbody');
+  var rows = Array.from(tbody.rows);
+  rows.sort(function(a, b) {
+    var ac = a.cells[colIdx], bc = b.cells[colIdx];
+    var ad = ac ? ac.querySelector('.dg-cell') : null;
+    var bd = bc ? bc.querySelector('.dg-cell') : null;
+    var av = ad ? (ad.getAttribute('data-raw') || '') : (ac ? ac.textContent.trim() : '');
+    var bv = bd ? (bd.getAttribute('data-raw') || '') : (bc ? bc.textContent.trim() : '');
+    if (av === '' && bv === '') return 0;
+    if (av === '') return 1;
+    if (bv === '') return -1;
+    var an = parseFloat(av), bn = parseFloat(bv);
+    if (!isNaN(an) && !isNaN(bn)) return dir === 'asc' ? an - bn : bn - an;
+    return dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+  });
+  rows.forEach(function(row) { tbody.appendChild(row); });
+  table.querySelectorAll('thead .dg-sort-arrow').forEach(function(el) { el.textContent = ''; });
+  var headerTh = table.rows[0] && table.rows[0].cells[colIdx];
+  if (headerTh) {
+    var arrow = headerTh.querySelector('.dg-sort-arrow');
+    if (arrow) arrow.textContent = dir === 'asc' ? ' ↑' : ' ↓';
+  }
+  // Refresh stats if visible
+  var statsRow = table.querySelector('.dg-stats-row');
+  if (statsRow && !statsRow.hidden) dgComputeStats(table, statsRow);
+}
+
+// ---------- number formatting ----------
+function dgGetAutoPrec(raw) {
+  var dot = raw.indexOf('.');
+  return dot < 0 ? 0 : Math.min(raw.length - dot - 1, 10);
+}
+
+function dgFormatNum(raw, fmt) {
+  var num = parseFloat(raw);
+  if (isNaN(num)) return raw;
+  var val = fmt.percent ? num * 100 : num;
+  var prec = fmt.precision !== null ? fmt.precision : dgGetAutoPrec(raw);
+  var opts = { minimumFractionDigits: prec, maximumFractionDigits: prec, useGrouping: fmt.commas || fmt.currency };
+  var result;
+  if (fmt.currency) {
+    result = new Intl.NumberFormat('en-US', Object.assign({ style: 'currency', currency: 'USD' }, opts)).format(val);
+  } else {
+    result = new Intl.NumberFormat('en-US', opts).format(val);
+    if (fmt.percent) result += '%';
+  }
+  return result;
+}
+
+function dgFmtCol(action) {
+  var table = _dgMenu.table;
+  var colIdx = _dgMenu.colIdx;
+  document.getElementById('dg-col-menu').hidden = true;
+  if (!table || colIdx < 0) return;
+  var fmt = dgGetFmt(table, colIdx);
+  var tbody = table.querySelector('tbody');
+  var firstRaw = '';
+  var firstRow = tbody.rows[0];
+  if (firstRow && firstRow.cells[colIdx]) {
+    var fd = firstRow.cells[colIdx].querySelector('.dg-cell');
+    firstRaw = fd ? (fd.getAttribute('data-raw') || '') : '';
+  }
+  var basePrec = fmt.precision !== null ? fmt.precision : dgGetAutoPrec(firstRaw);
+  if      (action === 'precision_inc') { fmt.precision = basePrec + 1; }
+  else if (action === 'precision_dec') { fmt.precision = Math.max(0, basePrec - 1); }
+  else if (action === 'commas')   { fmt.commas   = !fmt.commas; }
+  else if (action === 'percent')  { fmt.percent  = !fmt.percent;  if (fmt.percent)  fmt.currency = false; }
+  else if (action === 'currency') { fmt.currency = !fmt.currency; if (fmt.currency) fmt.percent  = false; }
+  Array.from(tbody.rows).forEach(function(row) {
+    var cell = row.cells[colIdx]; if (!cell) return;
+    var div = cell.querySelector('.dg-cell'); if (!div) return;
+    var raw = div.getAttribute('data-raw'); if (!raw) return;
+    div.textContent = dgFormatNum(raw, fmt);
+  });
+}
+
+// ---------- date formatting ----------
+// Format a raw date/timestamp string into the chosen display format.
+// Input strings can be "YYYY-MM-DD", "YYYY-MM-DD HH:mm:ss.SSS", or any
+// Snowflake-style date string. All parsed and displayed in UTC.
+function dgFormatDate(raw, fmtKey) {
+  if (!raw || raw === 'NULL') return raw;
+  // Normalise to ISO UTC so parsing is unambiguous across timezones:
+  // "2010-01-01 00:00:00.000" → "2010-01-01T00:00:00.000Z"
+  var iso = raw.replace(' ', 'T');
+  if (!/[Zz]|[+-]d{2}:?d{2}$/.test(iso)) iso += 'Z';
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return raw; // unparseable — leave as-is
+
+  var p2 = function(n) { return String(n).padStart(2, '0'); };
+  var yr = d.getUTCFullYear();
+  var mo = p2(d.getUTCMonth() + 1);
+  var dy = p2(d.getUTCDate());
+
+  if (fmtKey === 'ISO_DATE') {
+    // "YYYY-MM-DD"
+    return yr + '-' + mo + '-' + dy;
+  }
+  if (fmtKey === 'LOCAL_MONTH_YEAR') {
+    // "January 2010"  (localized, matching live app's MON YYYY format)
+    return d.toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  }
+  // ISO_DATETIME_SEP_BY_SPACE: "YYYY-MM-DD HH:mm:ss"  (no ms, matching live app's HH24:MI:SS format)
+  return yr + '-' + mo + '-' + dy + ' ' +
+    p2(d.getUTCHours()) + ':' + p2(d.getUTCMinutes()) + ':' + p2(d.getUTCSeconds());
+}
+
+function dgFmtDateCol(table, colIdx, fmtKey) {
+  if (!table || colIdx < 0) return;
+  var tbody = table.querySelector('tbody');
+  Array.from(tbody.rows).forEach(function(row) {
+    var cell = row.cells[colIdx]; if (!cell) return;
+    var div = cell.querySelector('.dg-cell'); if (!div) return;
+    var raw = div.getAttribute('data-raw'); if (!raw) return;
+    div.textContent = dgFormatDate(raw, fmtKey);
+  });
+}
+
+// ---------- column stats ----------
+function dgToggleStats() {
+  var table = _dgMenu.table;
+  document.getElementById('dg-col-menu').hidden = true;
+  if (!table) return;
+  var statsRow = table.querySelector('.dg-stats-row');
+  if (!statsRow) return;
+  statsRow.hidden = !statsRow.hidden;
+  if (!statsRow.hidden) dgComputeStats(table, statsRow);
+}
+
+function dgComputeStats(table, statsRow) {
+  var headerRow = table.rows[0];
+  var bodyRows = Array.from(table.querySelector('tbody').rows);
+  Array.from(statsRow.cells).forEach(function(statsTh, thIdx) {
+    if (thIdx === 0) return;
+    var hth = headerRow.cells[thIdx];
+    var colType = hth ? (hth.getAttribute('data-col-type') || 'nominal') : 'nominal';
+    var raws = bodyRows.map(function(row) {
+      var cell = row.cells[thIdx]; if (!cell) return null;
+      var div = cell.querySelector('.dg-cell');
+      var r = div ? div.getAttribute('data-raw') : null;
+      return (r === null || r === '') ? null : r;
+    });
+    var nulls = raws.filter(function(v) { return v === null; }).length;
+    var nonNull = raws.filter(function(v) { return v !== null; });
+    var text = '';
+    if (colType === 'quantitative') {
+      var nums = nonNull.map(Number).filter(function(n) { return !isNaN(n); });
+      if (nums.length) {
+        text = __i18n.min + ' ' + Math.min.apply(null, nums) + ' ' + __i18n.max + ' ' + Math.max.apply(null, nums);
+        if (nulls) text += ' ' + __i18n.nulls + ' ' + nulls;
+      }
+    } else {
+      text = __i18n.distinct + ' ' + new Set(nonNull).size;
+      if (nulls) text += ' ' + __i18n.nulls + ' ' + nulls;
+    }
+    statsTh.textContent = text;
+  });
+}
+
+document.addEventListener('click', function(e) {
+  var t = e.target;
+  if (!t || typeof t.closest !== 'function') return;
+  if (!t.closest('#dg-col-menu') && !t.closest('.dg-col-menu-btn')) {
+    document.getElementById('dg-col-menu').hidden = true;
+  }
+  document.querySelectorAll('.dg-colsel-popover').forEach(function(p) {
+    if (!p.hidden && !p.closest('.dg-colsel-wrapper').contains(t)) p.hidden = true;
+  });
+  document.querySelectorAll('.ch-add-col-menu').forEach(function(m) {
+    if (!m.hidden && !m.closest('.ch-add-col-wrapper').contains(t)) m.hidden = true;
+  });
+});
+
+// ---------- table search (expand/collapse like live notebook) ----------
+function dgSearchHover(el, hovering) {
+  el.dataset.dgHover = hovering ? '1' : '';
+  dgSearchSyncDeferred(el, hovering);
+}
+function dgSearchFocus(input, focused) {
+  var el = input.closest('.dg-search');
+  el.dataset.dgFocus = focused ? '1' : '';
+  dgSearchSyncDeferred(el, focused);
+}
+function dgSearchSyncDeferred(el, immediate) {
+  if (immediate) { dgSearchSync(el); return; }
+  // Small delay lets hover/blur settle before deciding to collapse
+  setTimeout(function() { dgSearchSync(el); }, 50);
+}
+function dgSearchSync(el) {
+  var input = el.querySelector('.dg-search-input');
+  var expanded = el.dataset.dgHover || el.dataset.dgFocus || (input && input.value);
+  el.classList.toggle('dg-search-expanded', !!expanded);
+}
+function dgSearchClear(el) {
+  var search = el.closest('.dg-search');
+  var input = search.querySelector('.dg-search-input');
+  input.value = '';
+  input.blur();
+  search.dataset.dgHover = '';
+  search.dataset.dgFocus = '';
+  dgSearchSync(search);
+  search.querySelector('.dg-search-clear').hidden = true;
+  dgSearchFilter(search);
+}
+var _dgSearchTimer;
+function dgSearchTable(input) {
+  var search = input.closest('.dg-search');
+  search.querySelector('.dg-search-clear').hidden = !input.value;
+  clearTimeout(_dgSearchTimer);
+  _dgSearchTimer = setTimeout(function() { dgSearchFilter(search); }, 150);
+}
+function dgSearchFilter(search) {
+  var container = search.closest('.dg-container');
+  if (!container) return;
+  var table = container.querySelector('.dg-table');
+  if (!table) return;
+  var term = (search.querySelector('.dg-search-input').value || '').toLowerCase();
+  var tbody = table.querySelector('tbody');
+  var rows = Array.from(tbody.rows);
+  rows.forEach(function(row) {
+    if (!term) { row.style.display = ''; return; }
+    var text = '';
+    for (var i = 1; i < row.cells.length; i++) {
+      if (row.cells[i].style.display === 'none') continue;
+      var div = row.cells[i].querySelector('.dg-cell');
+      text += (div ? div.textContent : row.cells[i].textContent) + ' ';
+    }
+    row.style.display = text.toLowerCase().indexOf(term) >= 0 ? '' : 'none';
+  });
+  var total = rows.length;
+  var visible = rows.filter(function(r) { return r.style.display !== 'none'; }).length;
+
+  var emptyEl = container.querySelector('.dg-search-empty');
+  if (emptyEl) {
+    var showEmpty = term && visible === 0;
+    emptyEl.hidden = !showEmpty;
+    if (showEmpty) {
+      emptyEl.textContent = __i18n.noResultsFor + ' “' + term + '”';
+    }
+  }
+
+  var countSpan = container.querySelector('.dg-row-count');
+  if (!countSpan) return;
+  function fmtRowCount(n) {
+    return (n === 1 ? __i18n.totalRowCountSingular : __i18n.totalRowCount).replace('{total}', n.toLocaleString());
+  }
+  countSpan.textContent = term
+    ? __i18n.filteredRowCount.replace('{visible}', visible.toLocaleString()).replace('{total}', total.toLocaleString())
+    : (countSpan.getAttribute('data-original') || fmtRowCount(total));
+}
+
+// ---------- column selection popover ----------
+function dgToggleColSel(btn) {
+  var wrapper = btn.closest('.dg-colsel-wrapper');
+  if (!wrapper) return;
+  var popover = wrapper.querySelector('.dg-colsel-popover');
+  if (!popover) return;
+  popover.hidden = !popover.hidden;
+  if (!popover.hidden) {
+    var rect = btn.getBoundingClientRect();
+    popover.style.top = (rect.bottom + 4) + 'px';
+    popover.style.left = Math.max(0, rect.right - 240) + 'px';
+    var si = popover.querySelector('.dg-colsel-search-input');
+    if (si) { si.value = ''; dgColSelSearch(si); si.focus(); }
+    dgSyncApplyState(popover);
+  }
+}
+
+function dgColSelSearch(input) {
+  var popover = input.closest('.dg-colsel-popover');
+  var term = input.value.toLowerCase();
+  var visibleCount = 0;
+  popover.querySelectorAll('.dg-colsel-list .dg-colsel-item').forEach(function(label) {
+    var name = label.querySelector('.dg-colsel-label').textContent.toLowerCase();
+    var visible = !term || name.indexOf(term) >= 0;
+    label.style.display = visible ? '' : 'none';
+    if (visible) visibleCount++;
+  });
+  var emptyEl = popover.querySelector('.dg-colsel-empty');
+  if (emptyEl) {
+    emptyEl.hidden = visibleCount > 0;
+    if (visibleCount === 0 && term) {
+      emptyEl.textContent = __i18n.noResultsFor + ' “' + term + '”';
+    }
+  }
+  var selectAllLabel = popover.querySelector('.dg-colsel-all');
+  if (selectAllLabel) selectAllLabel.style.display = visibleCount > 0 ? '' : 'none';
+}
+
+function dgToggleCol(checkbox) {
+  var popover = checkbox.closest('.dg-colsel-popover');
+  dgSyncSelectAll(popover);
+  dgSyncApplyState(popover);
+}
+
+function dgToggleAllCols(checkbox) {
+  var popover = checkbox.closest('.dg-colsel-popover');
+  var checked = checkbox.checked;
+  popover.querySelectorAll('.dg-colsel-list .dg-colsel-item').forEach(function(label) {
+    if (label.style.display === 'none') return;
+    var cb = label.querySelector('input[data-col]');
+    if (cb) cb.checked = checked;
+  });
+  dgSyncApplyState(popover);
+}
+
+function dgSyncSelectAll(popover) {
+  if (!popover) return;
+  var all = popover.querySelectorAll('.dg-colsel-list input[data-col]');
+  var checkedCount = Array.from(all).filter(function(cb) { return cb.checked; }).length;
+  var selectAllCb = popover.querySelector('.dg-colsel-all input');
+  if (selectAllCb) {
+    selectAllCb.checked = checkedCount === all.length;
+    selectAllCb.indeterminate = checkedCount > 0 && checkedCount < all.length;
+  }
+}
+
+function dgSyncApplyState(popover) {
+  if (!popover) return;
+  var anyChecked = !!popover.querySelector('.dg-colsel-list input[data-col]:checked');
+  var applyBtn = popover.querySelector('.dg-colsel-apply');
+  if (applyBtn) applyBtn.disabled = !anyChecked;
+}
+
+function dgColSelApply(btn) {
+  if (btn.disabled) return;
+  var popover = btn.closest('.dg-colsel-popover');
+  var container = popover.closest('.dg-container');
+  var table = container.querySelector('.dg-table');
+  if (!table) return;
+  var hiddenCols = new Set();
+  popover.querySelectorAll('.dg-colsel-list input[data-col]').forEach(function(cb) {
+    if (!cb.checked) hiddenCols.add(parseInt(cb.getAttribute('data-col'), 10) + 1);
+  });
+  Array.from(table.rows).forEach(function(row) {
+    for (var i = 0; i < row.cells.length; i++) {
+      row.cells[i].style.display = hiddenCols.has(i) ? 'none' : '';
+    }
+  });
+  popover.hidden = true;
+  var searchEl = container.querySelector('.dg-search');
+  if (searchEl) dgSearchFilter(searchEl);
+}
+
+// ============================================================
+// Interactive chart editor
+// ============================================================
+var _chState = {};
+
+function chInit(el) {
+  if (!el || el._chInited) return;
+  el._chInited = true;
+  var id = el.id;
+  var cols = JSON.parse(document.getElementById(id + '-cols').textContent  || '[]');
+  var vals = JSON.parse(document.getElementById(id + '-vals').textContent  || '[]');
+  var init = JSON.parse(document.getElementById(id + '-state').textContent || '{}');
+  _chState[id] = Object.assign({ cols: cols, vals: vals }, init);
+
+  var sidebar = document.createElement('div');
+  sidebar.className = 'ch-sidebar';
+  var formDiv = document.createElement('div');
+  formDiv.id = id + '-form';
+  formDiv.className = 'ch-form';
+  sidebar.appendChild(formDiv);
+
+  var area = document.createElement('div');
+  area.className = 'ch-area';
+  var vegaDiv = document.createElement('div');
+  vegaDiv.id = id + '-vega';
+  area.appendChild(vegaDiv);
+
+  el.appendChild(sidebar);
+  el.appendChild(area);
+
+  chBuildForm(id);
+  chRender(id);
+}
+
+// Build a <select> element from [value, label] pairs
+function chSel(value, opts, onChange) {
+  var sel = document.createElement('select');
+  sel.className = 'ch-select';
+  opts.forEach(function(o) {
+    var opt = document.createElement('option');
+    opt.value = o[0];
+    opt.textContent = o[1];
+    if (o[0] === value) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  sel.onchange = function() { onChange(sel.value); };
+  return sel;
+}
+
+// Build a labeled form row (label left, input right)
+function chRow(label, input) {
+  var row = document.createElement('div');
+  row.className = 'ch-field-row';
+  var lbl = document.createElement('span');
+  lbl.className = 'ch-label';
+  lbl.textContent = label;
+  row.appendChild(lbl);
+  row.appendChild(input);
+  return row;
+}
+
+function chDivider() {
+  var d = document.createElement('div');
+  d.className = 'ch-divider';
+  return d;
+}
+
+// Build a toggle-with-text row (switch + text input) for axis labels
+function chToggleText(label, enabled, text, placeholder, onToggle, onText) {
+  var row = document.createElement('div');
+  row.className = 'ch-field-row ch-toggle-row';
+  var lbl = document.createElement('span');
+  lbl.className = 'ch-label';
+  lbl.textContent = label;
+  row.appendChild(lbl);
+  var right = document.createElement('div');
+  right.className = 'ch-toggle-right';
+  var toggle = document.createElement('button');
+  toggle.className = 'ch-toggle' + (enabled ? ' ch-toggle-on' : '');
+  toggle.type = 'button';
+  toggle.setAttribute('role', 'switch');
+  toggle.setAttribute('aria-checked', String(!!enabled));
+  var knob = document.createElement('span');
+  knob.className = 'ch-toggle-knob';
+  toggle.appendChild(knob);
+  toggle.onclick = function() {
+    var next = !enabled;
+    onToggle(next);
+  };
+  right.appendChild(toggle);
+  if (enabled) {
+    var inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'ch-text-input';
+    inp.value = text || '';
+    inp.placeholder = placeholder || '';
+    var _t;
+    inp.oninput = function() { clearTimeout(_t); _t = setTimeout(function() { onText(inp.value); }, 150); };
+    right.appendChild(inp);
+  }
+  row.appendChild(right);
+  return row;
+}
+
+// Build the multi-select Y-axis UI: one dropdown per selected column + "Add column" button
+function chMultiY(id, yFields, colOpts) {
+  var s = _chState[id];
+  var wrapper = document.createElement('div');
+  wrapper.className = 'ch-multi-y';
+
+  var usedSet = {};
+  yFields.forEach(function(f) { usedSet[f] = true; });
+
+  yFields.forEach(function(fieldName, idx) {
+    var itemRow = document.createElement('div');
+    itemRow.className = 'ch-multi-y-item';
+    var filteredOpts = colOpts.filter(function(o) {
+      return o[0] === fieldName || !usedSet[o[0]];
+    });
+    var sel = chSel(fieldName, filteredOpts, function(v) {
+      if (s.yAxisLabel === s.yFields[idx]) s.yAxisLabel = v;
+      s.yFields[idx] = v;
+      chBuildForm(id);
+      chRender(id);
+    });
+    itemRow.appendChild(sel);
+    if (yFields.length > 1) {
+      var removeBtn = document.createElement('button');
+      removeBtn.className = 'ch-remove-btn';
+      removeBtn.type = 'button';
+      removeBtn.title = __i18n.removeColumn;
+      removeBtn.textContent = '✕';
+      removeBtn.onclick = function() {
+        s.yFields.splice(idx, 1);
+        if (s.yFields.length < 2) s.colorField = null;
+        chBuildForm(id);
+        chRender(id);
+      };
+      itemRow.appendChild(removeBtn);
+    }
+    wrapper.appendChild(itemRow);
+  });
+
+  // "Add column" button — shows remaining columns not yet selected
+  var remaining = colOpts.filter(function(o) { return !usedSet[o[0]]; });
+  if (remaining.length > 0) {
+    var addBtn = document.createElement('button');
+    addBtn.className = 'ch-add-col-btn';
+    addBtn.type = 'button';
+    addBtn.textContent = '+ ' + __i18n.addColumn;
+    var menuDiv = document.createElement('div');
+    menuDiv.className = 'ch-add-col-menu';
+    menuDiv.hidden = true;
+    var hdr = document.createElement('div');
+    hdr.className = 'ch-add-col-header';
+    hdr.textContent = __i18n.columns;
+    menuDiv.appendChild(hdr);
+    remaining.forEach(function(o) {
+      var item = document.createElement('button');
+      item.className = 'ch-add-col-item';
+      item.type = 'button';
+      item.textContent = o[1];
+      item.onclick = function(e) {
+        e.stopPropagation();
+        s.yFields.push(o[0]);
+        if (s.yFields.length >= 2) s.colorField = null;
+        menuDiv.hidden = true;
+        chBuildForm(id);
+        chRender(id);
+      };
+      menuDiv.appendChild(item);
+    });
+    addBtn.onclick = function(e) {
+      e.stopPropagation();
+      menuDiv.hidden = !menuDiv.hidden;
+    };
+    var addWrapper = document.createElement('div');
+    addWrapper.className = 'ch-add-col-wrapper';
+    addWrapper.appendChild(addBtn);
+    addWrapper.appendChild(menuDiv);
+    wrapper.appendChild(addWrapper);
+  }
+  return wrapper;
+}
+
+// Rebuild the editor form based on current state
+function chBuildForm(id) {
+  var s = _chState[id];
+  var form = document.getElementById(id + '-form');
+  if (!form) return;
+  while (form.firstChild) form.removeChild(form.firstChild);
+
+  var colOpts     = s.cols.map(function(c) { return [c.name, c.name]; });
+  var colOptsNone = [['', __i18n.noneParenthesized]].concat(colOpts);
+  var isArc       = s.type === 'arc';
+  var isAgg       = s.aggregate && s.aggregate !== 'none';
+
+  function re(fn) { return function(v) { fn(v); chRender(id); }; }
+
+  // Chart type — primary dropdown matching the live-app "Chart type" field
+  form.appendChild(chRow(__i18n.chartType, chSel(s.type || 'grouped-bar', [
+    ['grouped-bar', __i18n.barChart],
+    ['stacked-bar', __i18n.stackedBarChart],
+    ['line',        __i18n.lineChart],
+    ['area',        __i18n.areaChart],
+    ['arc',         __i18n.pieChart],
+  ], function(v) { s.type = v; chBuildForm(id); chRender(id); })));
+
+  form.appendChild(chDivider());
+
+  // X-axis + sort (not for pie)
+  if (!isArc) {
+    form.appendChild(chRow(__i18n.xAxis, chSel(s.xField || '', colOpts,
+      function(v) { if (s.xAxisLabel === s.xField) s.xAxisLabel = v; s.xField = v; s.timeResolution = 'none'; chBuildForm(id); chRender(id); })));
+
+    // Time resolution — shown when X-axis is a date/timestamp column
+    var xCol = s.cols.find(function(c) { return c.name === s.xField; });
+    if (xCol && xCol.type === 'temporal') {
+      form.appendChild(chRow(__i18n.timeResolution, chSel(s.timeResolution || 'none', [
+        ['none',                     __i18n.none],
+        ['year',                     __i18n.year],
+        ['yearmonth',                __i18n.month],
+        ['yearweek',                 __i18n.week],
+        ['yearmonthdate',            __i18n.day],
+        ['yearmonthdatehours',       __i18n.hours],
+        ['yearmonthdatehoursminutes',__i18n.minutes],
+      ], re(function(v) { s.timeResolution = v; }))));
+    }
+
+    form.appendChild(chRow(__i18n.sort, chSel(s.sortX || 'none', [
+      ['none',         __i18n.none],
+      ['x-ascending',  __i18n.byXAscending],
+      ['x-descending', __i18n.byXDescending],
+      ['y-ascending',  __i18n.byYAscending],
+      ['y-descending', __i18n.byYDescending],
+    ], re(function(v) { s.sortX = v; }))));
+    form.appendChild(chDivider());
+  }
+
+  // Y-axis / Value — multi-select with "Add column" (not for pie)
+  if (isArc) {
+    form.appendChild(chRow(__i18n.value, chSel(
+      (s.yFields && s.yFields[0]) || '', colOpts,
+      re(function(v) { s.yFields = v ? [v] : []; }))));
+  } else {
+    form.appendChild(chRow(__i18n.yAxis, chMultiY(id, s.yFields || [], colOpts)));
+  }
+
+  form.appendChild(chRow(__i18n.aggregate, chSel(s.aggregate || 'none', [
+    ['none',   __i18n.none],
+    ['sum',    __i18n.sum],
+    ['mean',   __i18n.average],
+    ['count',  __i18n.count],
+    ['min',    __i18n.min],
+    ['max',    __i18n.max],
+    ['median', __i18n.median],
+  ], function(v) {
+    s.aggregate = v;
+    if (v !== 'none') s.limit = 0; // Match live app: reset limit when aggregating
+    chBuildForm(id);
+    chRender(id);
+  })));
+
+  form.appendChild(chDivider());
+
+  // Group by (color) — hidden when multiple Y columns are selected (they use fold)
+  if (!s.yFields || s.yFields.length < 2) {
+    form.appendChild(chRow(__i18n.groupBy, chSel(s.colorField || '', colOptsNone,
+      function(v) { s.colorField = v || null; chBuildForm(id); chRender(id); })));
+  }
+
+  // Limit
+  var xColForLimit = s.cols.find(function(c) { return c.name === s.xField; });
+  var xIsRawTemporal = xColForLimit && xColForLimit.type === 'temporal' &&
+                       (!s.timeResolution || s.timeResolution === 'none');
+  if (!isArc && !isAgg && !xIsRawTemporal) {
+    form.appendChild(chRow(__i18n.limit, chSel(String(s.limit != null ? s.limit : -50), [
+      ['0',    __i18n.none],
+      ['-10',  __i18n.top10],
+      ['-25',  __i18n.top25],
+      ['-50',  __i18n.top50],
+      ['-100', __i18n.top100],
+      ['10',   __i18n.bottom10],
+      ['50',   __i18n.bottom50],
+      ['100',  __i18n.bottom100],
+    ], re(function(v) { s.limit = Number(v); }))));
+  }
+
+  form.appendChild(chDivider());
+
+  // Axis labels (toggle + text input)
+  if (!isArc) {
+    form.appendChild(chToggleText(__i18n.xAxisLabel,
+      s.xAxisLabelEnabled, s.xAxisLabel, __i18n.addLabel,
+      function(v) { s.xAxisLabelEnabled = v; chBuildForm(id); chRender(id); },
+      function(v) { s.xAxisLabel = v; chRender(id); }
+    ));
+    form.appendChild(chToggleText(__i18n.yAxisLabel,
+      s.yAxisLabelEnabled, s.yAxisLabel, __i18n.addLabel,
+      function(v) { s.yAxisLabelEnabled = v; chBuildForm(id); chRender(id); },
+      function(v) { s.yAxisLabel = v; chRender(id); }
+    ));
+  }
+}
+
+// Pre-filter vals to top/bottom N groups by aggregate Y value.
+// Runs client-side so the Vega spec stays free of window transforms.
+function chApplyLimit(vals, xF, yF, agg, limit) {
+  if (!limit || !xF || !yF) return vals;
+  var groups = {};
+  vals.forEach(function(row) {
+    var xVal = row[xF];
+    if (xVal == null) return;
+    var k = String(xVal);
+    if (!groups[k]) groups[k] = { sum: 0, count: 0, min: Infinity, max: -Infinity };
+    var yVal = parseFloat(row[yF]);
+    if (!isNaN(yVal)) {
+      groups[k].sum   += yVal;
+      groups[k].count += 1;
+      if (yVal < groups[k].min) groups[k].min = yVal;
+      if (yVal > groups[k].max) groups[k].max = yVal;
+    }
+  });
+  var keys = Object.keys(groups);
+  if (keys.length <= Math.abs(limit)) return vals;
+  keys.sort(function(a, b) {
+    function av(g) {
+      if (agg === 'count') return g.count;
+      if (agg === 'mean')  return g.count > 0 ? g.sum / g.count : 0;
+      if (agg === 'min')   return g.min;
+      if (agg === 'max')   return g.max;
+      return g.sum;
+    }
+    var d = av(groups[b]) - av(groups[a]);
+    return limit < 0 ? d : -d; // negative = top N desc; positive = bottom N asc
+  });
+  var keep = {};
+  keys.slice(0, Math.abs(limit)).forEach(function(k) { keep[k] = true; });
+  return vals.filter(function(row) {
+    var xVal = row[xF];
+    return xVal != null && keep[String(xVal)];
+  });
+}
+
+// Build a Vega-Lite spec from current editor state
+function chBuildSpec(id) {
+  var s       = _chState[id];
+  var type    = s.type;
+  var xF      = s.xField;
+  var yFields = s.yFields || [];
+  var yF      = yFields[0];
+  var useFold = yFields.length >= 2;
+  var colorF  = useFold ? null : s.colorField;
+  var agg     = s.aggregate || 'none';
+  var sortX   = s.sortX || 'none';
+  var limit   = s.limit != null ? s.limit : -50;
+  var timeRes = s.timeResolution || 'none';
+
+  function vt(name) {
+    var col = (s.cols || []).find(function(c) { return c.name === name; });
+    if (!col) return 'nominal';
+    if (col.type === 'quantitative') return 'quantitative';
+    if (col.type === 'temporal')     return 'temporal';
+    return 'nominal';
+  }
+
+  var xIsTemporal = vt(xF) === 'temporal';
+  var shouldApplyLimit = !xIsTemporal || timeRes !== 'none';
+  var filteredVals = (type !== 'arc' && shouldApplyLimit)
+    ? chApplyLimit(s.vals, xF, yF, agg, limit)
+    : s.vals;
+
+  // Vega's temporal parsing mutates data values in-place from date strings
+  // to epoch-ms numbers. If a temporal column is also used as group-by color,
+  // the legend would show raw numbers. Fix: copy the string value into a
+  // separate "__label" field that Vega won't parse, and use that for color.
+  var colorIsTemporal = colorF && vt(colorF) === 'temporal';
+  var colorFieldForEnc = colorF;
+  if (colorIsTemporal) {
+    colorFieldForEnc = '__ch_label_' + colorF;
+    filteredVals = filteredVals.map(function(row) {
+      var copy = Object.assign({}, row);
+      copy[colorFieldForEnc] = String(row[colorF] == null ? '' : row[colorF]);
+      return copy;
+    });
+  }
+
+  var base = {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    width: 'container', height: 300,
+    autosize: { type: 'fit', contains: 'padding' },
+    background: 'transparent',
+    data: { values: filteredVals },
+  };
+
+  var legendBottom = { orient: 'bottom', columns: 4 };
+
+  // Axis label helpers: returns title string or empty string (hidden)
+  var xTitle = s.xAxisLabelEnabled ? (s.xAxisLabel || xF || '') : '';
+  var yTitle = s.yAxisLabelEnabled ? (s.yAxisLabel || (useFold ? '' : yF) || '') : '';
+
+  if (type === 'arc') {
+    var theta = { field: yF, type: 'quantitative' };
+    if (agg !== 'none') theta.aggregate = agg;
+    return Object.assign({}, base, {
+      mark: { type: 'arc', tooltip: true },
+      encoding: {
+        theta: theta,
+        color: colorF ? { field: colorF, type: 'nominal', legend: legendBottom } : undefined,
+      },
+    });
+  }
+
+  // When multiple Y fields are selected, use a fold transform to melt
+  // them into a single "variable"/"value" pair — same as the live chart.
+  if (useFold) {
+    base.transform = [{ fold: yFields, as: ['__series__', '__value__'] }];
+  }
+
+  // Build X encoding
+  var xEnc = null;
+  if (xF) {
+    if (xIsTemporal && timeRes !== 'none') {
+      xEnc = {
+        field: xF,
+        type: 'ordinal',
+        timeUnit: { unit: timeRes, utc: true },
+        sort: 'ascending',
+        axis: { labelAngle: -35, labelLimit: 120, title: xTitle },
+      };
+    } else if (xIsTemporal) {
+      xEnc = {
+        field: xF,
+        type: 'temporal',
+        scale: { type: 'utc' },
+        sort: null,
+        axis: { labelAngle: -35, labelLimit: 120, title: xTitle },
+      };
+    } else {
+      xEnc = {
+        field: xF,
+        type:  vt(xF),
+        sort:  null,
+        axis:  { labelAngle: -35, labelLimit: 120, title: xTitle },
+      };
+    }
+    if (sortX !== 'none') {
+      var p = sortX.split('-'), ax = p[0], dir = p[1];
+      xEnc.sort = ax === 'x' ? dir : { encoding: 'y', order: dir };
+    }
+  }
+
+  var yEnc;
+  if (useFold) {
+    yEnc = { field: '__value__', type: 'quantitative', axis: { title: yTitle } };
+    if (agg !== 'none') yEnc.aggregate = agg;
+  } else {
+    yEnc = yF ? { field: yF, type: vt(yF), axis: { title: yTitle } } : null;
+    if (yEnc && agg !== 'none') yEnc.aggregate = agg;
+  }
+
+  var enc = { x: xEnc, y: yEnc, tooltip: true };
+
+  if (useFold) {
+    enc.color = { field: '__series__', type: 'nominal', legend: legendBottom };
+  } else if (colorFieldForEnc) {
+    enc.color = { field: colorFieldForEnc, type: 'nominal', legend: legendBottom };
+  }
+
+  var markType = (type === 'grouped-bar' || type === 'stacked-bar') ? 'bar' : type;
+  if (type === 'grouped-bar') {
+    if (useFold) {
+      enc.xOffset = { field: '__series__', type: 'nominal' };
+      if (yEnc) enc.y = Object.assign({}, yEnc, { stack: false });
+    } else if (colorFieldForEnc) {
+      enc.xOffset = { field: colorFieldForEnc, type: 'nominal' };
+      if (yEnc) enc.y = Object.assign({}, yEnc, { stack: false });
+    }
+  }
+
+  return Object.assign({}, base, {
+    mark: { type: markType, tooltip: true },
+    encoding: enc,
+  });
+}
+
+function chRender(id) {
+  if (typeof vegaEmbed !== 'function') return;
+  var el = document.getElementById(id + '-vega');
+  if (!el) return;
+  vegaEmbed(el, chBuildSpec(id), { actions: false }).catch(console.error);
+}
+</script>
+</body>
+</html>
